@@ -23,7 +23,7 @@ builddependencies = [
     ('CMake', '3.29.3'),
     ('pkgconf', '2.2.0'),
     # metatensor-core builds a Rust staticlib
-    ('Rust', '1.88.0'),  # Cargo.lock pulls crates needing edition2024 / 1.85+
+    ('Rust', '1.83.0'),
 ]
 
 start_dir = 'metatensor-core'
@@ -40,8 +40,9 @@ preconfigopts = (
     "-u CMAKE_CUDA_COMPILER_LAUNCHER "
 )
 prebuildopts = (
-    'env -u RUSTC_WRAPPER -u CARGO_BUILD_RUSTC_WRAPPER -u RUSTFLAGS '
-    '-u CARGO_ENCODED_RUSTFLAGS -u CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER '
+    'unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER; '
+    'ln -sfn %(builddir)s/*/Cargo.lock %(start_dir)s/Cargo.lock 2>/dev/null || true; '
+    'export CARGO_NET_OFFLINE=false; '
 )
 configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
 
