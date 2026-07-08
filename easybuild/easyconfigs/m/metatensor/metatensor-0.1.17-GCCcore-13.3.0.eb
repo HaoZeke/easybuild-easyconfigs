@@ -30,13 +30,12 @@ start_dir = 'metatensor-core'
 
 # GitHub tag tarballs are not git checkouts; metatensor CMake expects
 # cmake/git_version_info (two lines: n_commits, hash) for release builds.
+# Also strip host RUSTC_WRAPPER/sccache/cmake launcher env (common on workstations).
 preconfigopts = (
-    'printf "0
-release
-" > cmake/git_version_info && '
-    'env -u RUSTC_WRAPPER -u CMAKE_C_COMPILER_LAUNCHER '
-    '-u CMAKE_CXX_COMPILER_LAUNCHER -u CMAKE_CUDA_COMPILER_LAUNCHER '
-    '-u CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER '
+    "printf '0\\nrelease\\n' > cmake/git_version_info && "
+    "env -u RUSTC_WRAPPER -u CMAKE_C_COMPILER_LAUNCHER "
+    "-u CMAKE_CXX_COMPILER_LAUNCHER -u CMAKE_CUDA_COMPILER_LAUNCHER "
+    "-u CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER "
 )
 configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
 
