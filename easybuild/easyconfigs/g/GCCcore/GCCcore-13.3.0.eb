@@ -50,7 +50,7 @@ checksums = [
 
 builddependencies = [
     ('M4', '1.4.19'),
-    ('binutils', '2.42'),
+    ('binutils', '2.46.1'),
 ]
 
 languages = ['c', 'c++', 'fortran']
