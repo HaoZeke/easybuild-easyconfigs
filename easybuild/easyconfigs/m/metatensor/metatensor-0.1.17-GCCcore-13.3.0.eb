@@ -29,13 +29,15 @@ builddependencies = [
 start_dir = 'metatensor-core'
 
 # GitHub tag tarballs are not git checkouts; metatensor CMake expects
-# cmake/git_version_info (two lines: n_commits, hash) for release builds.
-# Also strip host RUSTC_WRAPPER/sccache/cmake launcher env (common on workstations).
+# cmake/git_version_info (n_commits, hash). Write into the SOURCE tree
+# (preconfigopts runs in the out-of-source CMake build dir).
+# Scrub host cargo/sccache/mold wrappers that break EESSI-container builds.
 preconfigopts = (
-    "printf '0\\nrelease\\n' > cmake/git_version_info && "
-    "env -u RUSTC_WRAPPER -u CMAKE_C_COMPILER_LAUNCHER "
-    "-u CMAKE_CXX_COMPILER_LAUNCHER -u CMAKE_CUDA_COMPILER_LAUNCHER "
-    "-u CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER "
+    "printf '0\\nrelease\\n' > %(start_dir)s/cmake/git_version_info && "
+    "env -u RUSTC_WRAPPER -u CARGO_BUILD_RUSTC_WRAPPER -u RUSTFLAGS "
+    "-u CARGO_ENCODED_RUSTFLAGS -u CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER "
+    "-u CMAKE_C_COMPILER_LAUNCHER -u CMAKE_CXX_COMPILER_LAUNCHER "
+    "-u CMAKE_CUDA_COMPILER_LAUNCHER "
 )
 configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
 
