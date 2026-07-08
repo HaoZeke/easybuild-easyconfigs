@@ -58,6 +58,10 @@ languages = ['c', 'c++', 'fortran']
 withisl = True
 withnvptx = True
 
+# Arch/kernel headers no longer ship linux/scc.h; libsanitizer fails to build.
+# Quill/eOn do not need asan/tsan/ubsan from this bootstrap toolchain.
+configopts = "--disable-libsanitizer"
+
 # Perl is only required when building with NVPTX support
 if withnvptx:
     osdependencies = ['perl']
