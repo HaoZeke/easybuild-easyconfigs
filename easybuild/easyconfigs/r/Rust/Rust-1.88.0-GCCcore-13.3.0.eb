@@ -35,3 +35,8 @@ dependencies = [
 ]
 
 moduleclass = 'lang'
+
+# Host workstations often set RUSTFLAGS=-C link-arg=-fuse-ld=mold;
+# that breaks bootstrap when mold/ld is not on PATH (EESSI container).
+preconfigopts = 'env -u RUSTFLAGS -u CARGO_ENCODED_RUSTFLAGS -u RUSTC_WRAPPER '
+prebuildopts = preconfigopts
