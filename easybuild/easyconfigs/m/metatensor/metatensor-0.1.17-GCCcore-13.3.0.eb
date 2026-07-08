@@ -22,27 +22,21 @@ builddependencies = [
     ('binutils', '2.42'),
     ('CMake', '3.29.3'),
     ('pkgconf', '2.2.0'),
-    # metatensor-core builds a Rust staticlib
-    ('Rust', '1.83.0'),
+    # cargo resolves crates needing edition2024 / rustc >= 1.85; use companion 1.88
+    ('Rust', '1.88.0'),
 ]
 
 start_dir = 'metatensor-core'
 
-# GitHub tag tarballs are not git checkouts; metatensor CMake expects
-# cmake/git_version_info (n_commits, hash). Write into the SOURCE tree
-# (preconfigopts runs in the out-of-source CMake build dir).
-# Scrub host cargo/sccache/mold wrappers that break EESSI-container builds.
+# GitHub tag tarballs are not git checkouts; CMake needs cmake/git_version_info
+# (n_commits, hash) in the source tree (preconfigopts runs in out-of-source build dir).
 preconfigopts = (
     "printf '0\\nrelease\\n' > %(start_dir)s/cmake/git_version_info && "
-    "env -u RUSTC_WRAPPER -u CARGO_BUILD_RUSTC_WRAPPER -u RUSTFLAGS "
-    "-u CARGO_ENCODED_RUSTFLAGS -u CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER "
-    "-u CMAKE_C_COMPILER_LAUNCHER -u CMAKE_CXX_COMPILER_LAUNCHER "
-    "-u CMAKE_CUDA_COMPILER_LAUNCHER "
+    "unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUILD_RUSTC_WRAPPER; "
 )
+# Scrub host mold/sccache wrappers for the cargo invoke during make
 prebuildopts = (
-    'unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER; '
-    'ln -sfn %(builddir)s/*/Cargo.lock %(start_dir)s/Cargo.lock 2>/dev/null || true; '
-    'export CARGO_NET_OFFLINE=false; '
+    "unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUILD_RUSTC_WRAPPER; "
 )
 configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
 
