@@ -23,4 +23,8 @@ builddependencies = [
 buildopts = 'MAKEINFO=true'
 installopts = buildopts
 
+# Host GCC 16 rejects gprofng collector sources in binutils 2.42
+# (incompatible pointer types / too many arguments).
+configopts = '--disable-gprofng'
+
 moduleclass = 'tools'
