@@ -1,6 +1,7 @@
 # Companion: metatomic Torch C++ library (libmetatomic_torch).
 # Required by eOn with_metatomic / feedstock libmetatomic-torch pin.
-easyblock = 'CMakeMake'
+# CMakeNinja: match -GNinja-style builds; CMakeMake + ninja generator has no Makefile.
+easyblock = 'CMakeNinja'
 
 name = 'metatomic-torch'
 version = '0.1.15'
@@ -36,7 +37,7 @@ preconfigopts = (
     "export CMAKE_PREFIX_PATH=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch:$EBROOTMETATENSOR:$EBROOTMETATENSORMINTORCH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH} && "
 )
 configopts = (
-    '-GNinja -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DMETATOMIC_TORCH_TESTS=OFF '
+    '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DMETATOMIC_TORCH_TESTS=OFF '
     '-DTorch_DIR=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch/share/cmake/Torch '
 )
 

@@ -1,7 +1,8 @@
 # Companion: TorchScript C++ bindings for metatensor (libmetatensor_torch).
 # Co-built against EasyBuild PyTorch on foss-2024a.
 # Requires metatensor-core 0.2.2 (CMakeLists REQUIRED_METATENSOR_VERSION).
-easyblock = 'CMakeMake'
+# CMakeNinja: -GNinja + make leaves no Makefile (job 483: "No targets... no makefile").
+easyblock = 'CMakeNinja'
 
 name = 'metatensor-torch'
 version = '0.10.0'
@@ -38,7 +39,7 @@ preconfigopts = (
     "export CMAKE_PREFIX_PATH=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch:$EBROOTMETATENSOR${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH} && "
 )
 configopts = (
-    '-GNinja -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
+    '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
     '-DTorch_DIR=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch/share/cmake/Torch '
 )
 
