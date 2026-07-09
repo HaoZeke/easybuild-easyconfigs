@@ -25,6 +25,16 @@ dependencies = [
     ('libiconv', '1.18'),
 ]
 
+
+# glibc 2.43 + _GNU_SOURCE always enables C23 string macros (_Generic wmemchr/bsearch).
+# gettext 0.26 gnulib redeclares those symbols; #undef immediately before the decls.
+prebuildopts = (
+    "find . -path '*/gnulib-lib/wchar.h' -print0 | "
+    "xargs -0 -r sed -i '/_GL_EXTERN_C wchar_t \\*wmemchr/i #undef wmemchr' && "
+    "find . -path '*/gnulib-lib/stdlib.h' -print0 | "
+    "xargs -0 -r sed -i '/_GL_EXTERN_C void \\*bsearch/i #undef bsearch' && "
+)
+
 configopts = '--without-emacs --with-libxml2-prefix=$EBROOTLIBXML2'
 
 modextrapaths = {
