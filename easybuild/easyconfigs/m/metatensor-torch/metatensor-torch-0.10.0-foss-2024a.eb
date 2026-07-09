@@ -1,6 +1,6 @@
 # Companion: TorchScript C++ bindings for metatensor (libmetatensor_torch).
 # Co-built against EasyBuild PyTorch on foss-2024a.
-# Requires metatensor-core >= 0.2.2 (see CMakeLists REQUIRED_METATENSOR_VERSION).
+# Requires metatensor-core 0.2.2 (CMakeLists REQUIRED_METATENSOR_VERSION).
 easyblock = 'CMakeMake'
 
 name = 'metatensor-torch'
@@ -13,11 +13,13 @@ Required by metatomic-torch and eOn metatomic potentials."""
 toolchain = {'name': 'foss', 'version': '2024a'}
 toolchainopts = {'pic': True, 'openmp': True}
 
-source_urls = ['https://github.com/metatensor/metatensor/archive/refs/tags/']
-sources = ['metatensor-torch-v%(version)s.tar.gz']
-checksums = [
-    {'metatensor-torch-v0.10.0.tar.gz': '824bc84c217b6994fa4c989d5d1953836bff22d309de8c4b0d022cb760093274'},
-]
+# Official CXX release asset: ships cmake/git_version_info + a baked VERSION,
+# extracts to a single self-named top dir. No git checkout, no start_dir or
+# git_version_info printf hack (the archive/refs/tags tarball needs both and
+# still breaks dev-versions.cmake for 0.10.0).
+source_urls = ['https://github.com/metatensor/metatensor/releases/download/metatensor-torch-v%(version)s/']
+sources = ['metatensor-torch-cxx-%(version)s.tar.gz']
+checksums = ['a0a25e061ae4fbf2a563e9fcceed68ac79b4d857e4c9803a1614d301dc3fdfcd']
 
 builddependencies = [
     ('CMake', '3.29.3'),
@@ -31,12 +33,8 @@ dependencies = [
     ('metatensor', '0.2.2', '', ('GCCcore', '13.3.0')),
 ]
 
-start_dir = 'metatensor-torch'
-
-# Tag tarball is not a git checkout; cmake/dev-versions.cmake reads git_version_info.
-# Siesta-style $EBROOT* at configure; EB PyTorch under site-packages/torch.
+# EB PyTorch lives under site-packages/torch; expose Torch + metatensor to CMake.
 preconfigopts = (
-    "printf '0\\nrelease\\n' > %(start_dir)s/cmake/git_version_info && "
     "export CMAKE_PREFIX_PATH=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch:$EBROOTMETATENSOR${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH} && "
 )
 configopts = (

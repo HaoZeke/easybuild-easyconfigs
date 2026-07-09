@@ -12,11 +12,11 @@ TorchScript. Requires metatensor-torch and PyTorch (foss-2024a)."""
 toolchain = {'name': 'foss', 'version': '2024a'}
 toolchainopts = {'pic': True, 'openmp': True}
 
-source_urls = ['https://github.com/metatensor/metatomic/archive/refs/tags/']
-sources = ['metatomic-torch-v%(version)s.tar.gz']
-checksums = [
-    {'metatomic-torch-v0.1.15.tar.gz': '89bae80e9be74636089c367c847421395cc6fbe8488af184ed5875da9d7c9847'},
-]
+# Official CXX release asset (metatensor/metatomic repo): ships
+# cmake/git_version_info + a baked VERSION, single self-named top dir.
+source_urls = ['https://github.com/metatensor/metatomic/releases/download/metatomic-torch-v%(version)s/']
+sources = ['metatomic-torch-cxx-%(version)s.tar.gz']
+checksums = ['2fa4c94144164168834a90ff195ed7d788959c9d9ffd3ea4a85e2f470925c708']
 
 builddependencies = [
     ('CMake', '3.29.3'),
@@ -31,12 +31,8 @@ dependencies = [
     ('metatensor-torch', '0.10.0'),
 ]
 
-start_dir = 'metatomic-torch'
-
-# Tag tarball: seed git_version_info for cmake/dev-versions.
-# convert_name: metatensor-torch → EBROOTMETATENSORMINTORCH
+# EBROOTMETATENSORMINTORCH = metatensor-torch prefix (EB name mangling).
 preconfigopts = (
-    "printf '0\\nrelease\\n' > %(start_dir)s/cmake/git_version_info && "
     "export CMAKE_PREFIX_PATH=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch:$EBROOTMETATENSOR:$EBROOTMETATENSORMINTORCH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH} && "
 )
 configopts = (
