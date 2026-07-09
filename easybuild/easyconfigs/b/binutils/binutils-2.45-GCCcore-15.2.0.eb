@@ -25,6 +25,9 @@ dependencies = [
 
 # avoid build failure when makeinfo command is not available
 # see https://sourceware.org/bugzilla/show_bug.cgi?id=15345
+# gprofng fails with modern toolchains/hosts; not required for GCCcore bootstrap.
+configopts = '--disable-gprofng '
+
 buildopts = 'MAKEINFO=true'
 installopts = buildopts
 
