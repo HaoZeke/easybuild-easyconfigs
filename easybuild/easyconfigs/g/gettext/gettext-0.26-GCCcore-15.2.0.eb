@@ -23,30 +23,12 @@ dependencies = [
     ('libiconv', '1.18'),
 ]
 
-# glibc 2.43 enables C23 _Generic macros for wmemchr/bsearch under _GNU_SOURCE.
-# gettext 0.26 gnulib redeclares those symbols; #undef before the decls.
-# Use python (not sed) to avoid shell/BRE escaping pitfalls.
-prebuildopts = """python3 -c "
-from pathlib import Path
-repls = {
-    'wchar.h': (
-        '_GL_EXTERN_C wchar_t *wmemchr (const wchar_t *__s, wchar_t __wc, size_t __n)',
-        '#undef wmemchr\\n_GL_EXTERN_C wchar_t *wmemchr (const wchar_t *__s, wchar_t __wc, size_t __n)',
-    ),
-    'stdlib.h': (
-        '_GL_EXTERN_C void *bsearch (const void *__key,',
-        '#undef bsearch\\n_GL_EXTERN_C void *bsearch (const void *__key,',
-    ),
-}
-for name, (old, new) in repls.items():
-    for p in Path('.').rglob('gnulib-lib/' + name):
-        t = p.read_text()
-        if old in t and new not in t:
-            p.write_text(t.replace(old, new, 1))
-            print('patched', p)
-" && """
+# glibc 2.43 + _GNU_SOURCE enables C23 _Generic macros for wmemchr/bsearch.
+# gettext 0.26 gnulib redeclares them; inject #undef (portable base64-inlined script).
+local_gettext_glibc43_b64 = 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCnJlcGxzID0gewogICAgIndjaGFyLmgiOiAoCiAgICAgICAgIl9HTF9FWFRFUk5fQyB3Y2hhcl90ICp3bWVtY2hyIChjb25zdCB3Y2hhcl90ICpfX3MsIHdjaGFyX3QgX193Yywgc2l6ZV90IF9fbikiLAogICAgICAgICIjdW5kZWYgd21lbWNoclxuX0dMX0VYVEVSTl9DIHdjaGFyX3QgKndtZW1jaHIgKGNvbnN0IHdjaGFyX3QgKl9fcywgd2NoYXJfdCBfX3djLCBzaXplX3QgX19uKSIsCiAgICApLAogICAgInN0ZGxpYi5oIjogKAogICAgICAgICJfR0xfRVhURVJOX0Mgdm9pZCAqYnNlYXJjaCAoY29uc3Qgdm9pZCAqX19rZXksIiwKICAgICAgICAiI3VuZGVmIGJzZWFyY2hcbl9HTF9FWFRFUk5fQyB2b2lkICpic2VhcmNoIChjb25zdCB2b2lkICpfX2tleSwiLAogICAgKSwKfQpuID0gMApmb3IgbmFtZSwgKG9sZCwgbmV3KSBpbiByZXBscy5pdGVtcygpOgogICAgZm9yIHAgaW4gUGF0aCgiLiIpLnJnbG9iKCJnbnVsaWItbGliLyIgKyBuYW1lKToKICAgICAgICB0ID0gcC5yZWFkX3RleHQoKQogICAgICAgIGlmIG9sZCBpbiB0IGFuZCBuZXcgbm90IGluIHQ6CiAgICAgICAgICAgIHAud3JpdGVfdGV4dCh0LnJlcGxhY2Uob2xkLCBuZXcsIDEpKQogICAgICAgICAgICBwcmludCgicGF0Y2hlZCIsIHApCiAgICAgICAgICAgIG4gKz0gMQpwcmludCgiZ2V0dGV4dF9nbGliYzQzX3BhdGNoOiAlZCBmaWxlKHMpIiAlIG4pCg=='
+prebuildopts = 'echo ' + local_gettext_glibc43_b64 + ' | base64 -d | python3 && '
 
-configopts = '--without-emacs --with-libxml2-prefix=$EBROOTLIBXML2'
+configopts = '--without-emacs --with-libxml2-prefix='
 
 modextrapaths = {
     'ACLOCAL_PATH': 'share/gettext/m4',
