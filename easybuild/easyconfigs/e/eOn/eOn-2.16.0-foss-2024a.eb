@@ -94,7 +94,7 @@ dependencies = [
     ('CapnProto', '1.1.0'),
     # metatomic stack (companions under easyconfigs/m/)
     ('PyTorch', '2.6.0'),
-    ('metatensor', '0.1.17', '', ('GCCcore', '13.3.0')),
+    ('metatensor', '0.2.2', '', ('GCCcore', '13.3.0')),
     ('metatensor-torch', '0.10.0'),
     ('metatomic-torch', '0.1.15'),
 ]

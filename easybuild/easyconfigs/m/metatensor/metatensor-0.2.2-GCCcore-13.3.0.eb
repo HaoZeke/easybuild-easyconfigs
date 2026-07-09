@@ -1,0 +1,46 @@
+# Companion: metatensor-core C library for eOn / metatensor-torch.
+# metatensor-torch 0.10.0 requires metatensor >= 0.2.2 (CONFIG).
+easyblock = 'CMakeMake'
+
+name = 'metatensor'
+version = '0.2.2'
+
+homepage = 'https://docs.metatensor.org/'
+description = """Metatensor core C library: sparse storage for atomistic
+machine learning. Built from the metatensor-core tree of the monorepo tag."""
+
+toolchain = {'name': 'GCCcore', 'version': '13.3.0'}
+toolchainopts = {'pic': True}
+
+source_urls = ['https://github.com/metatensor/metatensor/archive/refs/tags/']
+sources = ['metatensor-core-v%(version)s.tar.gz']
+checksums = [
+    {'metatensor-core-v0.2.2.tar.gz': 'a1e5e09116062afcd5f3b068cf6350003419257962a6f3ed2dea206ace287c81'},
+]
+
+builddependencies = [
+    ('binutils', '2.42'),
+    ('CMake', '3.29.3'),
+    ('pkgconf', '2.2.0'),
+    # cargo edition2024 / rustc >= 1.85; companion Rust 1.88 on GCCcore-13.3.0
+    ('Rust', '1.88.0'),
+]
+
+start_dir = 'metatensor-core'
+
+# GitHub tag tarballs are not git checkouts; cmake/dev-versions needs git_version_info.
+preconfigopts = (
+    "printf '0\\nrelease\\n' > %(start_dir)s/cmake/git_version_info && "
+    "unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUILD_RUSTC_WRAPPER; "
+)
+prebuildopts = (
+    "unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUILD_RUSTC_WRAPPER; "
+)
+configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
+
+sanity_check_paths = {
+    'files': ['include/metatensor.h', 'lib/libmetatensor.%s' % SHLIB_EXT],
+    'dirs': ['include', 'lib', 'lib/cmake'],
+}
+
+moduleclass = 'lib'

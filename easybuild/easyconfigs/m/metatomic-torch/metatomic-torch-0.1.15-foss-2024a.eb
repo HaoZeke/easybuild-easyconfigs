@@ -27,15 +27,22 @@ builddependencies = [
 dependencies = [
     ('Python', '3.12.3'),
     ('PyTorch', '2.6.0'),
-    ('metatensor', '0.1.17', '', ('GCCcore', '13.3.0')),
+    ('metatensor', '0.2.2', '', ('GCCcore', '13.3.0')),
     ('metatensor-torch', '0.10.0'),
 ]
 
 start_dir = 'metatomic-torch'
 
-# convert_name: metatensor-torch → EBROOTMETATENSORMINTORCH (hyphen → min)
-preconfigopts = 'export CMAKE_PREFIX_PATH=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch:$EBROOTMETATENSOR:$EBROOTMETATENSORMINTORCH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH} && '
-configopts = '-GNinja -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DMETATOMIC_TORCH_TESTS=OFF -DTorch_DIR=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch/share/cmake/Torch '
+# Tag tarball: seed git_version_info for cmake/dev-versions.
+# convert_name: metatensor-torch → EBROOTMETATENSORMINTORCH
+preconfigopts = (
+    "printf '0\\nrelease\\n' > %(start_dir)s/cmake/git_version_info && "
+    "export CMAKE_PREFIX_PATH=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch:$EBROOTMETATENSOR:$EBROOTMETATENSORMINTORCH${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH} && "
+)
+configopts = (
+    '-GNinja -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DMETATOMIC_TORCH_TESTS=OFF '
+    '-DTorch_DIR=$EBROOTPYTORCH/lib/python%(pyshortver)s/site-packages/torch/share/cmake/Torch '
+)
 
 sanity_check_paths = {
     'files': ['lib/libmetatomic_torch.%s' % SHLIB_EXT],
