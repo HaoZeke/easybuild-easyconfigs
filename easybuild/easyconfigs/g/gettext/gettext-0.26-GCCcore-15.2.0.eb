@@ -25,14 +25,26 @@ dependencies = [
 
 # glibc 2.43 enables C23 _Generic macros for wmemchr/bsearch under _GNU_SOURCE.
 # gettext 0.26 gnulib redeclares those symbols; #undef before the decls.
-prebuildopts = "sh -c 'for f in $(find . -path \"*/gnulib-lib/wchar.h\"); do "
-prebuildopts += "grep -q \"#undef wmemchr\" \"$f\" || "
-prebuildopts += "sed -i \"s/^_GL_EXTERN_C wchar_t \\*wmemchr/#undef wmemchr\\n_GL_EXTERN_C wchar_t *wmemchr/\" \"$f\"; "
-prebuildopts += "done; "
-prebuildopts += "for f in $(find . -path \"*/gnulib-lib/stdlib.h\"); do "
-prebuildopts += "grep -q \"#undef bsearch\" \"$f\" || "
-prebuildopts += "sed -i \"s/^_GL_EXTERN_C void \\*bsearch/#undef bsearch\\n_GL_EXTERN_C void *bsearch/\" \"$f\"; "
-prebuildopts += "done' && "
+# Use python (not sed) to avoid shell/BRE escaping pitfalls.
+prebuildopts = """python3 -c "
+from pathlib import Path
+repls = {
+    'wchar.h': (
+        '_GL_EXTERN_C wchar_t *wmemchr (const wchar_t *__s, wchar_t __wc, size_t __n)',
+        '#undef wmemchr\\n_GL_EXTERN_C wchar_t *wmemchr (const wchar_t *__s, wchar_t __wc, size_t __n)',
+    ),
+    'stdlib.h': (
+        '_GL_EXTERN_C void *bsearch (const void *__key,',
+        '#undef bsearch\\n_GL_EXTERN_C void *bsearch (const void *__key,',
+    ),
+}
+for name, (old, new) in repls.items():
+    for p in Path('.').rglob('gnulib-lib/' + name):
+        t = p.read_text()
+        if old in t and new not in t:
+            p.write_text(t.replace(old, new, 1))
+            print('patched', p)
+" && """
 
 configopts = '--without-emacs --with-libxml2-prefix=$EBROOTLIBXML2'
 
