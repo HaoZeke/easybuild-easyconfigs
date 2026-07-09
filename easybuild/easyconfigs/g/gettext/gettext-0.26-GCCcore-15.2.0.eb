@@ -9,6 +9,9 @@ build many other steps. This package offers to programmers, translators, and eve
 and documentation"""
 
 toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+# glibc 2.43+ with C23 defaults (GCC 15+) defines wmemchr/bsearch as
+# _Generic macros; gettext's gnulib redeclares them and fails.
+toolchainopts = {'cstd': 'gnu17'}
 
 source_urls = [GNU_SOURCE]
 sources = [SOURCE_TAR_GZ]
