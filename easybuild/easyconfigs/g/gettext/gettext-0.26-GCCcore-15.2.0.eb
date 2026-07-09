@@ -9,8 +9,6 @@ build many other steps. This package offers to programmers, translators, and eve
 and documentation"""
 
 toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
-# glibc 2.43+ with C23 defaults (GCC 15+) defines wmemchr/bsearch as
-# _Generic macros; gettext's gnulib redeclares them and fails.
 toolchainopts = {'cstd': 'gnu17'}
 
 source_urls = [GNU_SOURCE]
@@ -25,15 +23,16 @@ dependencies = [
     ('libiconv', '1.18'),
 ]
 
-
-# glibc 2.43 + _GNU_SOURCE always enables C23 string macros (_Generic wmemchr/bsearch).
-# gettext 0.26 gnulib redeclares those symbols; #undef immediately before the decls.
-prebuildopts = (
-    "find . -path '*/gnulib-lib/wchar.h' -print0 | "
-    "xargs -0 -r sed -i '/_GL_EXTERN_C wchar_t \\*wmemchr/i #undef wmemchr' && "
-    "find . -path '*/gnulib-lib/stdlib.h' -print0 | "
-    "xargs -0 -r sed -i '/_GL_EXTERN_C void \\*bsearch/i #undef bsearch' && "
-)
+# glibc 2.43 enables C23 _Generic macros for wmemchr/bsearch under _GNU_SOURCE.
+# gettext 0.26 gnulib redeclares those symbols; #undef before the decls.
+prebuildopts = "sh -c 'for f in $(find . -path \"*/gnulib-lib/wchar.h\"); do "
+prebuildopts += "grep -q \"#undef wmemchr\" \"$f\" || "
+prebuildopts += "sed -i \"s/^_GL_EXTERN_C wchar_t \\*wmemchr/#undef wmemchr\\n_GL_EXTERN_C wchar_t *wmemchr/\" \"$f\"; "
+prebuildopts += "done; "
+prebuildopts += "for f in $(find . -path \"*/gnulib-lib/stdlib.h\"); do "
+prebuildopts += "grep -q \"#undef bsearch\" \"$f\" || "
+prebuildopts += "sed -i \"s/^_GL_EXTERN_C void \\*bsearch/#undef bsearch\\n_GL_EXTERN_C void *bsearch/\" \"$f\"; "
+prebuildopts += "done' && "
 
 configopts = '--without-emacs --with-libxml2-prefix=$EBROOTLIBXML2'
 
