@@ -20,6 +20,9 @@ builddependencies = [
 
 # avoid build failure when makeinfo command is not available
 # see https://sourceware.org/bugzilla/show_bug.cgi?id=15345
+# gprofng/libcollector fails to build with host GCC 16 (_Generic parse error).
+configopts = '--disable-gprofng '
+
 buildopts = 'MAKEINFO=true'
 installopts = buildopts
 
