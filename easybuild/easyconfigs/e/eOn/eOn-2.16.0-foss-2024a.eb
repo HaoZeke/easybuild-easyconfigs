@@ -74,8 +74,10 @@ builddependencies = [
     # without a companion (Rust-1.88.0-GCCcore-13.3.0.eb under easyconfigs/r/Rust/).
     ('Rust', '1.88.0', '', ('GCCcore', '13.3.0')),
     # Feedstock-style C-API install of staged readcon-core (avoids meson subproject
-    # path that also requires cbindgen >= 0.29.0). Robot has cargo-c on 13.3.0.
-    ('cargo-c', '0.9.32', '', ('GCCcore', '13.3.0')),
+    # path that also requires cbindgen >= 0.29.0). cargo-c 0.9.32 links cargo 0.79
+    # (~1.78) and rejects edition2024 even when PATH has rustc 1.88 (job 489);
+    # 0.10.15 embeds cargo 0.90 and can parse readcon-core.
+    ('cargo-c', '0.10.15', '', ('GCCcore', '13.3.0')),
 ]
 
 dependencies = [
