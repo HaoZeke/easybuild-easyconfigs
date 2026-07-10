@@ -199,7 +199,8 @@ checksums = [
 osdependencies = [OS_PKG_IBVERBS_DEV]
 
 builddependencies = [
-    ('CMake', '4.2.1'),
+    # EB pytorch easyblock rejects CMake 4.x (requires major version 3).
+    ('CMake', '3.31.11'),
     ('hypothesis', '6.153.2'),
     ('setuptools', '80.9.0'),
     # For tests
