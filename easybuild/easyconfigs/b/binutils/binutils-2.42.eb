@@ -20,6 +20,8 @@ builddependencies = [
 
 # avoid build failure when makeinfo command is not available
 # see https://sourceware.org/bugzilla/show_bug.cgi?id=15345
+configopts = '--disable-gprofng '
+
 buildopts = 'MAKEINFO=true'
 installopts = buildopts
 
