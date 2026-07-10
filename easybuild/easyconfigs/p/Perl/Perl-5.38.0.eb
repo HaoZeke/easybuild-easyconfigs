@@ -14,7 +14,8 @@ sources = [SOURCELOWER_TAR_GZ]
 checksums = ['213ef58089d2f2c972ea353517dc60ec3656f050dcc027666e118b508423e517']
 
 builddependencies = [
-    ('binutils', '2.40'),
+    # Host GCC 16 emits .base64; binutils 2.40 gas lacks it (need >= 2.45).
+    ('binutils', '2.45'),
 ]
 
 dependencies = [
