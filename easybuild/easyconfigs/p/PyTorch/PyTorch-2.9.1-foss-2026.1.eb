@@ -225,7 +225,9 @@ dependencies = [
     ('Pillow', '12.2.0'),
     ('protobuf-python', '7.35.0'),
     ('protobuf', '35.0'),
-    ('pybind11', '3.0.4'),
+    # pybind11 3.x breaks torch/csrc/jit/python/init.cpp lambda return types;
+    # keep 2.13.x with PyTorch-2.9.0_revert-pybind11-3-change.patch (as foss-2024a).
+    ('pybind11', '2.13.6'),
     ('PuLP', '2.8.0'),
     ('PyYAML', '6.0.3'),
     ('pyzstd', '0.16.2'),
