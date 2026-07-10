@@ -274,9 +274,17 @@ excluded_tests = {
     ]
 }
 
-# Stack bootstrap: skip multi-hour test/run_test.py suite (foss-2026.1 green path).
-# Sanity checks below still exercise the install lightly.
-runtest = False
+# Full suite is multi-hour; stack builds pass --skip-test-step on the eb CLI
+# (pytorch easyblock forbids runtest=False). Keep runtest for optional full runs.
+runtest = (
+    ' TORCH_DISABLE_ADDR2LINE=1'
+    ' TORCHINDUCTOR_CUTLASS_DIR=%(start_dir)s/third_party/cutlass'
+    ' PYTEST_ADDOPTS=--full-trace'
+    ' PYTHONUNBUFFERED=1'
+    ' %(python)s test/run_test.py'
+    ' --continue-through-error --pipe-logs --verbose'
+    ' %(excluded_tests)s'
+)
 
 postinstallcmds = [
     "mkdir %(installdir)s/extra",
