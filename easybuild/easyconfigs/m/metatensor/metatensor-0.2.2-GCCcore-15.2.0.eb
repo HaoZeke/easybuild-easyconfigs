@@ -29,10 +29,11 @@ prebuildopts = 'unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUIL
 configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
 
 # cargo-built libmetatensor.so has no DT_RPATH; EB rpath sanity requires one.
+# (avoid Python % formatting — it collides with EB %(installdir)s templates)
 postinstallcmds = [
     "patchelf --force-rpath --set-rpath "
     "'$ORIGIN:$ORIGIN/../lib:%(installdir)s/lib:%(installdir)s/lib64' "
-    "%(installdir)s/lib/libmetatensor.%s" % SHLIB_EXT,
+    "%(installdir)s/lib/libmetatensor." + SHLIB_EXT,
 ]
 
 sanity_check_paths = {
