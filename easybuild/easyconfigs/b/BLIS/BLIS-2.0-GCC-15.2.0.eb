@@ -17,6 +17,10 @@ builddependencies = [
     ('Perl', '5.42.0'),
 ]
 
+# BLIS 2.0 has no zen5 config; Ryzen 9950X (zen5) fails auto-detect without archspec.
+# Pin zen3 (EB easyblock fallback target for zen5) so builds work with or without archspec.
+cpu_architecture = 'zen3'
+
 runtest = 'check'
 
 moduleclass = 'numlib'

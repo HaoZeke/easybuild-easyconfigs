@@ -20,11 +20,20 @@ builddependencies = [
     ('CMake', '4.2.1'),
     ('pkgconf', '2.5.1'),
     ('Rust', '1.94.1'),
+    # cargo/rustc link bypasses EB rpath wrappers; patchelf injects RPATH post-install
+    ('patchelf', '0.18.0'),
 ]
 
 preconfigopts = 'unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUILD_RUSTC_WRAPPER; '
 prebuildopts = 'unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS RUSTC_WRAPPER CARGO_BUILD_RUSTC_WRAPPER; '
 configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release '
+
+# cargo-built libmetatensor.so has no DT_RPATH; EB rpath sanity requires one.
+postinstallcmds = [
+    "patchelf --force-rpath --set-rpath "
+    "'$ORIGIN:$ORIGIN/../lib:%(installdir)s/lib:%(installdir)s/lib64' "
+    "%(installdir)s/lib/libmetatensor.%s" % SHLIB_EXT,
+]
 
 sanity_check_paths = {
     'files': ['include/metatensor.h', 'lib/libmetatensor.%s' % SHLIB_EXT],
