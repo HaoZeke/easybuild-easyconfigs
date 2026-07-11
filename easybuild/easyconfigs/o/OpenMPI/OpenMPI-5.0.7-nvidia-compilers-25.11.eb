@@ -25,8 +25,6 @@ checksums = [
      '75d4417e35252ea3a19b2792f1b06e9aeb408c253aa4921d77226d57b71dee45'},
 ]
 
-# Build/runtime deps aligned to the GCCcore-14.3.0 generation that
-# nvidia-compilers 25.x is built on (same set as OpenMPI-5.0.8-GCC-14.3.0).
 builddependencies = [
     ('pkgconf', '2.4.3'),
     ('Perl', '5.40.2'),
@@ -44,14 +42,16 @@ dependencies = [
     ('UCC', '1.4.4'),
 ]
 
-# CUDA-aware build via OpenMPI's internal cuda.h (NVHPC ships CUDA, but keep the
-# same self-contained approach as the intel-compilers build): compile a stub
-# libcuda from the bundled header and point --with-cuda at the internal tree.
+# CUDA related patches and custom configure option can be removed if CUDA support isn't wanted.
 preconfigopts = 'gcc -Iopal/mca/cuda/include -shared opal/mca/cuda/lib/cuda.c -o opal/mca/cuda/lib/libcuda.so && '
+# Update configure to include changes from the "disable_opal_path_nfs_test" patch
 preconfigopts += './autogen.pl --force && '
-preconfigopts += 'sed -i "s/have_ze=yes/have_ze=no/" %(start_dir)s/3rd-party/romio341/mpl/configure && '
-
 configopts = '--with-cuda=%(start_dir)s/opal/mca/cuda --with-show-load-errors=no'
+# Disable building Level Zero components of romio if system dependencies are picked up. Sources are not based on
+# recent Level Zero interface anyway, so there's a high chance that builds fail.
+# See https://github.com/open-mpi/ompi/issues/10235
+preconfigopts += 'sed -i "s/have_ze=yes/have_ze=no/" %(start_dir)s/3rd-party/romio341/mpl/configure && '
+# Do not pick up the system library automatically
 configopts += ' --without-xpmem'
 
 moduleclass = 'mpi'
