@@ -1,0 +1,36 @@
+name = 'NVHPC'
+version = '25.11'
+versionsuffix = '-CUDA-%(cudaver)s'
+
+homepage = 'https://developer.nvidia.com/hpc-sdk/'
+description = """Complete toolchain based on NVIDIA HPC SDK. Includes C, C++ and FORTRAN
+compilers (nvidia-compilers), an MPI implementation based on OpenMPI (NVHPCX)
+and math libraries based on OpenBLAS and ScaLAPACK."""
+
+toolchain = SYSTEM
+
+# By downloading, you accept the HPC SDK Software License Agreement
+# https://docs.nvidia.com/hpc-sdk/eula/index.html
+local_tarball_tmpl = 'nvhpc_2025_%%(version_major)s%%(version_minor)s_Linux_%s_cuda_multi.tar.gz'
+source_urls = ['https://developer.download.nvidia.com/hpc-sdk/%(version)s/']
+sources = [{'filename': local_tarball_tmpl % '%(arch)s', 'alt_location': 'nvidia-compilers'}]
+checksums = [
+    {
+        # aarch64 is deliberately absent: the tarball was verified on x86_64
+        # only. Add the aarch64 hash before this lands.
+        local_tarball_tmpl % 'x86_64':
+            '9970c6e443e7a4a442601e6f1685feb4a8271bc2e84769c225e9a76f4e7133e7',
+    }
+]
+
+dependencies = [
+    ('CUDA', '12.9.1'),
+    ('nvidia-compilers', version, versionsuffix),
+]
+
+# NVHPC needs CUDA to work. This easyconfig uses external CUDA from EasyBuild.
+# The default CUDA version used by NVHPC will be the version of loaded CUDA module
+
+# The default Compute Capability used by NVHPC is the one defined in nvidia-compilers (if any)
+
+moduleclass = 'toolchain'
