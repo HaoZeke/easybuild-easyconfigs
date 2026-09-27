@@ -1,7 +1,7 @@
 easyblock = 'ConfigureMake'
 
 name = 'readcon-core'
-version = '0.14.11'
+version = '0.14.10'
 
 homepage = 'https://github.com/lode-org/readcon-core'
 description = "CON file reader/writer C library (libreadcon_core)."
@@ -14,7 +14,7 @@ sources = [{
     'download_filename': 'v%(version)s.tar.gz',
     'filename': SOURCE_TAR_GZ,
 }]
-checksums = ['3967db105fd5fd3219bc784c904d274848f8d1b5d1930128165171ddeb0f26c6']
+checksums = ['6b0b136e1285c3fb7832420143edd0597dadbf973f907796721b906252466e92']
 
 builddependencies = [
     ('binutils', '2.45'),
