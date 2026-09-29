@@ -1,7 +1,7 @@
 easyblock = 'MesonNinja'
 
 name = 'rgpot'
-version = '3.2.0'
+version = '3.3.0'
 
 homepage = 'https://github.com/OmniPotentRPC/rgpot'
 description = """Potential frontends with Cap'n Proto RPC (NWChem/CPMD clients;
@@ -17,14 +17,7 @@ sources = [{
     'download_filename': 'v%(version)s.tar.gz',
     'filename': SOURCE_TAR_GZ,
 }]
-# The potentials-schema subproject only feeds two schema-sync tests; the patch
-# makes it optional so the build does not clone it (OmniPotentRPC/rgpot@949ddce).
-patches = ['%(name)s-%(version)s_optional-schema-subproject.patch']
-checksums = [
-    {'rgpot-3.2.0.tar.gz': '0bde596baad1741b79fef62e647ff7641725034d798bf346459cd274c4f451c7'},
-    {'rgpot-3.2.0_optional-schema-subproject.patch':
-     '9ad30623c149f80e91b57ea708d31e0aeb0db551711b439e5672728f0173c486'},
-]
+checksums = ['fc844ecaaca72157a5c674e6c84c483a136163515e348ba57ae7a83e8d678fa5']
 
 builddependencies = [
     ('binutils', '2.45'),

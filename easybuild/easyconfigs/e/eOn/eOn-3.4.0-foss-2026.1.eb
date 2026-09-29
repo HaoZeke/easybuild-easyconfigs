@@ -1,5 +1,5 @@
 name = 'eOn'
-version = '3.3.1'
+version = '3.4.0'
 
 homepage = 'https://eondocs.org/'
 description = """eOn models the evolution of atomic-scale systems over long time scales."""
@@ -14,14 +14,7 @@ sources = [{
     'download_filename': 'v%(version)s.tar.gz',
     'filename': SOURCE_TAR_GZ,
 }]
-# The IRA wrap names a fork. Revision 83e0f870 is on
-# mammasmias/IterativeRotationsAssignments.
-patches = ['%(name)s-%(version)s_ira-upstream-url.patch']
-checksums = [
-    {'eOn-3.3.1.tar.gz': '3bbb38a38857602fef80312b947072c8e08c14b6ecf9d98f10b40a8b4ec3043f'},
-    {'eOn-3.3.1_ira-upstream-url.patch':
-     'ac42bd004486bb23940b92501f7ba2b7130cc919287fcec4689209a88076b6f2'},
-]
+checksums = ['03d4444d8700938a3809e2f51779f36e95e1261e995afa2e984b999d01a41a1b']
 
 builddependencies = [
     ('CMake', '4.2.1'),
@@ -40,9 +33,9 @@ dependencies = [
     ('inih', '62'),
     ('nlohmann_json', '3.12.0'),
     ('quill', '11.1.0'),
-    # v3.3.1 pins readcon-core v0.14.10 in subprojects/readcon-core.wrap.
-    ('readcon-core', '0.14.10'),
-    ('rgpot', '3.2.0'),
+    # v3.4.0 pins readcon-core v0.14.11 in subprojects/readcon-core.wrap.
+    ('readcon-core', '0.14.11'),
+    ('rgpot', '3.3.0'),
 ]
 
 # The eOn easyblock enables each Meson option whose dependencies are listed
