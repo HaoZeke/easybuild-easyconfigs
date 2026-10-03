@@ -1,0 +1,46 @@
+name = 'eOn'
+version = '3.5.0'
+
+homepage = 'https://eondocs.org/'
+description = """eOn models the evolution of atomic-scale systems over long time scales."""
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+# eOn has no OpenMP code; openmp would only thread Eigen's products.
+toolchainopts = {'pic': True}
+
+github_account = 'TheochemUI'
+source_urls = [GITHUB_SOURCE]
+sources = [{
+    'download_filename': 'v%(version)s.tar.gz',
+    'filename': SOURCE_TAR_GZ,
+}]
+checksums = ['398f081f13aef870bc5e489f17c594325ddf91d89387d76ef041ceb2b365cd28']
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    ('Meson', '1.10.2'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+]
+
+dependencies = [
+    ('Python', '3.14.2'),
+    ('CapnProto', '1.4.0'),
+    ('SciPy-bundle', '2026.05'),
+    ('PyYAML', '6.0.3'),
+    ('Eigen', '5.0.0'),
+    ('Highway', '1.4.0'),
+    ('inih', '62'),
+    ('nlohmann_json', '3.12.0'),
+    ('quill', '11.1.0'),
+    # v3.5.0 pins readcon-core v0.16.0 and rgpot v3.4.0 in subprojects/.
+    ('readcon-core', '0.16.0'),
+    ('rgpot', '3.4.0'),
+]
+
+# The eOn easyblock enables each Meson option whose dependencies are listed
+# above (rgpot, and rgpot plus CapnProto for the eonclient server), and runs
+# meson test --suite eon.
+runtest = True
+
+moduleclass = 'chem'
