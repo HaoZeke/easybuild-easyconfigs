@@ -27,7 +27,9 @@ builddependencies = [
 
 dependencies = [('libuv', '1.52.1')]
 
-configopts = '-DLWS_WITH_LIBUV=ON'
+# the bundled minimal examples build with -Werror; GCC 15 with a const-correct strchr prototype turns a
+# discarded-qualifier warning in plugins/deaddrop into an error, so warnings stay warnings
+configopts = '-DLWS_WITH_LIBUV=ON -DDISABLE_WERROR=ON'
 
 sanity_check_paths = {
     'files': ['lib/libwebsockets.so'],
