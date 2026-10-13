@@ -19,6 +19,7 @@ patches = [
     'OpenBLAS-0.3.21_fix-order-vectorization.patch',
     'OpenBLAS-0.3.32_fix-non-sve-ddot-kernel-aarch64.patch',
     'OpenBLAS-0.3.32_fix-non-sve-sdot-ddot-aarch64.patch',
+    'OpenBLAS-0.3.32_fix-droundup-lwork.patch',
 ]
 checksums = [
     {'v0.3.32.tar.gz': 'f8a1138e01fddca9e4c29f9684fd570ba39dedc9ca76055e1425d5d4b1a4a766'},
@@ -32,6 +33,8 @@ checksums = [
      '19ca0ed7bc87f87cfca8418b1acf0ee9bbc3646b6bbac98d5d8ea2c07f981d2f'},
     {'OpenBLAS-0.3.32_fix-non-sve-sdot-ddot-aarch64.patch':
      '2b8cc1197aaaf7eab19f533909ac104517acc9baf77c3e36df319a6592e81df7'},
+    {'OpenBLAS-0.3.32_fix-droundup-lwork.patch':
+     '47b34ccc23b74b3d53f8c1c54780adda17e9ffe27771a2f2c63ba2ba4f95a4c1'},
 ]
 
 builddependencies = [

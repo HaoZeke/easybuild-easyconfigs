@@ -1,0 +1,28 @@
+OpenBLAS 0.3.32 omits the DOUBLE PRECISION declaration of DROUNDUP_LWORK
+in DSYGVD and DSPGVD, so an LWORK=-1 query stores WORK(1)=0.
+Backport of https://github.com/OpenMathLib/OpenBLAS/pull/5753
+
+--- a/lapack-netlib/SRC/dspgvd.f
++++ b/lapack-netlib/SRC/dspgvd.f
+@@ -225,7 +225,8 @@
+ *     ..
+ *     .. External Functions ..
+       LOGICAL            LSAME
+-      EXTERNAL           LSAME
++      DOUBLE PRECISION   DROUNDUP_LWORK
++      EXTERNAL           LSAME, DROUNDUP_LWORK
+ *     ..
+ *     .. External Subroutines ..
+       EXTERNAL           DPPTRF, DSPEVD, DSPGST, DTPMV, DTPSV, XERBLA
+--- a/lapack-netlib/SRC/dsygvd.f
++++ b/lapack-netlib/SRC/dsygvd.f
+@@ -245,7 +245,8 @@
+ *     ..
+ *     .. External Functions ..
+       LOGICAL            LSAME
+-      EXTERNAL           LSAME
++      DOUBLE PRECISION   DROUNDUP_LWORK
++      EXTERNAL           LSAME, DROUNDUP_LWORK
+ *     ..
+ *     .. External Subroutines ..
+       EXTERNAL           DPOTRF, DSYEVD, DSYGST, DTRMM, DTRSM, XERBLA
