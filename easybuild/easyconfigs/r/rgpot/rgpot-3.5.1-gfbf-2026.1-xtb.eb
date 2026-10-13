@@ -1,0 +1,117 @@
+easyblock = 'MesonNinja'
+
+name = 'rgpot'
+version = '3.5.1'
+versionsuffix = '-xtb'
+
+homepage = 'https://github.com/OmniPotentRPC/rgpot'
+description = """Potential frontends with Cap'n Proto RPC (NWChem/CPMD clients;
+engines are loaded at runtime via dlopen). Built fat: RPC server (potserv),
+Eigen array backend, nanobind Python bindings, and the xtb and tblite
+engines (libxtb_engine.so), which eOn loads at runtime."""
+
+toolchain = {'name': 'gfbf', 'version': '2026.1'}
+toolchainopts = {'pic': True, 'cstd': 'c++20'}
+
+github_account = 'OmniPotentRPC'
+source_urls = [GITHUB_SOURCE]
+sources = [{
+    'download_filename': 'v%(version)s.tar.gz',
+    'filename': SOURCE_TAR_GZ,
+}]
+checksums = ['3b9cf3a1407e86fd80bde114f44c67657af2d547f3c9ab14f443d7d7eaa1c4be']
+
+builddependencies = [
+    ('Meson', '1.10.2'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+    ('CMake', '4.2.1'),
+    ('Catch2', '3.14.0'),
+    ('nanobind', '2.13.0'),
+]
+
+# Eigen and fmt appear in the installed rgpot.pc Requires line, so they are
+# runtime dependencies rather than build-only.
+dependencies = [
+    ('CapnProto', '1.4.0'),
+    ('Eigen', '5.0.0'),
+    ('fmt', '12.2.0'),
+    ('Python', '3.14.2'),
+    ('xtb', '6.7.1'),
+    ('tblite', '0.6.0'),
+]
+
+# Fat build: full RPC (server + clients), Eigen backend, Python bindings,
+# unit and example tests. The metatomic and NWChem/CPMD dlopen frontends
+# always compile; their engines load at runtime.
+# Off: with_metatomic links the torch stack, with_xtensor duplicates the
+# Eigen backend, with_rust_core needs a cargo network fetch at build time.
+# with_cache stays off: in 3.4.0 its PotentialCache API was not exported
+# from librgpot.so and broke the eOn link
+# (https://github.com/OmniPotentRPC/rgpot/issues/55).
+configopts = '-Dpure_lib=false -Dwith_rpc=true -Dwith_eigen=true '
+# The Fortran 2018 kernels (SW, EDIP, Lenosky, Tersoff, EAM-Al, FeHe,
+# CuH2, TIP4P-H). eOn refuses an installed rgpot built without them.
+configopts += '-Dwith_fortran_pots=enabled '
+configopts += '-Dwith_python=true '
+# Since 3.5.0 librgpot never links MPI; the MPI side of the calculator groups
+# is a separate librgpot_mpi (plus rgpot-mpi.pc), which librgpot loads with
+# dlopen. This toolchain has no MPI, so it is off and not installed; an MPI
+# toolchain variant would set -Dwith_mpi=enabled and add lib/librgpot_mpi.so
+# and lib/pkgconfig/rgpot-mpi.pc to the sanity check.
+configopts += '-Dwith_mpi=disabled '
+configopts += '-Dwith_xtb=true -Dwith_tblite=true '
+configopts += '-Dwith_tests=true -Dwith_examples=true '
+# No build-time downloads: every subproject the options need is a dependency.
+configopts += '-Dwrap_mode=nodownload '
+
+# The Fortran pots are link_wholed into librgpot, so it NEEDs libgfortran.so.5.
+# xtb and tblite are further Fortran libraries, loaded from libxtb_engine.so,
+# and they need the same runtime. Meson puts -lgfortran only in Libs.private,
+# and ld does not resolve that DT_NEEDED from -L or the library RPATH.
+# Publish -lgfortran so a C++ consumer (eOn) links.
+postinstallcmds = [
+    "sed -i -e '/^Libs:/ { /-lgfortran/! s/$/ -lgfortran/ }' -e '/^Libs.private:/ s/ -lgfortran//' %(installdir)s/lib/pkgconfig/rgpot.pc",
+]
+
+# The meson suite includes TBLitetest (GFN2 and GFN1 water energies), so the
+# tblite 0.6 calculator path (RGPOT_TBLITE_XTB_CONFIG) is exercised here.
+runtest = 'meson'
+testopts = 'test -C %(builddir)s/easybuild_obj'
+
+# 3.5.0 moved the CMake package config from lib/cmake/pot to lib/cmake/rgpot,
+# but only the CMake build installs it; this Meson build installs rgpot.pc
+# only, so neither cmake directory is checked. lib/cmake/pot must not appear.
+sanity_check_paths = {
+    'files': [
+        'bin/potserv',
+        'lib/librgpot.%s' % SHLIB_EXT,
+        # 3.5.1 moved the 3.5 C++ layout to SONAME librgpot.so.4 (3.5.0 shipped it as .so.3)
+        'lib/librgpot.%s.4' % SHLIB_EXT,
+        'lib/libnwchempot.a',
+        'lib/libcpmdpot.a',
+        # generic engine table for LJ, Morse, ZBL and the Fortran pots (new in 3.5.0)
+        'lib/libclassical_engine.%s' % SHLIB_EXT,
+        'lib/libxtb_engine.%s' % SHLIB_EXT,
+        'lib/pkgconfig/rgpot.pc',
+    ],
+    'dirs': [
+        'include/rgpot',
+        'lib',
+        'lib/python%(pyshortver)s/site-packages/rgpot',
+    ],
+}
+
+sanity_check_commands = [
+    "pkg-config --exists rgpot",
+    "pkg-config --libs rgpot | grep -q -- -lgfortran",
+    "! pkg-config --exists rgpot-mpi",
+    "test ! -e %(installdir)s/lib/cmake/pot",
+    "test ! -e %(installdir)s/lib/librgpot_mpi." + SHLIB_EXT,
+    "python -c 'import rgpot'",
+]
+
+# eOn's RGPOT backend=xtb and rgpot's XTBDlopen frontend find the engine here.
+modextravars = {'RGPOT_XTB_ENGINE': '%(installdir)s/lib/libxtb_engine.' + SHLIB_EXT}
+
+moduleclass = 'lib'

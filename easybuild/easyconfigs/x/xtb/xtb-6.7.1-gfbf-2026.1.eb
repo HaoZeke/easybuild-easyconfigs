@@ -1,0 +1,96 @@
+easyblock = 'CMakeNinja'
+
+name = 'xtb'
+version = '6.7.1'
+# Use a post-6.7.1 snapshot for compatibility with tblite 0.6.0 and DFT-D4 4.x
+_commit = 'b31754b'
+
+homepage = 'https://xtb-docs.readthedocs.io'
+description = "xtb - An extended tight-binding semi-empirical program package."
+
+toolchain = {'name': 'gfbf', 'version': '2026.1'}
+
+github_account = 'grimme-lab'
+
+source_urls = ['https://github.com/grimme-lab/xtb/archive/']
+sources = [{
+    'download_filename': '%s.tar.gz' % _commit,
+    'filename': 'xtb-b31754b.tar.gz',
+}]
+# xtb-utils.cmake quotes if("<pkg>_FOUND"). CMake 3.17 (CMP0054) treats
+# that as a constant, so Findcpcmx ignores the installed CPCM-X and
+# FetchContent builds a copy whose tests fail to link libgfortran, libgomp
+# and FlexiBLAS.
+patches = ['xtb-6.7.1_fix-find-package-quoted-found.patch']
+checksums = [
+    {'xtb-b31754b.tar.gz': '8a5fde29decd562100d8a94a965abde497d36647a7593cf2e5c167c44221b997'},
+    {'xtb-6.7.1_fix-find-package-quoted-found.patch':
+     '4bbcd7494c67afae218268e17b8cc13e28bc2f7dbe8f185ea56461178c3a6cda'},
+]
+
+builddependencies = [
+    ('CMake', '3.31.11'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+]
+
+dependencies = [
+    ('tblite', '0.6.0'),
+    ('CPCM-X', '1.1.0'),
+    ('DFT-D4', '4.2.0'),
+    ('Simple-DFTD3', '1.4.0'),
+]
+
+# Install the shared library and Fortran module files
+configopts = '-DBUILD_SHARED_LIBS=ON -DINSTALL_MODULES=ON '
+configopts += '-DBLAS_LIBRARIES="-lflexiblas" -DLAPACK_LIBRARIES="-lflexiblas" '
+
+pretestopts = "export OMP_NUM_THREADS=2 && "
+runtest = True
+
+# The CMake build installs only xtb-config.cmake, whose targets Meson cannot
+# guess; write the xtb.pc that the upstream Meson build would install, so
+# dependency('xtb') works in Meson consumers such as rgpot.
+# libxtb.so NEEDs libgfortran, libgomp and FlexiBLAS, plus libcpx, libnumsa,
+# libmctc-lib, libtblite, libdftd4 and libs-dftd3. binutils 2.45 does not
+# resolve those DT_NEEDED entries from -L or the library RPATH, so rgpot's
+# link fails unless they are on the Libs line.
+postinstallcmds = [
+    "mkdir -p %(installdir)s/lib/pkgconfig && "
+    "cat > %(installdir)s/lib/pkgconfig/xtb.pc << 'EOF'\n"
+    "prefix=%(installdir)s\n"
+    "libdir=${prefix}/lib\n"
+    "includedir=${prefix}/include\n"
+    "\n"
+    "Name: xtb\n"
+    "Description: Semiempirical extended tight-binding program package\n"
+    "Version: %(version)s\n"
+    "Libs: -L${libdir} -lxtb -lcpx -lnumsa -lmctc-lib -ltblite -ldftd4 -ls-dftd3 -lflexiblas -lgfortran -lgomp\n"
+    "Cflags: -I${includedir}\n"
+    "EOF",
+]
+
+sanity_check_paths = {
+    'files': [
+        'bin/xtb',
+        'include/xtb.h',
+        'lib/libxtb.a',
+        f'lib/libxtb.{SHLIB_EXT}',
+        'lib/pkgconfig/xtb.pc',
+    ],
+    'dirs': ['include', 'share'],
+}
+
+sanity_check_commands = [
+    'xtb --help',
+    "pkg-config --libs xtb | grep -q -- -lgfortran",
+    "pkg-config --libs xtb | grep -q -- -lgomp",
+    "pkg-config --libs xtb | grep -q -- -lflexiblas",
+]
+
+modextravars = {
+    'XTBHOME': '%(installdir)s',
+    'XTBPATH': '%(installdir)s',
+}
+
+moduleclass = 'chem'

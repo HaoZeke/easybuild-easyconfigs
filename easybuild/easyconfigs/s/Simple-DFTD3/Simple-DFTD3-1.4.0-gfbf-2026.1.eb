@@ -11,7 +11,7 @@ description = """Reimplementation of the D3 dispersion correction. The s-dftd3 p
 provide a user-friendly and uniform interface to the D3 dispersion model and
 for the calculation of DFT-D3 dispersion corrections."""
 
-toolchain = {'name': 'gfbf', 'version': '2025a'}
+toolchain = {'name': 'gfbf', 'version': '2026.1'}
 toolchainopts = {'openmp': True, 'pic': True}
 
 github_account = 'dftd3'
@@ -20,8 +20,8 @@ sources = ['v%(version)s.tar.gz']
 checksums = ['c548629115c3d5f180d06a70bc29dcf42e4018fbc9e4ba7c99abc1cdbfda7c1e']
 
 builddependencies = [
-    ('CMake', '3.31.3'),
-    ('Ninja', '1.12.1'),
+    ('CMake', '3.31.11'),
+    ('Ninja', '1.13.2'),
 ]
 
 dependencies = [
