@@ -35,12 +35,14 @@ components = [
             {'mctc-lib-0.5.0_fix-install-template.patch':
              '647c77ba4bd4ce78090c7f3dd60ccbc7d4263320ac53572e98fef7bc46135a20'},
         ],
-        'configopts': '-DBUILD_SHARED_LIBS=ON',
+        # mctc-lib compiles with OpenMP. binutils 2.45 does not resolve
+        # libgomp.so.1 from DT_NEEDED, so the executables need -fopenmp.
+        'configopts': '-DBUILD_SHARED_LIBS=ON -DCMAKE_EXE_LINKER_FLAGS=-fopenmp',
     }),
     # 2nd entry to mctc-lib, to also build static librarY
     ('mctc-lib', '0.5.1', {
         'checksums': ['c0b3ed75546ca6382f18b5569ce3f80c916537aaf02b208662bce6eb53338350'],
-        'configopts': '-DBUILD_SHARED_LIBS=OFF',
+        'configopts': '-DBUILD_SHARED_LIBS=OFF -DCMAKE_EXE_LINKER_FLAGS=-fopenmp',
     }),
     ('mstore', '0.3.0', {
         'checksums': ['56b3d778629eb74b8a515cd53c727d04609f858a07f8d3555fd5fd392a206dcc'],

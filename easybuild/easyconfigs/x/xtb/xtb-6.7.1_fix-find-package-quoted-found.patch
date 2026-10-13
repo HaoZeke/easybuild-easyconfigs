@@ -1,0 +1,23 @@
+--- a/cmake/modules/xtb-utils.cmake
++++ b/cmake/modules/xtb-utils.cmake
+@@ -49,7 +49,10 @@
+          set("${package}_DIR" "${_pkg_uc}_DIR")
+       endif()
+       find_package("${package}" CONFIG QUIET)
+-      if("${package}_FOUND")
++      # Quoted if("..._FOUND") is a constant under CMP0054 (cmake_minimum_required
++      # 3.17) and never sees the variable, so an installed package is ignored
++      # and the fetch method always runs.
++      if(${package}_FOUND)
+          message(STATUS "Found ${package} via CMake config")
+          break()
+       endif()
+@@ -58,7 +61,7 @@
+    elseif("${method}" STREQUAL "pkgconf")
+       find_package("PkgConfig" QUIET) # built-in Find script
+       pkg_check_modules("${_pkg_uc}" QUIET "${package}") # check if it is a pkg-config module
+-      if("${_pkg_uc}_FOUND")
++      if(${_pkg_uc}_FOUND)
+          message(STATUS "Found ${package} via pkg-config")
+          add_library("${package}::${package}" INTERFACE IMPORTED GLOBAL) # interface library
+          target_link_libraries(
