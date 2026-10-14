@@ -27,7 +27,9 @@ builddependencies = [
 
 dependencies = [('libuv', '1.52.1')]
 
-configopts = '-DLWS_WITH_LIBUV=ON'
+# GCC 15 builds the bundled minimal examples with -Werror. ttyd only needs
+# the library, so leave those examples out of the build.
+configopts = '-DLWS_WITH_LIBUV=ON -DLWS_WITH_MINIMAL_EXAMPLES=OFF'
 
 sanity_check_paths = {
     'files': ['lib/libwebsockets.so'],
