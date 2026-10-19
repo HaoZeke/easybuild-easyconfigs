@@ -18,6 +18,8 @@ builddependencies = [
     ('Perl', '5.42.0'),
     # 7.1 configures the test suite with pytest, and fails if it is missing
     ('Python-bundle-PyPI', '2026.04'),
+    # pylibxc/testing.py defaults XC_TEST_BACKEND to numpy for the pytest suite
+    ('SciPy-bundle', '2026.05', '', ('gfbf', '2026.1')),
 ]
 
 # Enable building of third and fourth derivatives required by software that depends on libxc
@@ -33,7 +35,10 @@ configopts = [
 
 # make sure that built libraries (libxc*.so*) in build directory are picked when running tests
 # this is required when RPATH linking is used
+# 7.1 pytest tests load libxc via ctypes.util.find_library. With $LD_LIBRARY_PATH filtered,
+# the EasyBuild ctypes patch searches $LIBRARY_PATH instead (see Python-*-custom-ctypes.patch).
 pretestopts = "export LD_LIBRARY_PATH=%(builddir)s/easybuild_obj:$LD_LIBRARY_PATH && "
+pretestopts += "export LIBRARY_PATH=%(builddir)s/easybuild_obj:$LIBRARY_PATH && "
 
 runtest = 'test'
 
