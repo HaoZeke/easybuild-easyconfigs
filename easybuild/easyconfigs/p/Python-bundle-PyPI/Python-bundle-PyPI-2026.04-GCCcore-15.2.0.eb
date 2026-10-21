@@ -340,8 +340,8 @@ exts_list = [
     ('rapidfuzz', '3.14.5', {
         'checksums': ['ba10ac57884ce82112f7ed910b67e7fb6072d8ef2c06e30dc63c0f604a112e0e'],
     }),
-    ('msgpack', '1.1.2', {
-        'checksums': ['3b60763c1373dd60f398488069bcdc703cd08a711477b5d480eecc9f9626f47e'],
+    ('msgpack', '1.2.1', {
+        'checksums': ['04c721c2c7448767e9e3f2520a475663d8ee0f09c31890f6d2bd70fd636a9647'],
     }),
     ('CacheControl', '0.14.4', {
         'sources': [SOURCELOWER_PY3_WHL],
