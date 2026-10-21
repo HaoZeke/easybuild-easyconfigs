@@ -33,8 +33,8 @@ exts_list = [
     ('pamela', '1.2.0', {
         'checksums': ['0ea6e2a99dded8c7783a4a06f2d31f5bdcad894d79101e8f09322e387a34aacf'],
     }),
-    ('oauthlib', '3.3.1', {
-        'checksums': ['0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9'],
+    ('oauthlib', '4.0.0', {
+        'checksums': ['efb274799819440f95b4ab3b818869f1ce9ae26c5beacba0201d1a1b76b54f86'],
     }),
     ('prometheus-client', '0.25.0', {
         'checksums': ['5e373b75c31afb3c86f1a52fa1ad470c9aace18082d39ec0d2f918d11cc9ba28'],
