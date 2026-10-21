@@ -72,8 +72,8 @@ exts_list = [
     ('semantic-version', '2.10.0', {
         'checksums': ['bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c'],
     }),
-    ('pyasn1', '0.6.3', {
-        'checksums': ['697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf'],
+    ('pyasn1', '0.6.4', {
+        'checksums': ['9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81'],
     }),
     ('pynacl', '1.6.2', {
         'modulename': 'nacl',
