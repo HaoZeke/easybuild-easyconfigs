@@ -66,8 +66,8 @@ exts_list = [
     ('idna', '3.11', {
         'checksums': ['795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902'],
     }),
-    ('anyio', '4.13.0', {
-        'checksums': ['334b70e641fd2221c1505b3890c69882fe4a2df910cba14d97019b90b24439dc'],
+    ('anyio', '4.14.2', {
+        'checksums': ['cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f'],
     }),
     ('semantic-version', '2.10.0', {
         'checksums': ['bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c'],
