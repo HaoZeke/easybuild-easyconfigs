@@ -63,17 +63,17 @@ exts_list = [
     ('click', '8.3.3', {
         'checksums': ['398329ad4837b2ff7cbe1dd166a4c0f8900c3ca3a218de04466f38f6497f18a2'],
     }),
-    ('idna', '3.11', {
-        'checksums': ['795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902'],
+    ('idna', '3.15', {
+        'checksums': ['ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc'],
     }),
-    ('anyio', '4.13.0', {
-        'checksums': ['334b70e641fd2221c1505b3890c69882fe4a2df910cba14d97019b90b24439dc'],
+    ('anyio', '4.14.2', {
+        'checksums': ['cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f'],
     }),
     ('semantic-version', '2.10.0', {
         'checksums': ['bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c'],
     }),
-    ('pyasn1', '0.6.3', {
-        'checksums': ['697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf'],
+    ('pyasn1', '0.6.4', {
+        'checksums': ['9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81'],
     }),
     ('pynacl', '1.6.2', {
         'modulename': 'nacl',
@@ -130,11 +130,11 @@ exts_list = [
     ('chardet', '7.4.3', {
         'checksums': ['cc1d4eb92a4ec1c2df3b490836ffa46922e599d34ce0bb75cf41fd2bf6303d56'],
     }),
-    ('certifi', '2026.2.25', {
-        'checksums': ['e887ab5cee78ea814d3472169153c2d12cd43b14bd03329a39a9c6e2e80bfba7'],
+    ('certifi', '2026.10.19', {
+        'checksums': ['035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae'],
     }),
-    ('urllib3', '2.6.3', {
-        'checksums': ['1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed'],
+    ('urllib3', '2.8.0', {
+        'checksums': ['63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63'],
     }),
     ('charset-normalizer', '3.4.7', {
         'checksums': ['ae89db9e5f98a11a4bf50407d4363e7b09b31e55bc117b4f7d80aab97ba009e5'],
@@ -148,8 +148,8 @@ exts_list = [
     ('tabulate', '0.10.0', {
         'checksums': ['e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d'],
     }),
-    ('ujson', '5.12.0', {
-        'checksums': ['14b2e1eb528d77bc0f4c5bd1a7ebc05e02b5b41beefb7e8567c9675b8b13bcf4'],
+    ('ujson', '5.13.0', {
+        'checksums': ['d62e3d7625384c08082abad81a077af587fdef2761bb14c3822f4234b8d07d75'],
     }),
     ('more-itertools', '11.0.2', {
         'checksums': ['392a9e1e362cbc106a2457d37cabf9b36e5e12efd4ebff1654630e76597df804'],
@@ -340,15 +340,15 @@ exts_list = [
     ('rapidfuzz', '3.14.5', {
         'checksums': ['ba10ac57884ce82112f7ed910b67e7fb6072d8ef2c06e30dc63c0f604a112e0e'],
     }),
-    ('msgpack', '1.1.2', {
-        'checksums': ['3b60763c1373dd60f398488069bcdc703cd08a711477b5d480eecc9f9626f47e'],
+    ('msgpack', '1.2.1', {
+        'checksums': ['04c721c2c7448767e9e3f2520a475663d8ee0f09c31890f6d2bd70fd636a9647'],
     }),
     ('CacheControl', '0.14.4', {
         'sources': [SOURCELOWER_PY3_WHL],
         'checksums': ['b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b'],
     }),
-    ('fsspec', '2026.4.0', {
-        'checksums': ['301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4'],
+    ('fsspec', '2026.6.0', {
+        'checksums': ['f5bac145310fe30e16e1471bd6840b2d990d609e872251d7e674241822abf01a'],
     }),
     ('threadpoolctl', '3.6.0', {
         'checksums': ['8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e'],
