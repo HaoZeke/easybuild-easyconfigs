@@ -347,8 +347,8 @@ exts_list = [
         'sources': [SOURCELOWER_PY3_WHL],
         'checksums': ['b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b'],
     }),
-    ('fsspec', '2026.4.0', {
-        'checksums': ['301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4'],
+    ('fsspec', '2026.6.0', {
+        'checksums': ['f5bac145310fe30e16e1471bd6840b2d990d609e872251d7e674241822abf01a'],
     }),
     ('threadpoolctl', '3.6.0', {
         'checksums': ['8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e'],
