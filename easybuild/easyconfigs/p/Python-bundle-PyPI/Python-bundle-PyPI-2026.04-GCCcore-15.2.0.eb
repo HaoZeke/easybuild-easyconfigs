@@ -148,8 +148,8 @@ exts_list = [
     ('tabulate', '0.10.0', {
         'checksums': ['e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d'],
     }),
-    ('ujson', '5.12.0', {
-        'checksums': ['14b2e1eb528d77bc0f4c5bd1a7ebc05e02b5b41beefb7e8567c9675b8b13bcf4'],
+    ('ujson', '5.13.0', {
+        'checksums': ['d62e3d7625384c08082abad81a077af587fdef2761bb14c3822f4234b8d07d75'],
     }),
     ('more-itertools', '11.0.2', {
         'checksums': ['392a9e1e362cbc106a2457d37cabf9b36e5e12efd4ebff1654630e76597df804'],
