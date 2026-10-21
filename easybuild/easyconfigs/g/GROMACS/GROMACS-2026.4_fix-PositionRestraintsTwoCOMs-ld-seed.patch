@@ -1,0 +1,48 @@
+Pin ld-seed in PositionRestraintCommTest.PositionRestraintsTwoCOMs.
+
+The test integrates with tcoupl = v-rescale but leaves ld-seed at the default
+-1, so grompp draws a new seed on every invocation
+(gromacs/gmxpreprocess/grompp.cpp, "Setting the LD random seed"). The
+thermostat then changes the step-10 position-restraint energy. Double
+precision compares that energy with relativeToleranceAsFloatingPoint(1, 1.5e-2)
+(widened from 1e-2 in upstream 0a61941e5d06, which is still tighter than the
+thermostat noise). One seed grompp actually emits, -245437259, fails
+MdrunTestsTwoRanks on an otherwise correct double build:
+
+    src/testutils/refdata.cpp:1049: Failure
+       In item: /OctaneSandwich/Position Rest./Time 0.020000 Step 10 in frame 1
+        Actual: 65.792837418882343
+     Reference: 64.723105570319646
+    Difference: 1.06973 (75275686790208 double-prec. ULPs, rel. 0.0165)
+     Tolerance: abs. 0.015, rel. 0.015
+
+Single precision uses 5e-2 and passes the same scatter, which is why only the
+double-precision 2-rank run fails. With ld-seed = 1993 the energy is
+reproducible (about 0.55% from the checked-in reference on both 1 and 2 MPI
+ranks, AVX2_256 and AVX_512), so the reference data stays as it is. The
+~11% shift the test is meant to catch (not scaling the two COMs) remains
+outside the tolerance.
+
+Other v-rescale tests already set ld-seed
+(src/programs/mdrun/tests/multisimtest.cpp). This only changes the test input.
+
+diff -ru gromacs-2026.4.orig/src/programs/mdrun/tests/boxdeformation.cpp gromacs-2026.4/src/programs/mdrun/tests/boxdeformation.cpp
+--- gromacs-2026.4.orig/src/programs/mdrun/tests/boxdeformation.cpp
++++ gromacs-2026.4/src/programs/mdrun/tests/boxdeformation.cpp
+@@ -180,6 +180,8 @@
+     // We use a high shear speed of 2.5 nm/ps.
+     // With this the difference with not scaling with two COMS after 10 steps is 7 on 65,
+     // which we can detect within the tolerances set.
++    // Pin ld-seed. v-rescale is stochastic, and the default of -1 makes this
++    // comparison fail intermittently under the double-precision tolerance.
+     std::string theMdpFile =
+             "comm-mode        = linear\n"
+             "comm-grps        = Chain0 Chain1\n"
+@@ -195,6 +197,7 @@
+             "tc-grps          = system\n"
+             "ref-t            = 298\n"
+             "tau-t            = 0.5\n"
++            "ld-seed          = 1993\n"
+             "deform           = 0 0 0 0 2.5 0\n"
+             "deform-init-flow = yes\n";
+ 
