@@ -73,9 +73,9 @@ exts_list = [
         'modulename': 'ldapauthenticator',
         'checksums': ['c08cecd9bd996ab523c810d45204bb4a5eaac7adae38d3ef05eebc58fffc7a87'],
     }),
-    ('pyjwt', '2.13.0', {
+    ('pyjwt', '2.15.0', {
         'modulename': 'jwt',
-        'checksums': ['41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423'],
+        'checksums': ['b11c5f9791d7bf51c2b39a81ed669f6b2dbbd669df2942f6c60167e9e3d1abe4'],
     }),
     ('jupyterhub-jwtauthenticator-v2', '2.0.3', {
         'modulename': 'jwtauthenticator',
