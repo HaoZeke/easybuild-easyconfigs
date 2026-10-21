@@ -1,0 +1,33 @@
+easyblock = 'ConfigureMake'
+
+name = 'XZ'
+version = '5.8.3'
+
+homepage = 'https://tukaani.org/xz/'
+description = "xz: XZ utilities"
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = ['https://tukaani.org/xz/']
+sources = [SOURCELOWER_TAR_BZ2]
+checksums = ['33bf69c0d6c698e83a68f77e6c1f465778e418ca0b3d59860d3ab446f4ac99a6']
+
+builddependencies = [
+    ('gettext', '0.26'),
+    ('binutils', '2.45'),
+]
+
+# may become useful in non-x86 archs
+# configopts = ' --disable-assembler '
+
+sanity_check_paths = {
+    'files': ['bin/lzmainfo', 'bin/unxz', 'bin/xz'],
+    'dirs': []
+}
+
+sanity_check_commands = [
+    "xz --help",
+    "unxz --help",
+]
+
+moduleclass = 'tools'
