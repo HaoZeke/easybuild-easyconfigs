@@ -56,8 +56,8 @@ exts_list = [
     ('pandocfilters', '1.5.1', {
         'checksums': ['002b4a555ee4ebc03f8b66307e287fa492e4a77b4ea14d3f934328297bb4939e'],
     }),
-    ('mistune', '3.2.1', {
-        'checksums': ['7c8e5501d38bac1582e067e46c8343f17d57ea1aaa735823f3aba1fd59c88a28'],
+    ('mistune', '3.3.0', {
+        'checksums': ['3074ec4c61b384abe725128e4dcbb483f5a09cc4632012505cdee655d3a113b9'],
     }),
     ('deprecation', '2.1.0', {
         'checksums': ['72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff'],
