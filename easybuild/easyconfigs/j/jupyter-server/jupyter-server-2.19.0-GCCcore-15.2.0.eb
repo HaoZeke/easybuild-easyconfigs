@@ -74,8 +74,8 @@ exts_list = [
     ('tinycss2', '1.4.0', {
         'checksums': ['10c0972f6fc0fbee87c3edb76549357415e94548c1ae10ebccdea16fb404a9b7'],
     }),
-    ('bleach', '6.3.0', {
-        'checksums': ['6f3b91b1c0a02bb9a78b5a454c92506aa0fdf197e1d5e114d2e00c6f64306d22'],
+    ('bleach', '6.4.0', {
+        'checksums': ['4202482733d85cedd04e59fcb2f89f4e4c7c385a78d3c3c23c30446843a37452'],
     }),
     ('nbformat', '5.10.4', {
         'checksums': ['322168b14f937a5d11362988ecac2a4952d3d8e3a2cbeb2319584631226d5b3a'],
