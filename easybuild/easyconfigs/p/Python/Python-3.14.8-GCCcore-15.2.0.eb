@@ -66,8 +66,8 @@ exts_list = [
     ('typing_extensions', '4.15.0', {
         'checksums': ['0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466'],
     }),
-    ('setuptools', '80.9.0', {
-        'checksums': ['f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c'],
+    ('setuptools', '83.0.0', {
+        'checksums': ['025bccbbf0fa05b6192bc64ae1e7b16e001fd6d6d4d5de03c97b1c1ade523bef'],
     }),
     ('setuptools_scm', '9.2.2', {
         'checksums': ['1c674ab4665686a0887d7e24c03ab25f24201c213e82ea689d2f3e169ef7ef57'],
