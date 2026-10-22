@@ -63,6 +63,7 @@ exts_list = [
             'mistune-3.2.1_fix-CVE-2026-59927.patch',
             'mistune-3.2.1_fix-CVE-2026-59922.patch',
             'mistune-3.2.1_fix-CVE-2026-59930.patch',
+            'mistune-3.2.1_fix-CVE-2026-59928.patch',
         ],
         'checksums': [
             '7c8e5501d38bac1582e067e46c8343f17d57ea1aaa735823f3aba1fd59c88a28',
@@ -76,6 +77,8 @@ exts_list = [
              'fd6ecd862021dd1cbdbe98a132910625a0b012c52f81893a69ca3278d6d06ee5'},
             {'mistune-3.2.1_fix-CVE-2026-59930.patch':
              '1d2d0d9234e22a5ea1b4ba59db1a5c57ee887951d5648a8072eef04e9edd3ede'},
+            {'mistune-3.2.1_fix-CVE-2026-59928.patch':
+             'c755867fb41db2229feaf8a1c4d1241244d59fc231edc716b5d7a03fd4720d37'},
         ],
     }),
     ('deprecation', '2.1.0', {
