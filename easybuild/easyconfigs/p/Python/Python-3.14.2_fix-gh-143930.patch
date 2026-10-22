@@ -1,0 +1,78 @@
+# Reject leading dashes in URLs passed to webbrowser.open.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/9669a912a0e329c094e992204d6bdb8787024d76
+# Upstream commit: https://github.com/python/cpython/commit/594b5a05dc9913880ac92eded440defbf32a28d1
+
+diff --git a/Lib/webbrowser.py b/Lib/webbrowser.py
+index f2e2394089..deb6e64d17 100644
+--- a/Lib/webbrowser.py
++++ b/Lib/webbrowser.py
+@@ -163,6 +163,12 @@ def open_new(self, url):
+     def open_new_tab(self, url):
+         return self.open(url, 2)
+ 
++    @staticmethod
++    def _check_url(url):
++        """Ensures that the URL is safe to pass to subprocesses as a parameter"""
++        if url and url.lstrip().startswith("-"):
++            raise ValueError(f"Invalid URL (leading dash disallowed): {url!r}")
++
+ 
+ class GenericBrowser(BaseBrowser):
+     """Class for all browsers started with a command
+@@ -180,6 +186,7 @@ def __init__(self, name):
+ 
+     def open(self, url, new=0, autoraise=True):
+         sys.audit("webbrowser.open", url)
++        self._check_url(url)
+         cmdline = [self.name] + [arg.replace("%s", url)
+                                  for arg in self.args]
+         try:
+@@ -200,6 +207,7 @@ def open(self, url, new=0, autoraise=True):
+         cmdline = [self.name] + [arg.replace("%s", url)
+                                  for arg in self.args]
+         sys.audit("webbrowser.open", url)
++        self._check_url(url)
+         try:
+             if sys.platform[:3] == 'win':
+                 p = subprocess.Popen(cmdline)
+@@ -266,6 +274,7 @@ def _invoke(self, args, remote, autoraise, url=None):
+ 
+     def open(self, url, new=0, autoraise=True):
+         sys.audit("webbrowser.open", url)
++        self._check_url(url)
+         if new == 0:
+             action = self.remote_action
+         elif new == 1:
+@@ -357,6 +366,7 @@ class Konqueror(BaseBrowser):
+ 
+     def open(self, url, new=0, autoraise=True):
+         sys.audit("webbrowser.open", url)
++        self._check_url(url)
+         # XXX Currently I know no way to prevent KFM from opening a new win.
+         if new == 2:
+             action = "newTab"
+@@ -588,6 +598,7 @@ def register_standard_browsers():
+     class WindowsDefault(BaseBrowser):
+         def open(self, url, new=0, autoraise=True):
+             sys.audit("webbrowser.open", url)
++            self._check_url(url)
+             try:
+                 os.startfile(url)
+             except OSError:
+@@ -608,6 +619,7 @@ def __init__(self, name='default'):
+ 
+         def open(self, url, new=0, autoraise=True):
+             sys.audit("webbrowser.open", url)
++            self._check_url(url)
+             url = url.replace('"', '%22')
+             if self.name == 'default':
+                 proto, _sep, _rest = url.partition(":")
+@@ -664,6 +676,7 @@ def open(self, url, new=0, autoraise=True):
+     class IOSBrowser(BaseBrowser):
+         def open(self, url, new=0, autoraise=True):
+             sys.audit("webbrowser.open", url)
++            self._check_url(url)
+             # If ctypes isn't available, we can't open a browser
+             if objc is None:
+                 return False
