@@ -10,6 +10,9 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 toolchainopts = {'pic': True}
 
 sources = [SOURCE_TAR_GZ]
+patches = [
+    'cryptography-47.0.0_fix-CVE-2026-69249.patch',
+]
 
 builddependencies = [
     ('binutils', '2.45'),
@@ -89,6 +92,8 @@ checksums = [
     {'target-lexicon-0.13.5.tar.gz': 'adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca'},
     {'unicode-ident-1.0.24.tar.gz': 'e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75'},
     {'vcpkg-0.2.15.tar.gz': 'accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426'},
+    {'cryptography-47.0.0_fix-CVE-2026-69249.patch':
+     '3029c04819c2ebb3a697cf9ff0d90e00f252feb8cccfb9a7a44d0c04fdf82c5b'},
 ]
 
 moduleclass = 'tools'
