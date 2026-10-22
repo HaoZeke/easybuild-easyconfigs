@@ -24,11 +24,14 @@ exts_list = [
     (name, version, {
         'patches': [
             'dulwich-1.2.0_fix-CVE-2026-42563.patch',
+            'dulwich-1.2.0_fix-CVE-2026-47712.patch',
         ],
         'checksums': [
             'db600dae670f2b6402c2a6f201dcd9f54893a18d33262f51815de5efd99ba97e',
             {'dulwich-1.2.0_fix-CVE-2026-42563.patch':
              '6765c4dc259df092195e3fa54fa6bb1cbe527e586ba99eb7b8c7429836cf94c7'},
+            {'dulwich-1.2.0_fix-CVE-2026-47712.patch':
+             'bb1feb4690c76313fb94931c74d792f689e0717ad5d1c2cbaf7d0871682c5ce4'},
         ],
     }),
 ]
