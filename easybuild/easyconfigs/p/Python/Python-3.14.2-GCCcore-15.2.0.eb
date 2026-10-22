@@ -15,6 +15,7 @@ patches = [
     'Python-3.13.1_runshared-ld-preload.patch',
     'Python-3.14.2_skip-inf-recursion-tests.patch',
     'Python-3.14.2_fix-CVE-2026-24515.patch',
+    'Python-3.14.2_fix-CVE-2026-32776.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -30,6 +31,8 @@ checksums = [
     {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
     {'Python-3.14.2_fix-CVE-2026-24515.patch':
      '370eff4fc1ac42142d8098403863fd721132b467e6cee92fdfd975623bca8c05'},
+    {'Python-3.14.2_fix-CVE-2026-32776.patch':
+     '39fa7047dcc0f955b459b77685c17e45f440a81e555ce8dd3cd1e48f089b1eba'},
 ]
 
 builddependencies = [
