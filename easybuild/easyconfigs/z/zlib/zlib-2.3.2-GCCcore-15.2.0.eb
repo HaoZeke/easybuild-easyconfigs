@@ -12,7 +12,11 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = ['https://github.com/zlib-ng/zlib-ng/archive']
 sources = [{'download_filename': '%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
-checksums = ['6a0561b50b8f5f6434a6a9e667a67026f2b2064a1ffa959c6b2dae320161c2a8']
+patches = ['zlib-ng-2.3.2_fix-CVE-2026-27171.patch']
+checksums = [
+    '6a0561b50b8f5f6434a6a9e667a67026f2b2064a1ffa959c6b2dae320161c2a8',
+    '75fafb9edcc643ada214664fcd4445152500d4f207f4299e6406b4e7b4fa25b5',
+]
 
 # use same binutils version that was used when building GCC toolchain
 builddependencies = [('binutils', '2.45', '', SYSTEM)]
