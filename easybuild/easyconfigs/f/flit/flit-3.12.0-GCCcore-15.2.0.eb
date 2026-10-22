@@ -23,7 +23,14 @@ exts_list = [
         'checksums': ['ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848'],
     }),
     ('certifi', '2026.6.17', {
-        'checksums': ['024c88eeec92ca068db80f02b8b07c9cef7b9fe261d1d535abfd5abd6f6af432'],
+        'patches': [
+            'certifi-2026.6.17_fix-GHSA-6q48-6c7w-9gw2.patch',
+        ],
+        'checksums': [
+            {'certifi-2026.6.17.tar.gz': '024c88eeec92ca068db80f02b8b07c9cef7b9fe261d1d535abfd5abd6f6af432'},
+            {'certifi-2026.6.17_fix-GHSA-6q48-6c7w-9gw2.patch':
+             '620d0cc0589f2af18a0b15fbeb52e15c5c8ac236f9d10ed81a2f2e5098aff0fa'},
+        ],
     }),
     ('urllib3', '2.7.0', {
         'checksums': ['231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c'],
