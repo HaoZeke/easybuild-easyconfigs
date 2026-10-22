@@ -87,11 +87,14 @@ exts_list = [
         'modulename': 'jwt',
         'patches': [
             'pyjwt-2.13.0_fix-CVE-2026-103001.patch',
+            'pyjwt-2.13.0_fix-CVE-2026-102274.patch',
         ],
         'checksums': [
             '41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423',
             {'pyjwt-2.13.0_fix-CVE-2026-103001.patch':
              '463e8ec7206766db98df2952588b4a8f9a85868b158dd7a703e99324d4dfbd70'},
+            {'pyjwt-2.13.0_fix-CVE-2026-102274.patch':
+             '1f9b685d836d509feb4a088f44af3898eab68a603afa34f5cbdbeb51d6237b16'},
         ],
     }),
     ('jupyterhub-jwtauthenticator-v2', '2.0.3', {
