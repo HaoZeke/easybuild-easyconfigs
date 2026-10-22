@@ -114,7 +114,14 @@ exts_list = [
         'checksums': ['694ae5cc8a42f4c4e2bf2ca0e64e51e23a040c6a517a85074683d3959e1346c1'],
     }),
     (name, version, {
-        'checksums': ['1731236bc32b680223e1ceb9d68209a845203475012ef68773a81434b46a31a7'],
+        'patches': [
+            'jupyter_server-2.19.0_fix-CVE-2026-44727.patch',
+        ],
+        'checksums': [
+            '1731236bc32b680223e1ceb9d68209a845203475012ef68773a81434b46a31a7',
+            {'jupyter_server-2.19.0_fix-CVE-2026-44727.patch':
+             'b948f0b32e6fbc9482b52441dc942d6e142d878cb621e2fea4476a5753b402d7'},
+        ],
     }),
     ('comm', '0.2.3', {
         'checksums': ['2dc8048c10962d55d7ad693be1e7045d891b7ce8d999c97963a5e3e99c055971'],
