@@ -253,7 +253,12 @@ exts_list = [
         'checksums': ['0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466'],
     }),
     ('setuptools', '80.9.0', {
-        'checksums': ['f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c'],
+        'patches': ['setuptools-80.9.0_fix-CVE-2026-59890.patch'],
+        'checksums': [
+            {'setuptools-80.9.0.tar.gz': 'f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c'},
+            {'setuptools-80.9.0_fix-CVE-2026-59890.patch':
+             '6260839b492bdfe2d56a3ab87048e59b5a76ac6baad2d02cb8ccc977a19ee4c9'},
+        ],
     }),
     ('setuptools_scm', '9.2.2', {
         'checksums': ['1c674ab4665686a0887d7e24c03ab25f24201c213e82ea689d2f3e169ef7ef57'],
