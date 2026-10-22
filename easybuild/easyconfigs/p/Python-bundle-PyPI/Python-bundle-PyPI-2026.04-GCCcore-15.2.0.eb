@@ -365,7 +365,14 @@ exts_list = [
         'checksums': ['ba10ac57884ce82112f7ed910b67e7fb6072d8ef2c06e30dc63c0f604a112e0e'],
     }),
     ('msgpack', '1.1.2', {
-        'checksums': ['3b60763c1373dd60f398488069bcdc703cd08a711477b5d480eecc9f9626f47e'],
+        'patches': [
+            'msgpack-1.1.2_fix-CVE-2026-57585.patch',
+        ],
+        'checksums': [
+            {'msgpack-1.1.2.tar.gz': '3b60763c1373dd60f398488069bcdc703cd08a711477b5d480eecc9f9626f47e'},
+            {'msgpack-1.1.2_fix-CVE-2026-57585.patch':
+             '629757e15ac69e65d96a83d65fea39bbbcda4db267ca61adbc72c1caf512f083'},
+        ],
     }),
     ('CacheControl', '0.14.4', {
         'sources': [SOURCELOWER_PY3_WHL],
