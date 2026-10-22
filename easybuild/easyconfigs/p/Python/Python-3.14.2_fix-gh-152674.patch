@@ -1,0 +1,36 @@
+# Avoid quadratic XPath index predicates in ElementPath.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/cb409342a19f25656f62e679f8bac265fe1442c3
+
+diff --git a/Lib/xml/etree/ElementPath.py b/Lib/xml/etree/ElementPath.py
+index dc6bd28c03..de1fd203ff 100644
+--- a/Lib/xml/etree/ElementPath.py
++++ b/Lib/xml/etree/ElementPath.py
+@@ -324,15 +324,22 @@ def select_negated(context, result):
+                 index = -1
+         def select(context, result):
+             parent_map = get_parent_map(context)
++            cache = {}
+             for elem in result:
+                 try:
+                     parent = parent_map[elem]
++                except KeyError:
++                    continue
++                key = (parent, elem.tag)
++                if key not in cache:
+                     # FIXME: what if the selector is "*" ?
+-                    elems = list(parent.findall(elem.tag))
+-                    if elems[index] is elem:
+-                        yield elem
+-                except (IndexError, KeyError):
+-                    pass
++                    elems = parent.findall(elem.tag)
++                    try:
++                        cache[key] = elems[index]
++                    except IndexError:
++                        cache[key] = None
++                if cache[key] is elem:
++                    yield elem
+         return select
+     raise SyntaxError("invalid predicate")
+ 
