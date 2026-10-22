@@ -14,6 +14,7 @@ patches = [
     'Python-3.12.3_avoid-tkinter-build.patch',
     'Python-3.13.1_runshared-ld-preload.patch',
     'Python-3.14.8_fix-CVE-2025-15367.patch',
+    'Python-3.14.8_fix-CVE-2026-87910.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -25,6 +26,7 @@ checksums = [
     {'Python-3.12.3_avoid-tkinter-build.patch': '34fa44ca67fc08d41c58db2e289317f12f32777a352a982dca2e63459fc089e3'},
     {'Python-3.13.1_runshared-ld-preload.patch': 'ca9ec56c71aafa881e7ddf6fba23fbecc016be48c2d912e5ccd92962ddd38edf'},
     {'Python-3.14.8_fix-CVE-2025-15367.patch': 'be687466a52a5d9b9cad57e6dcd0cfecf5e43f7a21af48a781eda47151584b1d'},
+    {'Python-3.14.8_fix-CVE-2026-87910.patch': '426876c9488ac4afcb184c6f93c1128e261a35978ea8929a073e00a0136adaf0'},
     {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
 ]
 
