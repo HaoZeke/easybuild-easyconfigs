@@ -35,11 +35,14 @@ exts_list = [
     ('urllib3', '2.7.0', {
         'patches': [
             'urllib3-2.7.0_fix-CVE-2026-97688.patch',
+            'urllib3-2.7.0_fix-CVE-2026-97689.patch',
         ],
         'checksums': [
             {'urllib3-2.7.0.tar.gz': '231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c'},
             {'urllib3-2.7.0_fix-CVE-2026-97688.patch':
              '2a11105479aa18060ca394ac0a7e18f446e5ea985bdb783438128cd52476b3f1'},
+            {'urllib3-2.7.0_fix-CVE-2026-97689.patch':
+             '95385d3081a58492fcc61268b7fe5e99fdce5fd0e37cdf28fe22db23e70a8d4f'},
         ],
     }),
     ('charset-normalizer', '3.4.7', {
