@@ -188,11 +188,14 @@ exts_list = [
     ('ujson', '5.12.0', {
         'patches': [
             'ujson-5.12.0_fix-CVE-2026-44660.patch',
+            'ujson-5.12.0_fix-CVE-2026-54911.patch',
         ],
         'checksums': [
             {'ujson-5.12.0.tar.gz': '14b2e1eb528d77bc0f4c5bd1a7ebc05e02b5b41beefb7e8567c9675b8b13bcf4'},
             {'ujson-5.12.0_fix-CVE-2026-44660.patch':
              '2567d1a7d08b0c4a05456c570b1d24475b4e741e07159eb50ecbce312c5b0a83'},
+            {'ujson-5.12.0_fix-CVE-2026-54911.patch':
+             '128ddaae8bf5511843a8ddc9853981818d292ff8c0187de80e2ef99fe90704a0'},
         ],
     }),
     ('more-itertools', '11.0.2', {
