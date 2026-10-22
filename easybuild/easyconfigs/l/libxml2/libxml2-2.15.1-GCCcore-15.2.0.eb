@@ -13,7 +13,13 @@ toolchainopts = {'pic': True}
 
 source_urls = ['https://download.gnome.org/sources/libxml2/%(version_major_minor)s/']
 sources = [SOURCE_TAR_XZ]
-checksums = ['c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c']
+patches = [
+    'libxml2-2.15.1_fix-CVE-2026-1757.patch',
+]
+checksums = [
+    'c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c',
+    '15fe7519754ec97dc0f87c92e2ff0a898f3811a1a26c1fced063fd575063bc04',
+]
 
 builddependencies = [
     ('binutils', '2.45'),
