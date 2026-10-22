@@ -24,6 +24,7 @@ patches = [
     'libxml2-2.15.1_fix-CVE-2026-74860.patch',
     'libxml2-2.15.1_fix-CVE-2026-86137.patch',
     'libxml2-2.15.1_fix-CVE-2026-86138.patch',
+    'libxml2-2.15.1_fix-CVE-2026-86139.patch',
 ]
 checksums = [
     'c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c',
@@ -37,6 +38,7 @@ checksums = [
     'f0241d59b2265096a8bed4fcf5651e809f19521d4b0e533973bee4bb5d90abcb',
     '7a684bf7ab7da5ef895298ade4998ce51ba91c3272e03450813c57bdd03f2487',
     '868a05fa7bc956d1ef0ae76e861ccfa6b42be644bef91b5295f111bf319a7968',
+    '3c41cc92045246904ad1f04fc1cf75d3d674cd3517b0b20d590dcc63069d2a1e',
 ]
 
 builddependencies = [
