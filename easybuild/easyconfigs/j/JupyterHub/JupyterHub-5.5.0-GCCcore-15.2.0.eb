@@ -36,11 +36,14 @@ exts_list = [
     ('oauthlib', '3.3.1', {
         'patches': [
             'oauthlib-3.3.1_fix-CVE-2026-49264.patch',
+            'oauthlib-3.3.1_fix-CVE-2026-49265.patch',
         ],
         'checksums': [
             '0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9',
             {'oauthlib-3.3.1_fix-CVE-2026-49264.patch':
              '83872c6c12fee322fc256ac3ae715ff3a39d969fa41a2cffd28a9638163e412f'},
+            {'oauthlib-3.3.1_fix-CVE-2026-49265.patch':
+             '4ab94a6eeccc9afed2ed9b7093086c2a3be81742bcbb119600283fe66a879041'},
         ],
     }),
     ('prometheus-client', '0.25.0', {
