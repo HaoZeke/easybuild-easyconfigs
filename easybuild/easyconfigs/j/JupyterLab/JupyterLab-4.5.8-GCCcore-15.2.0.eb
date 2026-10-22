@@ -37,7 +37,14 @@ exts_list = [
         'checksums': ['89bdb258a0140d7313cf8f4031d816a042202faa61d0ab310a0a538baa1c24b6'],
     }),
     ('jupyterlab', version, {
-        'checksums': ['af54d7242cc689a1e6c3ad213cc9b6d9781787d9ec67c52ec9a8f4707088cadd'],
+        'patches': [
+            'JupyterLab-4.5.8_fix-CVE-2026-73416.patch',
+        ],
+        'checksums': [
+            'af54d7242cc689a1e6c3ad213cc9b6d9781787d9ec67c52ec9a8f4707088cadd',
+            {'JupyterLab-4.5.8_fix-CVE-2026-73416.patch':
+             'e143d1c404b4219f1ab649825dc30d04d7faf6fc11087b16d95151e11ce7d9fe'},
+        ],
     }),
 ]
 
