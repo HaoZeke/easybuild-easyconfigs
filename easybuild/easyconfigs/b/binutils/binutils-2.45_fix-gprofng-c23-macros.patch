@@ -1,0 +1,23 @@
+fix gprofng build against C23 const-preserving libc macros
+
+CALL_UTIL(strstr) is unparsable when strstr is a function-like macro,
+which the EESSI compat glibc does via _Generic. Parenthesize the
+member access so the argument is not expanded. This is not a CVE fix;
+binutils 2.45 does not compile here without it.
+
+see https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=5f66aee7f4bec7a2d8378034116f5e5c3dc50f41
+
+author: Rohit Goswami (HaoZeke)
+
+diff --git a/gprofng/src/collector_module.h b/gprofng/src/collector_module.h
+--- a/gprofng/src/collector_module.h
++++ b/gprofng/src/collector_module.h
+@@ -119,7 +119,7 @@
+ extern CollectorUtilFuncs __collector_util_funcs;
+ extern int __collector_dlsym_guard;
+ 
+-#define CALL_UTIL(x) __collector_util_funcs.x
++#define CALL_UTIL(x) (__collector_util_funcs.x)
+ 
+ /* The following constants define the meaning of the "void *arg"
+  * argument of getFrameInfo().
