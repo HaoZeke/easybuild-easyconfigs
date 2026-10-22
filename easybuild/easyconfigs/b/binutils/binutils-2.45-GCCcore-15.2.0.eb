@@ -11,6 +11,7 @@ sources = [SOURCE_TAR_GZ]
 patches = [
     'binutils-2.45_fix-CVE-2025-69649.patch',
     'binutils-2.45_fix-CVE-2026-3441-CVE-2026-3442.patch',
+    'binutils-2.45_fix-CVE-2026-6846.patch',
 ]
 checksums = [
     {'binutils-2.45.tar.gz': '8a3eb4b10e7053312790f21ee1a38f7e2bbd6f4096abb590d3429e5119592d96'},
@@ -18,6 +19,8 @@ checksums = [
      '38bf004bb7a676fb915beadc4ea2a93d042e36cd3fb21fa1085236aa441b3f70'},
     {'binutils-2.45_fix-CVE-2026-3441-CVE-2026-3442.patch':
      'b58072b14f315d267b3fb5a0f9a62c05e0ae3ea7e5e07bce7588a2dfe3f50978'},
+    {'binutils-2.45_fix-CVE-2026-6846.patch':
+     'fb04bb35637be77ef732c79a275461badb403bda3654f7e47c0299673bf16622'},
 ]
 
 builddependencies = [
