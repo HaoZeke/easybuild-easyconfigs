@@ -69,11 +69,14 @@ exts_list = [
     ('anyio', '4.13.0', {
         'patches': [
             'anyio-4.13.0_fix-CVE-2026-64847.patch',
+            'anyio-4.13.0_fix-CVE-2026-63374.patch',
         ],
         'checksums': [
             {'anyio-4.13.0.tar.gz': '334b70e641fd2221c1505b3890c69882fe4a2df910cba14d97019b90b24439dc'},
             {'anyio-4.13.0_fix-CVE-2026-64847.patch':
              '23f874e6b4ed08f57c076528b24c7d35cd6e4ba8a94fc81bf4406c50e21c2741'},
+            {'anyio-4.13.0_fix-CVE-2026-63374.patch':
+             '7df594d5002f7f7e1f168078e6fd42985ce6f7206b548077b6bf4e8406552025'},
         ],
     }),
     ('semantic-version', '2.10.0', {
