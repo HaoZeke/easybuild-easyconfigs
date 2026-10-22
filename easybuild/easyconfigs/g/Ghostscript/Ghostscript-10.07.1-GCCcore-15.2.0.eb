@@ -16,10 +16,12 @@ source_urls = [
 sources = [SOURCELOWER_TAR_GZ]
 patches = [
     'Ghostscript-10.07.1_fix-CVE-2026-39919.patch',
+    'Ghostscript-10.07.1_fix-CVE-2026-103226.patch',
 ]
 checksums = [
     '2fc74362f9be6fae1b0a65d38fdcfd4f0b518cc3b07c5581fb661eb4d2e15251',
     'f2ac4e666f0be3d8a9e4f1c71faba6e6eff09d7925ae2f72ac84cca26a9050cb',
+    '51adeafa715ac2c642a42b7d3cbeafefda379d5d54cc7577d10eb9e1bb2fe8d7',
 ]
 
 builddependencies = [
