@@ -95,6 +95,7 @@ exts_list = [
             'pyjwt-2.13.0_fix-CVE-2026-102268.patch',
             'pyjwt-2.13.0_fix-CVE-2026-102271.patch',
             'pyjwt-2.13.0_fix-CVE-2026-101917.patch',
+            'pyjwt-2.13.0_fix-CVE-2026-102275.patch',
         ],
         'checksums': [
             '41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423',
@@ -116,6 +117,8 @@ exts_list = [
              '00dbb9a1b5afd23342ca82f691e1544db2bb19276532459cc3eab22fc8d0ef92'},
             {'pyjwt-2.13.0_fix-CVE-2026-101917.patch':
              'dc8b55043279475419d33e9adfbd488585d5475a780786910a427acdb1094ae2'},
+            {'pyjwt-2.13.0_fix-CVE-2026-102275.patch':
+             '08d5cc152182f74fca12ea3195020f84e92073a3b6beb5eeacfeacfedd19a0c5'},
         ],
     }),
     ('jupyterhub-jwtauthenticator-v2', '2.0.3', {
