@@ -16,11 +16,13 @@ sources = [SOURCE_TAR_XZ]
 patches = [
     'libxml2-2.15.1_fix-CVE-2026-1757.patch',
     'libxml2-2.15.1_fix-CVE-2026-0990.patch',
+    'libxml2-2.15.1_fix-CVE-2026-0992.patch',
 ]
 checksums = [
     'c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c',
     '15fe7519754ec97dc0f87c92e2ff0a898f3811a1a26c1fced063fd575063bc04',
     'e871af9eefb3d15bd44022bf14e04ee4d00521c7adcd9ea48d09c5a9d7c464b0',
+    '814065f888f3cbf445ff9530282800be0462753b91259c9d9802962cc25d9a14',
 ]
 
 builddependencies = [
