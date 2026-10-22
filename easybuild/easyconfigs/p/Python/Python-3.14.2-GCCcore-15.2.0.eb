@@ -87,7 +87,6 @@ checksums = [
     {'Python-3.13.1_runshared-ld-preload.patch': 'ca9ec56c71aafa881e7ddf6fba23fbecc016be48c2d912e5ccd92962ddd38edf'},
     {'Python-3.14.2_skip-inf-recursion-tests.patch':
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
-    {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
     {'Python-3.14.2_fix-CVE-2026-24515.patch':
      '370eff4fc1ac42142d8098403863fd721132b467e6cee92fdfd975623bca8c05'},
     {'Python-3.14.2_fix-CVE-2026-32776.patch':
@@ -210,6 +209,7 @@ checksums = [
      'dd686e12c779b8109794bed5a9c5eccd7937f98df0ece4ff6041302b5909faf2'},
     {'Python-3.14.2_fix-CVE-2026-12345.patch':
      '2aca6acc38d5351a1812cc841b0c7feb469ea35c42221f38e06cb5c72480bf91'},
+    {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
 ]
 
 builddependencies = [
