@@ -57,7 +57,14 @@ exts_list = [
         'checksums': ['002b4a555ee4ebc03f8b66307e287fa492e4a77b4ea14d3f934328297bb4939e'],
     }),
     ('mistune', '3.2.1', {
-        'checksums': ['7c8e5501d38bac1582e067e46c8343f17d57ea1aaa735823f3aba1fd59c88a28'],
+        'patches': [
+            'mistune-3.2.1_fix-CVE-2026-49851.patch',
+        ],
+        'checksums': [
+            '7c8e5501d38bac1582e067e46c8343f17d57ea1aaa735823f3aba1fd59c88a28',
+            {'mistune-3.2.1_fix-CVE-2026-49851.patch':
+             '355208ed32a952398494a266bd737e926ffcdb91f6dcc3b77bc9ab2fea670e30'},
+        ],
     }),
     ('deprecation', '2.1.0', {
         'checksums': ['72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff'],
