@@ -16,6 +16,7 @@ patches = [
     'Python-3.14.2_skip-inf-recursion-tests.patch',
     'Python-3.14.2_fix-CVE-2026-24515.patch',
     'Python-3.14.2_fix-CVE-2026-32776.patch',
+    'Python-3.14.2_fix-CVE-2026-32777.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -33,6 +34,8 @@ checksums = [
      '370eff4fc1ac42142d8098403863fd721132b467e6cee92fdfd975623bca8c05'},
     {'Python-3.14.2_fix-CVE-2026-32776.patch':
      '39fa7047dcc0f955b459b77685c17e45f440a81e555ce8dd3cd1e48f089b1eba'},
+    {'Python-3.14.2_fix-CVE-2026-32777.patch':
+     'dcc8fd81a8ca50c37e2746dedea15f45d73bc55c0c5b8283a82e7fd85ef7879e'},
 ]
 
 builddependencies = [
