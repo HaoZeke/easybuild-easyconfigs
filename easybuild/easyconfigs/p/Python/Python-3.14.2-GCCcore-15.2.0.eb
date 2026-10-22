@@ -48,6 +48,7 @@ patches = [
     'Python-3.14.2_fix-gh-152674.patch',
     'Python-3.14.2_fix-gh-151987.patch',
     'Python-3.14.2_fix-gh-151981.patch',
+    'Python-3.14.2_fix-CVE-2026-12003.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -129,6 +130,8 @@ checksums = [
      '6508db1e52e00eaab5c5d3237a7fd1e376da14da0f7d44c1f64b11e9c8001353'},
     {'Python-3.14.2_fix-gh-151981.patch':
      'eb69dda10160914fbbf37131c29873c388a9f92af4e7de9243e2c28386f5a3e6'},
+    {'Python-3.14.2_fix-CVE-2026-12003.patch':
+     '5c56cd2e3dc8157459102c0be37d635a57bca397d192683777d5569ea97b3006'},
 ]
 
 builddependencies = [
