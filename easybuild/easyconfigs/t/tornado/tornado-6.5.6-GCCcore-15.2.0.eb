@@ -16,6 +16,7 @@ patches = [
     'tornado-6.5.6_fix-CVE-2026-82397.patch',
     'tornado-6.5.6_fix-CVE-2026-91991.patch',
     'tornado-6.5.6_fix-CVE-2026-103262.patch',
+    'tornado-6.5.6_fix-CVE-2026-103261.patch',
 ]
 checksums = [
     {'tornado-6.5.6.tar.gz': '9a365179fe8ff6b8766f602c0f67c185d778193e9bdd828b19f0b6ed7764177d'},
@@ -25,6 +26,7 @@ checksums = [
     {'tornado-6.5.6_fix-CVE-2026-82397.patch': '985d768b1869a8490650adc357604b86b0be749836179baef0ed90cd3d00eae4'},
     {'tornado-6.5.6_fix-CVE-2026-91991.patch': 'e36e7e00f659b1c5bab3e95ae6a51e70789ca94228b61aea7f50c6c839b06b2e'},
     {'tornado-6.5.6_fix-CVE-2026-103262.patch': 'bf70ca205eff6c3d765af71a7042c21683346154cdfee83ad2008161154dd4ab'},
+    {'tornado-6.5.6_fix-CVE-2026-103261.patch': 'b3d3e817946b83441fe9b62f2113030215bb2c989f0c7dcc436c9ddff6ec7d19'},
 ]
 builddependencies = [
     ("binutils", "2.45"),
