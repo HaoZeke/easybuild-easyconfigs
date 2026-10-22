@@ -92,11 +92,14 @@ exts_list = [
     ('pyasn1', '0.6.3', {
         'patches': [
             'pyasn1-0.6.3_fix-CVE-2026-59885.patch',
+            'pyasn1-0.6.3_fix-CVE-2026-59886.patch',
         ],
         'checksums': [
             {'pyasn1-0.6.3.tar.gz': '697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf'},
             {'pyasn1-0.6.3_fix-CVE-2026-59885.patch':
              'c9fe30869c46a37eebabe8b627609c0b40d93749a5625a37bab71a5da8458c5f'},
+            {'pyasn1-0.6.3_fix-CVE-2026-59886.patch':
+             'faaa1e3099d54d3c71d31e5a6b351d7d02f53632d691d5717ab0ecd7fb3a07ca'},
         ],
     }),
     ('pynacl', '1.6.2', {
