@@ -13,7 +13,13 @@ toolchainopts = {'pic': True, 'usempi': True}
 
 source_urls = ['https://github.com/HDFGroup/hdf5/releases/download/%(version)s/']
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16']
+patches = [
+    'HDF5-2.2.0_fix-CVE-2026-19024.patch',
+]
+checksums = [
+    {'hdf5-2.2.0.tar.gz': '1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16'},
+    {'HDF5-2.2.0_fix-CVE-2026-19024.patch': 'f73c7ed242ecf383d99c9ca00b31e18352643354318c9195142858dd3ab2e998'},
+]
 
 builddependencies = [('CMake', '4.2.1')]
 
