@@ -174,6 +174,7 @@ exts_list = [
         'patches': [
             'urllib3-2.6.3_fix-CVE-2026-44431.patch',
             'urllib3-2.6.3_fix-CVE-2026-44432.patch',
+            'urllib3-2.6.3_fix-CVE-2026-97688.patch',
         ],
         'checksums': [
             {'urllib3-2.6.3.tar.gz': '1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed'},
@@ -181,6 +182,8 @@ exts_list = [
              '86b8179381931c48789bb0891b01166b5b6eda5e0ab892c1fdacaafdd74959e4'},
             {'urllib3-2.6.3_fix-CVE-2026-44432.patch':
              '0a740bd322ef030e3ee7ad0c0e6513ab7b0443e65958e70e2985cd9f23b10704'},
+            {'urllib3-2.6.3_fix-CVE-2026-97688.patch':
+             '2a11105479aa18060ca394ac0a7e18f446e5ea985bdb783438128cd52476b3f1'},
         ],
     }),
     ('charset-normalizer', '3.4.7', {
