@@ -18,11 +18,14 @@ exts_list = [
     ('soupsieve', '2.8.3', {
         'patches': [
             'soupsieve-2.8.3_fix-CVE-2026-49477.patch',
+            'soupsieve-2.8.3_fix-CVE-2026-49476.patch',
         ],
         'checksums': [
             '3267f1eeea4251fb42728b6dfb746edc9acaffc4a45b27e19450b676586e8349',
             {'soupsieve-2.8.3_fix-CVE-2026-49477.patch':
              '541eb0c6745590e93549ad6bc995d50cb132add7611eb1cf8b12d0f343f76561'},
+            {'soupsieve-2.8.3_fix-CVE-2026-49476.patch':
+             '7451f799ac6832e6c4352e108fe6474a04a92a523b4a8a5aff4afadc5b4dfff4'},
         ],
     }),
     ('beautifulsoup4', version, {
