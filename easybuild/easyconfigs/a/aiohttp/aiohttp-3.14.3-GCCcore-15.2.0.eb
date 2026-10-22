@@ -62,7 +62,19 @@ exts_list = [
             'aiohttp-3.14.3_fix-CVE-2026-111748.patch',
             'aiohttp-3.14.3_fix-CVE-2026-111063.patch',
             'aiohttp-3.14.3_fix-CVE-2026-111064.patch',
+            'aiohttp-3.14.3_fix-GHSA-2g87-pp6c-29x5-more.patch',
         ],
+        # The sdist ships 3.14.3 copies of _http_parser.c and reader_c.c, and
+        # setup.py compiles those. Rebuild them from the patched sources.
+        # reader_c.pxd is paired with the reader_c module name, so the patched
+        # reader_py.py is copied onto reader_c.py before Cython runs.
+        'preinstallopts': (
+            'cython -3 -X freethreading_compatible=True -I aiohttp -Werror '
+            '-o aiohttp/_http_parser.c aiohttp/_http_parser.pyx && '
+            'cp aiohttp/_websocket/reader_py.py aiohttp/_websocket/reader_c.py && '
+            'cython -3 -X freethreading_compatible=True -I aiohttp -Werror '
+            '-o aiohttp/_websocket/reader_c.c aiohttp/_websocket/reader_c.py && '
+        ),
         'checksums': [
             '9491196535a88924a60afd5b5f434b5b203b6cc616250878dbdb223a8f7844bc',
             {'aiohttp-3.14.3_fix-GHSA-2g87-pp6c-29x5.patch':
@@ -81,6 +93,8 @@ exts_list = [
              'a050363278af54d40e04e78a60fa7770bd6343e54e149c3c2ecdadad81fc2ff8'},
             {'aiohttp-3.14.3_fix-CVE-2026-111064.patch':
              '6d13ae5ebe5c7244099da391ac6c2c71d87769f48a8882f371a7fdf82434e738'},
+            {'aiohttp-3.14.3_fix-GHSA-2g87-pp6c-29x5-more.patch':
+             'b898b9cfafcfb1d844a71100da9d85ad9636534986ef61704f9f2be0a8be4949'},
         ],
     }),
     ('aioitertools', '0.13.0', {
@@ -92,6 +106,30 @@ exts_list = [
     ('aiobotocore', '3.9.1', {
         'checksums': ['617d4a78da5adb6ae7d532835727ad388f73555f2ef129b9de1b1add73a43ee6'],
     }),
+]
+
+sanity_check_commands = [
+    "python -c 'import asyncio\n"
+    "from aiohttp._http_parser import HttpRequestParser\n"
+    "from aiohttp.http_exceptions import InvalidURLError\n"
+    "\n"
+    "class Proto:\n"
+    "    def pause_reading(self, *a, **k):\n"
+    "        return None\n"
+    "    def resume_reading(self, *a, **k):\n"
+    "        return None\n"
+    "\n"
+    "loop = asyncio.new_event_loop()\n"
+    "parser = HttpRequestParser(Proto(), loop, 65536)\n"
+    "data = b\"GET http:///evil HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n\"\n"
+    "try:\n"
+    "    parser.feed_data(data)\n"
+    "except InvalidURLError:\n"
+    "    pass\n"
+    "else:\n"
+    "    raise SystemExit(1)\n"
+    "if HttpRequestParser.__module__ != \"aiohttp._http_parser\":\n"
+    "    raise SystemExit(1)'",
 ]
 
 moduleclass = 'lib'

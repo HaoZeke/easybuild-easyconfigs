@@ -1,0 +1,827 @@
+fix for GHSA-2g87-pp6c-29x5 (message-tail limit, websocket reader memory stall, form-field cap, cookie caps, and domain-mask ReDoS)
+
+The five commits below did not apply with fuzz 0 on 3.14.3. This patch keeps
+only the hunks that impose the advisory limits. yarl 1.24.5 has no
+query_to_pairs, so client_max_fields is a fixed cap of 1000. The cookie-parser
+and cookie-jar rewrites in 6963ee0b depend on storage changes that are not in
+3.14.3; the same numeric limits are applied to the existing parsers, and a new
+cookie past the cap is dropped rather than evicted by LRU.
+
+see https://github.com/aio-libs/aiohttp/commit/3d850ee9b92573c7e913821cbcb96005beb3f4df
+see https://github.com/aio-libs/aiohttp/commit/0ae507423f681161efa77d20052b4054397c7fb6
+see https://github.com/aio-libs/aiohttp/commit/615fec3d4f088f30d2ee72cad760152e92aa1c53
+see https://github.com/aio-libs/aiohttp/commit/6963ee0befec1502b6bb7b4db6c72d044c08f4fa
+see https://github.com/aio-libs/aiohttp/commit/c6ac0e44c3c573ff9616f4a6a532992538b31e43
+
+author: Rohit Goswami (HaoZeke)
+
+diff --git a/aiohttp/_cookie_helpers.py b/aiohttp/_cookie_helpers.py
+--- a/aiohttp/_cookie_helpers.py
++++ b/aiohttp/_cookie_helpers.py
+@@ -44,6 +44,19 @@
+     ("secure", "httponly", "partitioned")
+ )
+ 
++# Implementation limits as permitted by RFC 6265 Section 6.1.
++# The 6963ee0b parser rewrite does not apply on 3.14.3; these caps sit on
++# the existing regex parser instead.
++_MAX_COOKIES_PER_RESPONSE = 50
++_MAX_COOKIE_PAIRS = 150
++_MAX_COOKIE_PAIR_LENGTH = 4096
++_MAX_COOKIE_ATTRIBUTE_VALUE_LENGTH = 1024
++_MAX_COOKIE_ATTRIBUTES = 32
++_MAX_SET_COOKIE_HEADER_LENGTH = (
++    _MAX_COOKIE_PAIR_LENGTH
++    + _MAX_COOKIE_ATTRIBUTES * (_MAX_COOKIE_ATTRIBUTE_VALUE_LENGTH + 64)
++)
++
+ # SimpleCookie's pattern for parsing cookies with relaxed validation
+ # Based on http.cookies pattern but extended to allow more characters in cookie names
+ # to handle real-world cookies (fixes #2683)
+@@ -186,6 +199,8 @@
+     """
+     if not header:
+         return []
++    if len(header) > _MAX_COOKIE_PAIRS * _MAX_COOKIE_PAIR_LENGTH:
++        return []
+ 
+     cookies: list[tuple[str, Morsel[str]]] = []
+     morsel: Morsel[str]
+@@ -194,6 +209,8 @@
+ 
+     invalid_names = []
+     while i < n:
++        if len(cookies) >= _MAX_COOKIE_PAIRS:
++            break
+         # Use the same pattern as parse_set_cookie_headers to find cookies
+         match = _COOKIE_PATTERN.match(header, i)
+         if not match:
+@@ -205,6 +222,9 @@
+             # Try to extract key=value if '=' comes before ';'
+             if eq_pos != -1 and (next_semi == -1 or eq_pos < next_semi):
+                 end_pos = next_semi if next_semi != -1 else n
++                if end_pos - i > _MAX_COOKIE_PAIR_LENGTH:
++                    i = next_semi + 1 if next_semi != -1 else n
++                    continue
+                 key = header[i:eq_pos].strip()
+                 value = header[eq_pos + 1 : end_pos].strip()
+ 
+@@ -233,6 +253,8 @@
+         key = match.group("key")
+         value = match.group("val") or ""
+         i = match.end(0)
++        if len(key) + 1 + len(value) > _MAX_COOKIE_PAIR_LENGTH:
++            continue
+ 
+         # Validate the name
+         if not key or not _COOKIE_NAME_RE.match(key):
+@@ -285,7 +307,9 @@
+     parsed_cookies: list[tuple[str, Morsel[str]]] = []
+ 
+     for header in headers:
+-        if not header:
++        if len(parsed_cookies) >= _MAX_COOKIES_PER_RESPONSE:
++            break
++        if not header or len(header) > _MAX_SET_COOKIE_HEADER_LENGTH:
+             continue
+ 
+         # Parse cookie string using SimpleCookie's algorithm
+@@ -293,6 +317,7 @@
+         n = len(header)
+         current_morsel: Morsel[str] | None = None
+         morsel_seen = False
++        attr_count = 0
+ 
+         while 0 <= i < n:
+             # Start looking for a cookie
+@@ -319,6 +344,15 @@
+                 if not morsel_seen:
+                     # Invalid cookie string - attribute before cookie
+                     break
++                attr_count += 1
++                if attr_count > _MAX_COOKIE_ATTRIBUTES:
++                    break
++                if (
++                    value
++                    and len(value) > _MAX_COOKIE_ATTRIBUTE_VALUE_LENGTH
++                    and lower_key not in _COOKIE_BOOL_ATTRS
++                ):
++                    continue
+                 if lower_key in _COOKIE_BOOL_ATTRS:
+                     # Boolean attribute with any value should be True
+                     if current_morsel is not None and current_morsel.isReservedKey(key):
+@@ -331,6 +365,11 @@
+                     current_morsel[lower_key] = _unquote(value)
+             elif value is not None:
+                 # This is a cookie name=value pair
++                if len(parsed_cookies) >= _MAX_COOKIES_PER_RESPONSE:
++                    break
++                if len(key) + 1 + len(value) > _MAX_COOKIE_PAIR_LENGTH:
++                    current_morsel = None
++                    continue
+                 # Validate the name
+                 if key in _COOKIE_KNOWN_ATTRS or not _COOKIE_NAME_RE.match(key):
+                     internal_logger.warning(
+@@ -354,6 +393,7 @@
+                     else:
+                         parsed_cookies.append((key, current_morsel))
+                         morsel_seen = True
++                        attr_count = 0
+             else:
+                 # Invalid cookie string - no value for non-attribute
+                 break
+diff --git a/aiohttp/_websocket/reader_c.pxd b/aiohttp/_websocket/reader_c.pxd
+--- a/aiohttp/_websocket/reader_c.pxd
++++ b/aiohttp/_websocket/reader_c.pxd
+@@ -37,11 +37,13 @@
+ cdef tuple EMPTY_FRAME
+ cdef tuple EMPTY_FRAME_ERROR
+ 
++cdef unsigned int MSG_SIZE_OVERHEAD
++
+ cdef class WebSocketDataQueue:
+ 
+-    cdef unsigned int _size
++    cdef readonly unsigned int _size
+     cdef public object _protocol
+-    cdef unsigned int _limit
++    cdef readonly unsigned int _limit
+     cdef object _loop
+     cdef bint _eof
+     cdef object _waiter
+@@ -49,6 +51,7 @@
+     cdef public object _buffer
+     cdef object _get_buffer
+     cdef object _put_buffer
++    cdef readonly object _stalled_reader
+ 
+     cdef void _release_waiter(self)
+ 
+@@ -59,6 +62,11 @@
+ 
+ cdef class WebSocketReader:
+ 
++    # cdef classes are not weak-referenceable without this; the queue parks a
++    # weakref here while parsing is stalled.
++    cdef object __weakref__
++    cdef object _weak_self
++
+     cdef WebSocketDataQueue queue
+     cdef unsigned int _max_msg_size
+     cdef bint _decode_text
+diff --git a/aiohttp/_websocket/reader_py.py b/aiohttp/_websocket/reader_py.py
+--- a/aiohttp/_websocket/reader_py.py
++++ b/aiohttp/_websocket/reader_py.py
+@@ -2,12 +2,14 @@
+ 
+ import asyncio
+ import builtins
++import weakref
+ from collections import deque
+ from typing import Final
+ 
+ from ..base_protocol import BaseProtocol
+ from ..compression_utils import TooManyMembersError, ZLibDecompressor
+ from ..helpers import _EXC_SENTINEL, set_exception
++from ..log import ws_logger
+ from ..streams import EofStream
+ from .helpers import UNPACK_CLOSE_CODE, UNPACK_LEN3, websocket_mask
+ from .models import (
+@@ -49,6 +51,15 @@
+ 
+ TUPLE_NEW = tuple.__new__
+ 
++# Overhead added to each message to ensure that tiny messages can't use
++# unreasonable amounts of memory.
++MSG_SIZE_OVERHEAD: Final[int] = 128
++
++STALLED_READER_COLLECTED: Final[str] = (
++    "WebSocketReader was garbage collected while stalled; "
++    "callers of set_parser() must hold a strong reference"
++)
++
+ cython_int = int  # Typed to int in Python, but cython with use a signed int in the pxd
+ 
+ 
+@@ -71,6 +82,7 @@
+         self._buffer: deque[tuple[WSMessage | WSMessageTextBytes, int]] = deque()
+         self._get_buffer = self._buffer.popleft
+         self._put_buffer = self._buffer.append
++        self._stalled_reader: "weakref.ref[WebSocketReader] | None" = None
+ 
+     def is_eof(self) -> bool:
+         return self._eof
+@@ -104,7 +116,7 @@
+     def feed_data(
+         self, data: "WSMessage | WSMessageTextBytes", size: "cython_int"
+     ) -> None:
+-        self._size += size
++        self._size += size + MSG_SIZE_OVERHEAD
+         self._put_buffer((data, size))
+         self._release_waiter()
+         if self._size > self._limit and not self._protocol._reading_paused:
+@@ -124,8 +136,33 @@
+     def _read_from_buffer(self) -> WSMessage | WSMessageTextBytes:
+         if self._buffer:
+             data, size = self._get_buffer()
+-            self._size -= size
+-            if self._size < self._limit and self._protocol._reading_paused:
++            self._size -= size + MSG_SIZE_OVERHEAD
++            if self._stalled_reader is not None and self._size <= self._limit // 2:
++                # Resume parsing once the queue drains to the low-water mark.
++                # Each resume re-slices the parser's unparsed tail, so waiting
++                # for headroom makes a drain cost one copy per batch of
++                # messages instead of one per message.
++                if (reader := self._stalled_reader()) is not None:
++                    reader.feed_data(b"")
++                else:
++                    # The stash died with the reader. Deliver what was already
++                    # queued, then surface the contract violation on the next
++                    # read instead of hanging. Log as well, since a caller that
++                    # stops reading early never sees the deferred exception. A
++                    # real failure that was already recorded stays the reported
++                    # cause.
++                    self._stalled_reader = None
++                    ws_logger.warning(STALLED_READER_COLLECTED)
++                    if self._exception is None:
++                        self.set_exception(RuntimeError(STALLED_READER_COLLECTED))
++            # Resuming the transport while a stash remains would admit
++            # another socket read into the tail for every couple of messages
++            # drained, moving the memory bound from the queue into the tail.
++            if (
++                self._stalled_reader is None
++                and self._size < self._limit
++                and self._protocol._reading_paused
++            ):
+                 self._protocol.resume_reading()
+             return data
+         if self._exception is not None:
+@@ -144,6 +181,9 @@
+         self.queue = queue
+         self._max_msg_size = max_msg_size
+         self._decode_text = decode_text
++        # Parked on the queue while parsing is stalled; created once so
++        # stalling does not allocate.
++        self._weak_self = weakref.ref(self)
+ 
+         self._exc: Exception | None = None
+         self._partial = bytearray()
+@@ -336,6 +376,7 @@
+ 
+     def _feed_data(self, data: bytes) -> None:
+         """Return the next frame from the socket."""
++        self.queue._stalled_reader = None
+         if self._tail:
+             data, self._tail = self._tail + data, b""
+ 
+@@ -344,6 +385,14 @@
+         data_cstr = data
+ 
+         while True:
++            if start_pos < data_len and self.queue._size > self.queue._limit:
++                # Over the high-water mark with unparsed bytes left: stash the
++                # remainder and stall. Gating on unparsed bytes keeps a read
++                # that ended on a frame boundary from arming an empty stall,
++                # which would hold the transport paused with nothing to drain.
++                self.queue._stalled_reader = self._weak_self
++                break
++
+             # read header
+             if self._state == READ_HEADER:
+                 if data_len - start_pos < 2:
+diff --git a/aiohttp/client.py b/aiohttp/client.py
+--- a/aiohttp/client.py
++++ b/aiohttp/client.py
+@@ -1380,14 +1380,14 @@
+                 compress=compress,
+                 client_notakeover=notakeover,
+             )
+-            parser = WebSocketReader(
++            ws_resp._parser = WebSocketReader(
+                 reader,
+                 max_msg_size,
+                 compress=bool(compress),
+                 decode_text=decode_text,
+             )
+             cb = None if heartbeat is None else ws_resp._on_data_received
+-            conn_proto.set_parser(parser, reader, data_received_cb=cb)
++            conn_proto.set_parser(ws_resp._parser, reader, data_received_cb=cb)
+             return ws_resp
+ 
+     def _prepare_headers(self, headers: LooseHeaders | None) -> "CIMultiDict[str]":
+diff --git a/aiohttp/client_ws.py b/aiohttp/client_ws.py
+--- a/aiohttp/client_ws.py
++++ b/aiohttp/client_ws.py
+@@ -8,7 +8,7 @@
+ 
+ import attr
+ 
+-from ._websocket.reader import WebSocketDataQueue
++from ._websocket.reader import WebSocketDataQueue, WebSocketReader
+ from .client_exceptions import ClientError, ServerTimeoutError, WSMessageTypeError
+ from .client_reqrep import ClientResponse
+ from .helpers import calculate_timeout_when, set_result
+@@ -79,6 +79,10 @@
+ 
+         self._writer = writer
+         self._reader = reader
++        # Set by ClientSession._ws_connect; owns the parser so a stalled
++        # reader parked on the queue by weakref stays alive while this
++        # response can still be drained.
++        self._parser: WebSocketReader | None = None
+         self._protocol = protocol
+         self._closed = False
+         self._closing = False
+@@ -216,6 +220,8 @@
+         if self._closed:
+             return
+         self._set_closed()
++        # close() is never reached after this; release the parser here.
++        self._parser = None
+         self._close_code = WSCloseCode.ABNORMAL_CLOSURE
+         self._exception = exc
+         self._response.close()
+@@ -333,25 +339,8 @@
+ 
+         self._set_closed()
+         try:
+-            await self._writer.close(code, message)
+-        except asyncio.CancelledError:
+-            self._close_code = WSCloseCode.ABNORMAL_CLOSURE
+-            self._response.close()
+-            raise
+-        except Exception as exc:
+-            self._close_code = WSCloseCode.ABNORMAL_CLOSURE
+-            self._exception = exc
+-            self._response.close()
+-            return True
+-
+-        if self._close_code:
+-            self._response.close()
+-            return True
+-
+-        while True:
+             try:
+-                async with async_timeout.timeout(self._timeout.ws_close):
+-                    msg = await self._reader.read()
++                await self._writer.close(code, message)
+             except asyncio.CancelledError:
+                 self._close_code = WSCloseCode.ABNORMAL_CLOSURE
+                 self._response.close()
+@@ -362,11 +351,33 @@
+                 self._response.close()
+                 return True
+ 
+-            if msg.type is WSMsgType.CLOSE:
+-                self._close_code = msg.data
++            if self._close_code:
+                 self._response.close()
+                 return True
+ 
++            while True:
++                try:
++                    async with async_timeout.timeout(self._timeout.ws_close):
++                        msg = await self._reader.read()
++                except asyncio.CancelledError:
++                    self._close_code = WSCloseCode.ABNORMAL_CLOSURE
++                    self._response.close()
++                    raise
++                except Exception as exc:
++                    self._close_code = WSCloseCode.ABNORMAL_CLOSURE
++                    self._exception = exc
++                    self._response.close()
++                    return True
++
++                if msg.type is WSMsgType.CLOSE:
++                    self._close_code = msg.data
++                    self._response.close()
++                    return True
++        finally:
++            # Once closed the response can no longer be drained; release the
++            # parser and the stash it retains.
++            self._parser = None
++
+     @overload
+     async def receive(
+         self: "ClientWebSocketResponse[Literal[True]]", timeout: float | None = None
+@@ -421,7 +432,10 @@
+                 await self.close()
+                 return WSMessage(WSMsgType.CLOSED, None, None)
+             except ClientError:
+-                # Likely ServerDisconnectedError when connection is lost
++                # Likely ServerDisconnectedError when connection is lost.
++                # close() is not called on this path, so release the parser
++                # and the stash it retains here.
++                self._parser = None
+                 self._set_closed()
+                 self._close_code = WSCloseCode.ABNORMAL_CLOSURE
+                 return WS_CLOSED_MESSAGE
+diff --git a/aiohttp/cookiejar.py b/aiohttp/cookiejar.py
+--- a/aiohttp/cookiejar.py
++++ b/aiohttp/cookiejar.py
+@@ -39,6 +39,14 @@
+ _MIN_SCHEDULED_COOKIE_EXPIRATION = 100
+ _SIMPLE_COOKIE = SimpleCookie()
+ 
++# Same numbers as 6963ee0b. That commit's LRU jar rewrite (access generations,
++# morsel-cache tuple entries) is not in 3.14.3, so a new cookie past the cap
++# is dropped instead of evicting the least recently used one.
++_MAX_COOKIES_PER_DOMAIN = 180
++_MAX_COOKIES_TOTAL = 3300
++_MAX_COOKIES_PER_REQUEST = 150
++_MAX_COOKIE_HEADER_LENGTH = 8190
++
+ # Not persisted; the absolute deadline is saved instead.
+ _RELATIVE_EXPIRY_ATTRS = frozenset(("max-age", "expires"))
+ 
+@@ -448,6 +456,16 @@
+                     cookie["expires"] = ""
+ 
+             key = (domain, path)
++            jar = self._cookies.get(key)
++            replacing = jar is not None and name in jar
++            if not replacing:
++                if len(self) >= _MAX_COOKIES_TOTAL:
++                    continue
++                domain_count = sum(
++                    len(stored) for (dom, _), stored in self._cookies.items() if dom == domain
++                )
++                if domain_count >= _MAX_COOKIES_PER_DOMAIN:
++                    continue
+             if self._cookies[key].get(name) != cookie:
+                 # Don't blow away the cache if the same
+                 # cookie gets set again
+@@ -478,6 +496,20 @@
+             )
+             request_url = URL(request_url)
+         hostname = request_url.raw_host or ""
++        sent = 0
++        header_len = 0
++
++        def _accept(name: str, morsel: Morsel[str]) -> bool:
++            nonlocal sent, header_len
++            if sent >= _MAX_COOKIES_PER_REQUEST:
++                return False
++            piece = len(name) + 1 + len(morsel.coded_value or morsel.value)
++            extra = 2 if sent else 0
++            if header_len + extra + piece > _MAX_COOKIE_HEADER_LENGTH:
++                return False
++            header_len += extra + piece
++            sent += 1
++            return True
+ 
+         is_not_secure = request_url.scheme not in ("https", "wss")
+         if is_not_secure and self._treat_as_secure_origin:
+@@ -494,12 +526,13 @@
+ 
+             # Check cache first
+             if c.key in self._morsel_cache[key]:
+-                filtered[c.key] = self._morsel_cache[key][c.key]
+-                continue
+-
+-            # Build and cache the morsel
+-            mrsl_val = self._build_morsel(c)
+-            self._morsel_cache[key][c.key] = mrsl_val
++                mrsl_val = self._morsel_cache[key][c.key]
++            else:
++                # Build and cache the morsel
++                mrsl_val = self._build_morsel(c)
++                self._morsel_cache[key][c.key] = mrsl_val
++            if not _accept(c.key, mrsl_val):
++                return filtered
+             filtered[c.key] = mrsl_val
+ 
+         if is_ip_address(hostname):
+@@ -537,12 +570,13 @@
+ 
+                 # We already built the Morsel so reuse it here
+                 if name in self._morsel_cache[p]:
+-                    filtered[name] = self._morsel_cache[p][name]
+-                    continue
+-
+-                # Build and cache the morsel
+-                mrsl_val = self._build_morsel(cookie)
+-                self._morsel_cache[p][name] = mrsl_val
++                    mrsl_val = self._morsel_cache[p][name]
++                else:
++                    # Build and cache the morsel
++                    mrsl_val = self._build_morsel(cookie)
++                    self._morsel_cache[p][name] = mrsl_val
++                if not _accept(name, mrsl_val):
++                    return filtered
+                 filtered[name] = mrsl_val
+ 
+         return filtered
+diff --git a/aiohttp/web_protocol.py b/aiohttp/web_protocol.py
+--- a/aiohttp/web_protocol.py
++++ b/aiohttp/web_protocol.py
+@@ -154,6 +154,7 @@
+         "_msg_queue_resume_size",
+         "_msg_queue_paused",
+         "_message_tail",
++        "_read_bufsize",
+         "_handler_waiter",
+         "_waiter",
+         "_task_handler",
+@@ -197,6 +198,7 @@
+         # Low-water mark: resume reading once the queue drains to half the limit
+         # so we refill in batches instead of churning pause/resume per request.
+         self._msg_queue_resume_size = MAX_MSG_QUEUE_SIZE // 2
++        self._read_bufsize = read_bufsize
+         # Set before super().__init__ so _reading_paused_for_msg_queue() is safe
+         # if BaseProtocol ever triggers a resume during init.
+         self._msg_queue_paused = False
+@@ -425,6 +427,9 @@
+             self._payload_parser.feed_data(self._message_tail)
+             self._message_tail = b""
+ 
++        if self._msg_queue_paused:
++            self._resume_msg_queue_reading()
++
+     def eof_received(self) -> None:
+         pass
+ 
+@@ -468,6 +473,11 @@
+         # no parser, just store
+         elif self._payload_parser is None and self._upgraded and data:
+             self._message_tail += data
++            if (
++                not self._msg_queue_paused
++                and len(self._message_tail) >= self._read_bufsize
++            ):
++                self._pause_msg_queue_reading()
+ 
+         # feed payload
+         elif data:
+@@ -491,6 +501,10 @@
+                 pass
+ 
+     def _resume_msg_queue_reading(self) -> None:
++        # Tested empty-first so a read_bufsize of 0 cannot wedge the connection.
++        if self._message_tail and len(self._message_tail) >= self._read_bufsize:
++            return
++
+         if not self._upgraded:
+             # Reparse buffered pipelined requests while still marked paused so
+             # a refill past the limit does not re-pause an already-paused
+@@ -775,17 +789,39 @@
+             self._parser.set_upgraded(False)
+             self._upgraded = False
+             if self._message_tail:
+-                messages, _upgraded, tail = self._parser.feed_data(self._message_tail)
++                messages: Sequence[_MsgType]
++                try:
++                    messages, upgraded, tail = self._parser.feed_data(
++                        self._message_tail
++                    )
++                except HttpProcessingError as parse_exc:
++                    # Garbage (or an oversized request line) buffered behind the
++                    # upgrade: answer 400 instead of letting the error escape
++                    # and lose this response, like data_received() does.
++                    messages = [
++                        (
++                            _ErrInfo(
++                                status=400,
++                                exc=parse_exc,
++                                message=parse_exc.message,
++                            ),
++                            EMPTY_PAYLOAD,
++                        )
++                    ]
++                    upgraded = False
++                    tail = b""
++                # A further upgrade request in the tail buffers its own remainder.
++                self._upgraded = upgraded
+                 self._message_tail = tail
+                 for msg, payload in messages:
+                     self._request_count += 1
+                     self._messages.append((msg, payload))
+-                # Pause the transport, like in data_received().
+-                if (
+-                    not self._msg_queue_paused
+-                    and len(self._messages) >= self._max_msg_queue_size
+-                ):
++                if len(self._messages) >= self._max_msg_queue_size:
++                    # Pause the transport, like in data_received().
+                     self._pause_msg_queue_reading()
++                elif self._msg_queue_paused:
++                    # Resume reading now the tail has been parsed.
++                    self._resume_msg_queue_reading()
+                 # This shouldn't be possible. If a future refactor results in this
+                 # failing, then the code may need to be updated to set the waiter.
+                 assert self._waiter is None
+diff --git a/aiohttp/web_request.py b/aiohttp/web_request.py
+--- a/aiohttp/web_request.py
++++ b/aiohttp/web_request.py
+@@ -134,6 +134,18 @@
+ # HTTP Request
+ ############################################################
+ 
++# Same default as upstream client_max_fields. yarl 1.24.5 has no
++# query_to_pairs(..., max_fields=), and Application.client_max_fields is not
++# in 3.14.3, so the cap is fixed here.
++_MAX_FORM_FIELDS: Final[int] = 1000
++
++
++def _too_many_fields() -> HTTPRequestEntityTooLarge:
++    return HTTPRequestEntityTooLarge(
++        _MAX_FORM_FIELDS,
++        text=f"Maximum number of form fields {_MAX_FORM_FIELDS} exceeded.",
++    )
++
+ 
+ class BaseRequest(MutableMapping[str | RequestKey[Any], Any], HeadersMixin):
+     POST_METHODS = {
+@@ -796,6 +808,8 @@
+                 # overhead without entering the loop and the check below.
+                 if 0 < max_size < payload.total_bytes:
+                     raise HTTPRequestEntityTooLarge(max_size)
++                if len(out) >= _MAX_FORM_FIELDS:
++                    raise _too_many_fields()
+ 
+                 field_ct = field.headers.get(hdrs.CONTENT_TYPE)
+ 
+@@ -874,6 +888,9 @@
+         else:
+             data = await self.read()
+             if data:
++                # Count separators before parse_qsl allocates a pair per field.
++                if data.count(b"&") + 1 > _MAX_FORM_FIELDS:
++                    raise _too_many_fields()
+                 charset = self.charset or "utf-8"
+                 out.extend(
+                     parse_qsl(
+diff --git a/aiohttp/web_urldispatcher.py b/aiohttp/web_urldispatcher.py
+--- a/aiohttp/web_urldispatcher.py
++++ b/aiohttp/web_urldispatcher.py
+@@ -1,6 +1,7 @@
+ import abc
+ import asyncio
+ import base64
++import fnmatch
+ import functools
+ import hashlib
+ import html
+@@ -840,15 +841,23 @@
+ 
+     def __init__(self, domain: str) -> None:
+         super().__init__(domain)
+-        mask = self._domain.replace(".", r"\.").replace("*", ".*")
+-        self._mask = re.compile(mask)
++        # canonical stays the historical pattern string. Matching uses
++        # fnmatch.translate, which does not stack overlapping ".*".
++        # 3.14.3 compiles replace("*", ".*"), not the "[^:]*" form in
++        # c6ac0e44, so that hunk does not apply.
++        self._pattern = self._domain.replace(".", r"\.").replace("*", ".*")
++        host_mask, _, self._port = self._domain.partition(":")
++        self._mask = re.compile(fnmatch.translate(host_mask))
+ 
+     @property
+     def canonical(self) -> str:
+-        return self._mask.pattern
++        return self._pattern
+ 
+     def match_domain(self, host: str) -> bool:
+-        return self._mask.fullmatch(host) is not None
++        hostname, _, port = host.partition(":")
++        if self._port and port != self._port:
++            return False
++        return self._mask.match(hostname) is not None
+ 
+ 
+ class MatchedSubAppResource(PrefixedSubAppResource):
+diff --git a/aiohttp/web_ws.py b/aiohttp/web_ws.py
+--- a/aiohttp/web_ws.py
++++ b/aiohttp/web_ws.py
+@@ -89,6 +89,7 @@
+     _ws_protocol: str | None = None
+     _writer: WebSocketWriter | None = None
+     _reader: WebSocketDataQueue | None = None
++    _parser: WebSocketReader | None = None
+     _closed: bool = False
+     _closing: bool = False
+     _conn_lost: int = 0
+@@ -250,6 +251,8 @@
+         if self._closed:
+             return
+         self._set_closed()
++        # close() is never reached after this; release the parser here.
++        self._parser = None
+         self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
+         self._exception = exc
+         if self._waiting and not self._closing and self._reader is not None:
+@@ -394,14 +397,16 @@
+         self._reader = WebSocketDataQueue(
+             request._protocol, DEFAULT_CHUNK_SIZE, loop=loop
+         )
+-        parser = WebSocketReader(
++        # Owns the parser so a stalled reader parked on the queue by weakref
++        # stays alive while this response can still be drained.
++        self._parser = WebSocketReader(
+             self._reader,
+             self._max_msg_size,
+             compress=bool(self._compress),
+             decode_text=self._decode_text,
+         )
+         cb = None if self._heartbeat is None else self._on_data_received
+-        request.protocol.set_parser(parser, data_received_cb=cb)
++        request.protocol.set_parser(self._parser, data_received_cb=cb)
+         # disable HTTP keepalive for WebSocket
+         request.protocol.keep_alive(False)
+ 
+@@ -530,48 +535,53 @@
+         self._set_closed()
+ 
+         try:
+-            await self._writer.close(code, message)
+-            writer = self._payload_writer
+-            assert writer is not None
+-            if drain:
+-                await writer.drain()
+-        except (asyncio.CancelledError, asyncio.TimeoutError):
+-            self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
+-            raise
+-        except Exception as exc:
+-            self._exception = exc
+-            self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
+-            return True
+-
+-        reader = self._reader
+-        assert reader is not None
+-        # we need to break `receive()` cycle before we can call
+-        # `reader.read()` as `close()` may be called from different task
+-        if self._waiting:
+-            assert self._loop is not None
+-            assert self._close_wait is None
+-            self._close_wait = self._loop.create_future()
+-            reader.feed_data(WS_CLOSING_MESSAGE, 0)
+-            await self._close_wait
+-
+-        if self._closing:
+-            self._close_transport()
+-            return True
+-
+-        try:
+-            async with async_timeout.timeout(self._timeout):
+-                while True:
+-                    msg = await reader.read()
+-                    if msg.type is WSMsgType.CLOSE:
+-                        self._set_code_close_transport(msg.data)
+-                        return True
+-        except asyncio.CancelledError:
+-            self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
+-            raise
+-        except Exception as exc:
+-            self._exception = exc
+-            self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
+-            return True
++            try:
++                await self._writer.close(code, message)
++                writer = self._payload_writer
++                assert writer is not None
++                if drain:
++                    await writer.drain()
++            except (asyncio.CancelledError, asyncio.TimeoutError):
++                self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
++                raise
++            except Exception as exc:
++                self._exception = exc
++                self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
++                return True
++
++            reader = self._reader
++            assert reader is not None
++            # we need to break `receive()` cycle before we can call
++            # `reader.read()` as `close()` may be called from different task
++            if self._waiting:
++                assert self._loop is not None
++                assert self._close_wait is None
++                self._close_wait = self._loop.create_future()
++                reader.feed_data(WS_CLOSING_MESSAGE, 0)
++                await self._close_wait
++
++            if self._closing:
++                self._close_transport()
++                return True
++
++            try:
++                async with async_timeout.timeout(self._timeout):
++                    while True:
++                        msg = await reader.read()
++                        if msg.type is WSMsgType.CLOSE:
++                            self._set_code_close_transport(msg.data)
++                            return True
++            except asyncio.CancelledError:
++                self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
++                raise
++            except Exception as exc:
++                self._exception = exc
++                self._set_code_close_transport(WSCloseCode.ABNORMAL_CLOSURE)
++                return True
++        finally:
++            # Once closed the response can no longer be drained; release the
++            # parser and the stash it retains.
++            self._parser = None
+ 
+     def _set_closing(self, code: WSCloseCode) -> None:
+         """Set the close code and mark the connection as closing."""
