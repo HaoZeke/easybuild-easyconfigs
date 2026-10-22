@@ -12,7 +12,11 @@ toolchainopts = {'pic': True}
 
 source_urls = ['https://www.cpan.org/src/%(version_major)s.0']
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['e093ef184d7f9a1b9797e2465296f55510adb6dab8842b0c3ed53329663096dc']
+patches = ['Perl-5.42.0_fix-CVE-2026-4176.patch']
+checksums = [
+    {'perl-5.42.0.tar.gz': 'e093ef184d7f9a1b9797e2465296f55510adb6dab8842b0c3ed53329663096dc'},
+    {'Perl-5.42.0_fix-CVE-2026-4176.patch': '38a057451f1a850a91e4db345f46aef317fd686d2892ea74f905ac69b0fc93aa'},
+]
 
 builddependencies = [
     ('binutils', '2.45'),
