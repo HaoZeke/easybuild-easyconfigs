@@ -64,7 +64,14 @@ exts_list = [
         'checksums': ['398329ad4837b2ff7cbe1dd166a4c0f8900c3ca3a218de04466f38f6497f18a2'],
     }),
     ('idna', '3.11', {
-        'checksums': ['795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902'],
+        'patches': [
+            'idna-3.11_fix-CVE-2026-45409.patch',
+        ],
+        'checksums': [
+            {'idna-3.11.tar.gz': '795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902'},
+            {'idna-3.11_fix-CVE-2026-45409.patch':
+             'f471f076e5d17f3137f8fa219406761d01598e6ef431582500b84eeb00b23620'},
+        ],
     }),
     ('anyio', '4.13.0', {
         'patches': [
