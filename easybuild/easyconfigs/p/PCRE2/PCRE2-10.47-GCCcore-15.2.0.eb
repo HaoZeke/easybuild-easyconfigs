@@ -16,10 +16,12 @@ source_urls = ['https://github.com/PCRE2Project/%(namelower)s/releases/download/
 sources = [SOURCELOWER_TAR_GZ]
 patches = [
     'PCRE2-10.47_fix-CVE-2026-89156.patch',
+    'PCRE2-10.47_fix-CVE-2026-89157.patch',
 ]
 checksums = [
     'c08ae2388ef333e8403e670ad70c0a11f1eed021fd88308d7e02f596fcd9dc16',
     '5990ba6914d256ccee11376f404ee8997aa6d7738e2393bffff5ac5299524956',
+    '9d7ae60975bd0054a15eab7a4cdffccc509540449114804ecec1aa4db6f5f95f',
 ]
 
 builddependencies = [('binutils', '2.45')]
