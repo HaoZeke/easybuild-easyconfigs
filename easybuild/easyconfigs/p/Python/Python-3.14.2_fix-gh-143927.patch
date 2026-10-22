@@ -1,0 +1,19 @@
+# Normalize CR, CRLF and LF when writing multiline configparser values.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/71f2e02a52d47417a6fd69f456346cd8aa7aca98
+
+diff --git a/Lib/configparser.py b/Lib/configparser.py
+index 18af1eadaa..337ad14290 100644
+--- a/Lib/configparser.py
++++ b/Lib/configparser.py
+@@ -984,7 +984,9 @@ def _write_section(self, fp, section_name, section_items, delimiter, unnamed=Fal
+             value = self._interpolation.before_write(self, section_name, key,
+                                                      value)
+             if value is not None or not self._allow_no_value:
+-                value = delimiter + str(value).replace('\n', '\n\t')
++                # Convert all possible line-endings into '\n\t'
++                value = (delimiter + str(value).replace('\r\n', '\n')
++                         .replace('\r', '\n').replace('\n', '\n\t'))
+             else:
+                 value = ""
+             fp.write("{}{}\n".format(key, value))
