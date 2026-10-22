@@ -367,11 +367,14 @@ exts_list = [
     ('fsspec', '2026.4.0', {
         'patches': [
             'fsspec-2026.4.0_fix-CVE-2026-104851.patch',
+            'fsspec-2026.4.0_fix-CVE-2026-104851-templates.patch',
         ],
         'checksums': [
             {'fsspec-2026.4.0.tar.gz': '301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4'},
             {'fsspec-2026.4.0_fix-CVE-2026-104851.patch':
              'd67ca8faac5247442e497a3bb3b0519f27670a60aa32d512d4202cda4a96f14a'},
+            {'fsspec-2026.4.0_fix-CVE-2026-104851-templates.patch':
+             '123f05731bd8b86530ffb735245ecc1f7a353f56819188f1d485a5934ab8d7fc'},
         ],
     }),
     ('threadpoolctl', '3.6.0', {
