@@ -1,0 +1,20 @@
+# Reject control characters in data: URL media types.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/05356b1cc153108aaf27f3b72ce438af4aa218c0
+
+diff --git a/Lib/urllib/request.py b/Lib/urllib/request.py
+index 566b8087ae..8d7470a227 100644
+--- a/Lib/urllib/request.py
++++ b/Lib/urllib/request.py
+@@ -1634,6 +1634,11 @@ def data_open(self, req):
+         scheme, data = url.split(":",1)
+         mediatype, data = data.split(",",1)
+ 
++        # Disallow control characters within mediatype.
++        if re.search(r"[\x00-\x1F\x7F]", mediatype):
++            raise ValueError(
++                "Control characters not allowed in data: mediatype")
++
+         # even base64 encoded data URLs might be quoted so unquote in any case:
+         data = unquote_to_bytes(data)
+         if mediatype.endswith(";base64"):
