@@ -16,6 +16,7 @@ patches = [
     'LibTIFF-4.7.1_fix-CVE-2026-52491.patch',
     'LibTIFF-4.7.1_fix-CVE-2026-12912.patch',
     'LibTIFF-4.7.1_fix-CVE-2026-36849.patch',
+    'LibTIFF-4.7.1_fix-CVE-2026-52490.patch',
 ]
 checksums = [
     'f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69',
@@ -23,6 +24,7 @@ checksums = [
     '70d0ab328bce68681e2bc09df573118b922648eb2abd08f4c52c58c89ca550e4',
     '30c1613a255ef2f88fcc536cd83fe17a63122994a0f2a7fb1acee17309730f2c',
     '9405cac5d24474e482e0781178f861ceae8ab2c7b6fe43f9d6b159f6f83a50b5',
+    '90095557c19b5e31fe62f89564109ddef362eaddb0b6440d0fc706eafc8d2a49',
 ]
 
 builddependencies = [('binutils', '2.45')]
