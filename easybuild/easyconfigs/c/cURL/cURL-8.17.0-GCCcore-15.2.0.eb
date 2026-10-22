@@ -59,6 +59,7 @@ patches = [
     'cURL-8.17.0_fix-CVE-2026-86414.patch',
     'cURL-8.17.0_fix-CVE-2026-87862.patch',
     'cURL-8.17.0_fix-CVE-2026-87863.patch',
+    'cURL-8.17.0_fix-CVE-2026-87864.patch',
 ]
 checksums = [
     'e8e74cdeefe5fb78b3ae6e90cd542babf788fa9480029cfcee6fd9ced42b7910',
@@ -101,6 +102,7 @@ checksums = [
     'e04b2658a815d033c1fde9de44cfd77d4c00d2b569a998965128a0848f46d0b3',
     'ed0ffd26e85e3d6cedcbf0cc9e3350193a1ef3afd34bf00bf854308ad10095a2',
     '49122c1684ba55328a77469d25a80896bd80fcf105b1023c6a0c584ad77b4064',
+    '896f7517d9645e2f30ebee5de57f150dd201142e2493484edbf9ae192139fc67',
 ]
 
 builddependencies = [
