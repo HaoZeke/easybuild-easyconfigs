@@ -19,7 +19,13 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = ['https://curl.haxx.se/download/']
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['e8e74cdeefe5fb78b3ae6e90cd542babf788fa9480029cfcee6fd9ced42b7910']
+patches = [
+    'cURL-8.17.0_fix-CVE-2025-13034.patch',
+]
+checksums = [
+    'e8e74cdeefe5fb78b3ae6e90cd542babf788fa9480029cfcee6fd9ced42b7910',
+    '47fe0ba80dc8e1dd3aa422a4701f6b5c2c5005914617d819c0789e0811860aed',
+]
 
 builddependencies = [
     ('binutils', '2.45'),
