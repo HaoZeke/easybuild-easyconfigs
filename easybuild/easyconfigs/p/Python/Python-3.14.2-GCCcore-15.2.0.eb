@@ -75,6 +75,7 @@ patches = [
     'Python-3.14.2_fix-gh-143921.patch',
     'Python-3.14.2_fix-CVE-2026-19445.patch',
     'Python-3.14.2_fix-CVE-2026-12345.patch',
+    'Python-3.14.2_fix-expat-2.7.3-symbols.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -209,6 +210,8 @@ checksums = [
      'dd686e12c779b8109794bed5a9c5eccd7937f98df0ece4ff6041302b5909faf2'},
     {'Python-3.14.2_fix-CVE-2026-12345.patch':
      '2aca6acc38d5351a1812cc841b0c7feb469ea35c42221f38e06cb5c72480bf91'},
+    {'Python-3.14.2_fix-expat-2.7.3-symbols.patch':
+     'a5b9b4ce15e8e05a6e513d0479cd0129fcc06d74860c2ebe18b823ab1b02403a'},
     {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
 ]
 

@@ -1,0 +1,71 @@
+# Give the 2.7.3 expat backport the XML_INDEX_MAX macro and scaffIndexSize field it uses.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/libexpat/libexpat/commit/99d8454fdf900a6d00c2a52748e6c0eeb507574d
+# Upstream commit: https://github.com/libexpat/libexpat/commit/58400483d7c97be316d7a77739c0a6af5d55932e
+
+diff --git a/Modules/expat/xmlparse.c b/Modules/expat/xmlparse.c
+index 7d3f4be0fa..c8d72cff20 100644
+--- a/Modules/expat/xmlparse.c
++++ b/Modules/expat/xmlparse.c
+@@ -220,6 +220,12 @@ typedef char ICHAR;
+ 
+ #define EXPAT_MIN(a, b) (((a) < (b)) ? (a) : (b))
+ 
++/* 2.7.3 has no XML_INDEX_MAX. It is the largest XML_Index, used by the
++   CVE-2026-56406 length check. */
++#ifndef XML_INDEX_MAX
++#  define XML_INDEX_MAX ((XML_Index)(~(XML_Size)0 >> 1))
++#endif
++
+ #include "internal.h"
+ #include "xmltok.h"
+ #include "xmlrole.h"
+@@ -428,6 +434,8 @@ typedef struct {
+   unsigned scaffCount;
+   int scaffLevel;
+   int *scaffIndex;
++  /* Allocated length of scaffIndex, in elements. CVE-2026-56132. */
++  size_t scaffIndexSize;
+ } DTD;
+ 
+ enum EntityType {
+@@ -6181,6 +6189,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
+             if (new_scaff_index == NULL)
+               return XML_ERROR_NO_MEMORY;
+             dtd->scaffIndex = new_scaff_index;
++            dtd->scaffIndexSize = parser->m_groupSize;
+           }
+         } else {
+           parser->m_groupConnector = MALLOC(parser, parser->m_groupSize = 32);
+@@ -7840,6 +7849,7 @@ dtdCreate(XML_Parser parser) {
+ 
+   p->in_eldecl = XML_FALSE;
+   p->scaffIndex = NULL;
++  p->scaffIndexSize = 0;
+   p->scaffold = NULL;
+   p->scaffLevel = 0;
+   p->scaffSize = 0;
+@@ -7881,6 +7891,7 @@ dtdReset(DTD *p, XML_Parser parser) {
+ 
+   FREE(parser, p->scaffIndex);
+   p->scaffIndex = NULL;
++  p->scaffIndexSize = 0;
+   FREE(parser, p->scaffold);
+   p->scaffold = NULL;
+ 
+@@ -8076,6 +8087,7 @@ dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
+   newDtd->scaffSize = oldDtd->scaffSize;
+   newDtd->scaffLevel = oldDtd->scaffLevel;
+   newDtd->scaffIndex = oldDtd->scaffIndex;
++  newDtd->scaffIndexSize = oldDtd->scaffIndexSize;
+ 
+   return 1;
+ } /* End dtdCopy */
+@@ -8597,6 +8609,7 @@ nextScaffoldPart(XML_Parser parser) {
+     dtd->scaffIndex = MALLOC(parser, parser->m_groupSize * sizeof(int));
+     if (! dtd->scaffIndex)
+       return -1;
++    dtd->scaffIndexSize = parser->m_groupSize;
+     dtd->scaffIndex[0] = 0;
+   }
+ 
