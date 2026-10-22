@@ -186,7 +186,14 @@ exts_list = [
         'checksums': ['e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d'],
     }),
     ('ujson', '5.12.0', {
-        'checksums': ['14b2e1eb528d77bc0f4c5bd1a7ebc05e02b5b41beefb7e8567c9675b8b13bcf4'],
+        'patches': [
+            'ujson-5.12.0_fix-CVE-2026-44660.patch',
+        ],
+        'checksums': [
+            {'ujson-5.12.0.tar.gz': '14b2e1eb528d77bc0f4c5bd1a7ebc05e02b5b41beefb7e8567c9675b8b13bcf4'},
+            {'ujson-5.12.0_fix-CVE-2026-44660.patch':
+             '2567d1a7d08b0c4a05456c570b1d24475b4e741e07159eb50ecbce312c5b0a83'},
+        ],
     }),
     ('more-itertools', '11.0.2', {
         'checksums': ['392a9e1e362cbc106a2457d37cabf9b36e5e12efd4ebff1654630e76597df804'],
