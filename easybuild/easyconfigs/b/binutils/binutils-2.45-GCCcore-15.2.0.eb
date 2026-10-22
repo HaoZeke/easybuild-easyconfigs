@@ -8,8 +8,13 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = [GNU_SOURCE]
 sources = [SOURCE_TAR_GZ]
-checksums = ['8a3eb4b10e7053312790f21ee1a38f7e2bbd6f4096abb590d3429e5119592d96']
-
+patches = [
+    'binutils-2.45_fix-CVE-2025-69649.patch',
+]
+checksums = [
+    {'binutils-2.45.tar.gz': '8a3eb4b10e7053312790f21ee1a38f7e2bbd6f4096abb590d3429e5119592d96'},
+    {'binutils-2.45_fix-CVE-2025-69649.patch': '38bf004bb7a676fb915beadc4ea2a93d042e36cd3fb21fa1085236aa441b3f70'},
+]
 builddependencies = [
     ('flex', '2.6.4'),
     ('Bison', '3.8.2'),
