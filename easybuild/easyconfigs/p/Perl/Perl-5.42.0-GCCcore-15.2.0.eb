@@ -15,11 +15,13 @@ sources = [SOURCELOWER_TAR_GZ]
 patches = [
     'Perl-5.42.0_fix-CVE-2026-4176.patch',
     'Perl-5.42.0_fix-CVE-2026-57432.patch',
+    'Perl-5.42.0_fix-CVE-2026-8376.patch',
 ]
 checksums = [
     {'perl-5.42.0.tar.gz': 'e093ef184d7f9a1b9797e2465296f55510adb6dab8842b0c3ed53329663096dc'},
     {'Perl-5.42.0_fix-CVE-2026-4176.patch': '62ac0d386d82e1b5dc702fa94666f2fb5c9d7c01403cd4e24e409013e76aa30f'},
     {'Perl-5.42.0_fix-CVE-2026-57432.patch': 'ceb7056f852b829128332cc9aeb7d81d3bfed4207f8e5ff8ea67b019d6bcaf6a'},
+    {'Perl-5.42.0_fix-CVE-2026-8376.patch': '07c13b94b73f5f6e7bcfea99fa885aff212bee94597b8f68849e1ebe2491482d'},
 ]
 builddependencies = [
     ('binutils', '2.45'),
