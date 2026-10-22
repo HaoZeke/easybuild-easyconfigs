@@ -12,7 +12,12 @@ toolchainopts = {'pic': True}
 
 source_urls = [SOURCEFORGE_SOURCE]
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['8f91e941a07fb1069ebb3855278f82a849e6af14ca05821e14ec3d5348697ea5']
+patches = ['libpng-1.6.56_fix-CVE-2026-34757.patch']
+checksums = [
+    '8f91e941a07fb1069ebb3855278f82a849e6af14ca05821e14ec3d5348697ea5',
+    '6a567275125a2eed0e2129acf6b160260f7b31cd3821ea6ec0fb577aef947c26',
+]
+
 
 builddependencies = [('binutils', '2.45')]
 
