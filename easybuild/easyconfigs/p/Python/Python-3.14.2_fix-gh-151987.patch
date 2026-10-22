@@ -1,0 +1,18 @@
+# Apply the extraction filter when tarfile.extract falls back to a link target.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/5e0ef3f1afe892e4f64eb83368db57ac4c40cba0
+
+diff --git a/Lib/tarfile.py b/Lib/tarfile.py
+index fd3fad303f..a01cd3e04f 100644
+--- a/Lib/tarfile.py
++++ b/Lib/tarfile.py
+@@ -2482,7 +2482,8 @@ def extract(self, member, path="", set_attrs=True, *, numeric_owner=False,
+         tarinfo, unfiltered = self._get_extract_tarinfo(
+             member, filter_function, path)
+         if tarinfo is not None:
+-            self._extract_one(tarinfo, path, set_attrs, numeric_owner)
++            self._extract_one(tarinfo, path, set_attrs, numeric_owner,
++                              filter_function=filter_function)
+ 
+     def _get_extract_tarinfo(self, member, filter_function, path):
+         """Get (filtered, unfiltered) TarInfos from *member*
