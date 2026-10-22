@@ -13,11 +13,13 @@ sources = [SOURCELOWER_TAR_BZ2]
 patches = [
     'FFmpeg-9.0.2_fix-CVE-2026-107696.patch',
     'FFmpeg-9.0.2_fix-CVE-2026-107678.patch',
+    'FFmpeg-9.0.2_fix-CVE-2026-107676.patch',
 ]
 checksums = [
     {'ffmpeg-9.0.2.tar.bz2': 'ee80a25a5621df84498cef46917be87eab3b4f01951e85c2c7cbe5c94914ee70'},
     {'FFmpeg-9.0.2_fix-CVE-2026-107696.patch': '515c661d562921c9f0adedf463f35e644f7cdb4550f13fd15aeb7ad4868e9b53'},
     {'FFmpeg-9.0.2_fix-CVE-2026-107678.patch': '58a4bf59755f22b8dbe08a9e86143e8acb6ca809753c42d9f5eb7ad994c4f58a'},
+    {'FFmpeg-9.0.2_fix-CVE-2026-107676.patch': '87013c6d2a7eea9e01d6e130a223ef7abeac9c0e2badbcfa5e44aa9be09b9e04'},
 ]
 
 builddependencies = [
