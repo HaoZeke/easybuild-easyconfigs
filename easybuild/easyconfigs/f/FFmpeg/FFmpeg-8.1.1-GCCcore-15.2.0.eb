@@ -10,7 +10,14 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = ['https://%(namelower)s.org/releases/']
 sources = [SOURCELOWER_TAR_BZ2]
-checksums = ['b08594a47ca475ddda21c7990d8e9e3ceb5cd74f9709b4b5995b24d11cafa467']
+patches = [
+    'FFmpeg-8.1.1_fix-CVE-2026-107676.patch',
+]
+checksums = [
+    {'ffmpeg-8.1.1.tar.bz2': 'b08594a47ca475ddda21c7990d8e9e3ceb5cd74f9709b4b5995b24d11cafa467'},
+    {'FFmpeg-8.1.1_fix-CVE-2026-107676.patch':
+     '37b7283a7634e40fba4dc132b3d26b40dfa64214613010cf6e710c1eeea7cf20'},
+]
 
 builddependencies = [
     ('binutils', '2.45'),
