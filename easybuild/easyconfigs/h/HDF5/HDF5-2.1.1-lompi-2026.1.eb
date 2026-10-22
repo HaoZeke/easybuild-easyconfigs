@@ -16,11 +16,13 @@ sources = [SOURCELOWER_TAR_GZ]
 patches = [
     'HDF5-2.1.1-fix_fortran_wrappers.patch',
     'HDF5-2.1.1_fix-CVE-2026-19023.patch',
+    'HDF5-2.1.1_fix-CVE-2026-19024.patch',
 ]
 checksums = [
     {'hdf5-2.1.1.tar.gz': 'efff93b5a904d66e8f626d7da60b5eedc9faf544be27dbabbaa87967b8ad798b'},
     {'HDF5-2.1.1-fix_fortran_wrappers.patch': '8c753aa33f48a94d5fa3e1e2c92d032b85279971298dcddb26121b663d2c86b9'},
     {'HDF5-2.1.1_fix-CVE-2026-19023.patch': 'ec2efc9e9abf1f3d150e5e2b8c17ac7fab88ea657d1fc58139199f2ababba2a1'},
+    {'HDF5-2.1.1_fix-CVE-2026-19024.patch': 'f73c7ed242ecf383d99c9ca00b31e18352643354318c9195142858dd3ab2e998'},
 ]
 builddependencies = [('CMake', '4.2.1')]
 
