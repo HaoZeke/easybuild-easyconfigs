@@ -365,7 +365,14 @@ exts_list = [
         'checksums': ['b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b'],
     }),
     ('fsspec', '2026.4.0', {
-        'checksums': ['301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4'],
+        'patches': [
+            'fsspec-2026.4.0_fix-CVE-2026-104851.patch',
+        ],
+        'checksums': [
+            {'fsspec-2026.4.0.tar.gz': '301d8ac70ae90ef3ad05dcf94d6c3754a097f9b5fe4667d2787aa359ec7df7e4'},
+            {'fsspec-2026.4.0_fix-CVE-2026-104851.patch':
+             'd67ca8faac5247442e497a3bb3b0519f27670a60aa32d512d4202cda4a96f14a'},
+        ],
     }),
     ('threadpoolctl', '3.6.0', {
         'checksums': ['8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e'],
