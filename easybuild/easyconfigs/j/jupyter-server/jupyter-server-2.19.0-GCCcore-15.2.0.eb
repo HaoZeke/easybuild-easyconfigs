@@ -116,11 +116,14 @@ exts_list = [
     (name, version, {
         'patches': [
             'jupyter_server-2.19.0_fix-CVE-2026-44727.patch',
+            'jupyter_server-2.19.0_fix-CVE-2026-86049.patch',
         ],
         'checksums': [
             '1731236bc32b680223e1ceb9d68209a845203475012ef68773a81434b46a31a7',
             {'jupyter_server-2.19.0_fix-CVE-2026-44727.patch':
              'b948f0b32e6fbc9482b52441dc942d6e142d878cb621e2fea4476a5753b402d7'},
+            {'jupyter_server-2.19.0_fix-CVE-2026-86049.patch':
+             '61d4ddfb7ca4b747670fc9a24fe9fce7760a6e6457e651ce78ac0f2d5abc5228'},
         ],
     }),
     ('comm', '0.2.3', {
