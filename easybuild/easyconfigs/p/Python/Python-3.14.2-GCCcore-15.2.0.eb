@@ -14,6 +14,7 @@ patches = [
     'Python-3.12.3_avoid-tkinter-build.patch',
     'Python-3.13.1_runshared-ld-preload.patch',
     'Python-3.14.2_skip-inf-recursion-tests.patch',
+    'Python-3.14.2_fix-CVE-2026-24515.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -27,6 +28,8 @@ checksums = [
     {'Python-3.14.2_skip-inf-recursion-tests.patch':
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
     {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
+    {'Python-3.14.2_fix-CVE-2026-24515.patch':
+     '370eff4fc1ac42142d8098403863fd721132b467e6cee92fdfd975623bca8c05'},
 ]
 
 builddependencies = [
