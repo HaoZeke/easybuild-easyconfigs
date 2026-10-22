@@ -11,7 +11,13 @@ toolchainopts = {'pic': True}
 
 source_urls = ['https://download.osgeo.org/libtiff/']
 sources = ['tiff-%(version)s.tar.gz']
-checksums = ['f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69']
+patches = [
+    'LibTIFF-4.7.1_fix-CVE-2026-4775.patch',
+]
+checksums = [
+    'f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69',
+    '6e837946c454cb28be59568220c4038e7e8fa79a4b7a8bfa4da929ce34f801ce',
+]
 
 builddependencies = [('binutils', '2.45')]
 
