@@ -14,11 +14,13 @@ sources = ['tiff-%(version)s.tar.gz']
 patches = [
     'LibTIFF-4.7.1_fix-CVE-2026-4775.patch',
     'LibTIFF-4.7.1_fix-CVE-2026-52491.patch',
+    'LibTIFF-4.7.1_fix-CVE-2026-12912.patch',
 ]
 checksums = [
     'f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69',
     '6e837946c454cb28be59568220c4038e7e8fa79a4b7a8bfa4da929ce34f801ce',
     '70d0ab328bce68681e2bc09df573118b922648eb2abd08f4c52c58c89ca550e4',
+    '30c1613a255ef2f88fcc536cd83fe17a63122994a0f2a7fb1acee17309730f2c',
 ]
 
 builddependencies = [('binutils', '2.45')]
