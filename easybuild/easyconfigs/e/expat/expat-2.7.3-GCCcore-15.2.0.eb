@@ -16,10 +16,12 @@ source_urls = ['https://github.com/libexpat/libexpat/releases/download/R_%s/' % 
 sources = [SOURCE_TAR_BZ2]
 patches = [
     'expat-2.7.3_fix-CVE-2026-25210.patch',
+    'expat-2.7.3_fix-CVE-2026-24515.patch',
 ]
 checksums = [
     '59c31441fec9a66205307749eccfee551055f2d792f329f18d97099e919a3b2f',
     'ac9baccd11a1c9e88a513ab33104a004921a3d89394688ddd398128f23f9b7c4',
+    'b902f78e4808562e9ebac05e67e6a507f0e35962a32058faa2dfdfd5c0a72c61',
 ]
 
 builddependencies = [('binutils', '2.45')]
