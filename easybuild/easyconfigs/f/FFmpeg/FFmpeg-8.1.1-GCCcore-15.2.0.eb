@@ -22,6 +22,7 @@ patches = [
     'FFmpeg-8.1.1_fix-CVE-2026-96611.patch',
     'FFmpeg-8.1.1_fix-CVE-2026-107660.patch',
     'FFmpeg-8.1.1_fix-CVE-2026-107697.patch',
+    'FFmpeg-8.1.1_fix-CVE-2026-107695.patch',
 ]
 checksums = [
     {'ffmpeg-8.1.1.tar.bz2': 'b08594a47ca475ddda21c7990d8e9e3ceb5cd74f9709b4b5995b24d11cafa467'},
@@ -47,6 +48,8 @@ checksums = [
      '56cec840de66486fa15d15ba8d3f9393756f473a2ac9ba858223560d011a2adc'},
     {'FFmpeg-8.1.1_fix-CVE-2026-107697.patch':
      '57fc0a6c42d7b6a478a6e8a0459df8bcc0d6e122facca737a6c7a03017f8a3c8'},
+    {'FFmpeg-8.1.1_fix-CVE-2026-107695.patch':
+     'e19475f6bfcf78a7d6243625237b5b782db38132296bc02c93593717b821b6d2'},
 ]
 
 builddependencies = [
