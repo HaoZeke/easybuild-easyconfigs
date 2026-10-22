@@ -77,11 +77,14 @@ exts_list = [
     ('bleach', '6.3.0', {
         'patches': [
             'bleach-6.3.0_fix-GHSA-8rfp-98v4-mmr6.patch',
+            'bleach-6.3.0_fix-GHSA-gj48-438w-jh9v.patch',
         ],
         'checksums': [
             '6f3b91b1c0a02bb9a78b5a454c92506aa0fdf197e1d5e114d2e00c6f64306d22',
             {'bleach-6.3.0_fix-GHSA-8rfp-98v4-mmr6.patch':
              '5c3db5420a48be28ef0f6cafdadad2c9cb5181908cb4e1fc068910e84a9e1596'},
+            {'bleach-6.3.0_fix-GHSA-gj48-438w-jh9v.patch':
+             '27c8480ddbbbaa135992d56289938a7b994def5a37985e5aaf53b3726803ce7f'},
         ],
     }),
     ('nbformat', '5.10.4', {
