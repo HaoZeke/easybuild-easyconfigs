@@ -20,6 +20,7 @@ exts_list = [
             'soupsieve-2.8.3_fix-CVE-2026-49477.patch',
             'soupsieve-2.8.3_fix-CVE-2026-49476.patch',
             'soupsieve-2.8.3_fix-CVE-2026-86000.patch',
+            'soupsieve-2.8.3_fix-CVE-2026-85999.patch',
         ],
         'checksums': [
             '3267f1eeea4251fb42728b6dfb746edc9acaffc4a45b27e19450b676586e8349',
@@ -29,6 +30,8 @@ exts_list = [
              '7451f799ac6832e6c4352e108fe6474a04a92a523b4a8a5aff4afadc5b4dfff4'},
             {'soupsieve-2.8.3_fix-CVE-2026-86000.patch':
              '999fef017ea8a3e9fe5f2de2ceb0ec1d033b967f154f5f3caf63227f4d312a51'},
+            {'soupsieve-2.8.3_fix-CVE-2026-85999.patch':
+             '3f1721c9a02c26e13f94670b0e62440e898249ca993e074b54433e5aca916c82'},
         ],
     }),
     ('beautifulsoup4', version, {
