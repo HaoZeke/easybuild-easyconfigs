@@ -12,6 +12,7 @@ patches = [
     'binutils-2.45_fix-CVE-2025-69649.patch',
     'binutils-2.45_fix-CVE-2026-3441-CVE-2026-3442.patch',
     'binutils-2.45_fix-CVE-2026-6846.patch',
+    'binutils-2.45_fix-CVE-2025-69644-CVE-2025-69647.patch',
 ]
 checksums = [
     {'binutils-2.45.tar.gz': '8a3eb4b10e7053312790f21ee1a38f7e2bbd6f4096abb590d3429e5119592d96'},
@@ -19,6 +20,8 @@ checksums = [
     {'binutils-2.45_fix-CVE-2026-3441-CVE-2026-3442.patch':
      'b58072b14f315d267b3fb5a0f9a62c05e0ae3ea7e5e07bce7588a2dfe3f50978'},
     {'binutils-2.45_fix-CVE-2026-6846.patch': 'fb04bb35637be77ef732c79a275461badb403bda3654f7e47c0299673bf16622'},
+    {'binutils-2.45_fix-CVE-2025-69644-CVE-2025-69647.patch':
+     'afdf25414c936e405f3f50110f957a509d68fe4254c505cfc6855e2631d20a4b'},
 ]
 builddependencies = [
     ('flex', '2.6.4'),
