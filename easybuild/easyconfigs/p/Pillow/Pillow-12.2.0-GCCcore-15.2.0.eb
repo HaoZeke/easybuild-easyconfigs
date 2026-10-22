@@ -42,6 +42,7 @@ patches = [
     'Pillow-12.2.0_fix-CVE-2026-112405.patch',
     'Pillow-12.2.0_fix-CVE-2026-112896.patch',
     'Pillow-12.2.0_fix-CVE-2026-112902.patch',
+    'Pillow-12.2.0_fix-CVE-2026-112897-CVE-2026-112404.patch',
 ]
 checksums = [
     {'pillow-12.2.0.tar.gz': 'a830b1a40919539d07806aa58e1b114df53ddd43213d9c8b75847eee6c0182b5'},
@@ -79,6 +80,8 @@ checksums = [
     {'Pillow-12.2.0_fix-CVE-2026-112405.patch': '7c70302aaf1f6c0f788261b76a13b7995bb164a5880f0793075f84472f9a2fe4'},
     {'Pillow-12.2.0_fix-CVE-2026-112896.patch': 'f449349cc2c3faba719266be388dfb0ee4efcb29ff75cf533e26231f16b897e3'},
     {'Pillow-12.2.0_fix-CVE-2026-112902.patch': 'b6f872614091ab578357ecf7b6d6c083f133b784912677004a68eaf60abf6134'},
+    {'Pillow-12.2.0_fix-CVE-2026-112897-CVE-2026-112404.patch':
+     'e788d5805520486dfb7f45c841233ed646a25cf145e3ea775e476dfe4154b58b'},
 ]
 
 builddependencies = [
