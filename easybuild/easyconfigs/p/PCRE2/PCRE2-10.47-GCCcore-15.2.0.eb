@@ -19,6 +19,7 @@ patches = [
     'PCRE2-10.47_fix-CVE-2026-89157.patch',
     'PCRE2-10.47_fix-CVE-2026-89158.patch',
     'PCRE2-10.47_fix-CVE-2026-89160.patch',
+    'PCRE2-10.47_fix-CVE-2026-89161.patch',
 ]
 checksums = [
     'c08ae2388ef333e8403e670ad70c0a11f1eed021fd88308d7e02f596fcd9dc16',
@@ -26,6 +27,7 @@ checksums = [
     '9d7ae60975bd0054a15eab7a4cdffccc509540449114804ecec1aa4db6f5f95f',
     '3004117d0d1d32419e7197ef4c2ce9b6f6f2f3ab46c9dbd77e3ca2111ea6a74b',
     'e1225626502c6982db8e68b7e7e4ddeebfa198b1459b978ec57042652cc6ac30',
+    'b41aa679d43c8d93705424310659fd15ac042e465881b2cf3e68ef59027a244f',
 ]
 
 builddependencies = [('binutils', '2.45')]
