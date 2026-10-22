@@ -1,0 +1,19 @@
+# Stop tarfile stream seeks at EOF.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/e86666c9dd256d52d0fbef6feb1ea4a51768fdec
+
+diff --git a/Lib/tarfile.py b/Lib/tarfile.py
+index a01cd3e04f..66769ce12f 100644
+--- a/Lib/tarfile.py
++++ b/Lib/tarfile.py
+@@ -524,7 +524,9 @@ def seek(self, pos=0):
+         if pos - self.pos >= 0:
+             blocks, remainder = divmod(pos - self.pos, self.bufsize)
+             for i in range(blocks):
+-                self.read(self.bufsize)
++                data = self.read(self.bufsize)
++                if not data:
++                    break
+             self.read(remainder)
+         else:
+             raise StreamError("seeking backwards is not allowed")
