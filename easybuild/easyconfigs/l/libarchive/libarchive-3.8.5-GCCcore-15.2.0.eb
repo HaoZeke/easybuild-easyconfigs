@@ -13,7 +13,14 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = ['https://github.com/libarchive/libarchive/releases/download/v%(version)s/']
 sources = [SOURCE_TAR_GZ]
-checksums = ['8a60f3a7bfd59c54ce82ae805a93dba65defd04148c3333b7eaa2102f03b7ffd']
+patches = [
+    'libarchive-3.8.5_fix-CVE-2026-4424.patch',
+]
+checksums = [
+    '8a60f3a7bfd59c54ce82ae805a93dba65defd04148c3333b7eaa2102f03b7ffd',
+    '46500ee099f964c8fe1cedb0cc19fa1964e8c27b13352d32746d5b2a3fbbd1cc',
+]
+
 
 builddependencies = [
     ('binutils', '2.45'),
