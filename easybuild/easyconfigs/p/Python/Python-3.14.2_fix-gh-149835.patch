@@ -1,0 +1,19 @@
+# Use realpath in shutil.move so a symlink cannot bypass the destination-inside-source guard.
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/a5ac7212de6eb59c37d2ea2ed4a78747cda55980
+
+diff --git a/Lib/shutil.py b/Lib/shutil.py
+index 8d8fe14556..2dfd584e13 100644
+--- a/Lib/shutil.py
++++ b/Lib/shutil.py
+@@ -940,8 +940,8 @@ def move(src, dst, copy_function=copy2):
+     return real_dst
+ 
+ def _destinsrc(src, dst):
+-    src = os.path.abspath(src)
+-    dst = os.path.abspath(dst)
++    src = os.path.realpath(src)
++    dst = os.path.realpath(dst)
+     if not src.endswith(os.path.sep):
+         src += os.path.sep
+     if not dst.endswith(os.path.sep):
