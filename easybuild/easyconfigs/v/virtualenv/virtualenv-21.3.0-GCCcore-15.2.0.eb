@@ -36,6 +36,7 @@ exts_list = [
             'virtualenv-21.3.0_fix-CVE-2026-102937.patch',
             'virtualenv-21.3.0_fix-CVE-2026-113776.patch',
             'virtualenv-21.3.0_fix-CVE-2026-113732.patch',
+            'virtualenv-21.3.0_fix-CVE-2026-113726.patch',
         ],
         'checksums': [
             {'virtualenv-21.3.0.tar.gz': '733750db978ec95c2d8eb4feadaa57091002bce404cb39ba69899cf7bd28944e'},
@@ -51,6 +52,8 @@ exts_list = [
              '5b526ccbb10cd88c08e311fd14f63212e10495311e222f460517aed32166439a'},
             {'virtualenv-21.3.0_fix-CVE-2026-113732.patch':
              'be910991bf4204dbb76be9540750e8e6c08e7e929d15fd02a4c4a2d5d81d01b1'},
+            {'virtualenv-21.3.0_fix-CVE-2026-113726.patch':
+             'e6e3de750d346b68f3bd7e70e21e1a67bf74aa09a4dc165b3ca2d59d1e6d7391'},
         ],
     }),
 ]
