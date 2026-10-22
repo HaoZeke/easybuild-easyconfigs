@@ -53,6 +53,7 @@ patches = [
     'Python-3.14.2_fix-GHSA-w4q2-g22w-6fr4.patch',
     'Python-3.14.2_fix-gh-143927.patch',
     'Python-3.14.2_fix-gh-158446.patch',
+    'Python-3.14.2_fix-gh-156793.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -144,6 +145,8 @@ checksums = [
      'e5d9b474ea51b2c7336832314d056cf7eb5a35e5df7ee71381b0f3023dd24968'},
     {'Python-3.14.2_fix-gh-158446.patch':
      '362cf94562f19e5700e784529eca7249b29e50fae2de8a528451de920f520420'},
+    {'Python-3.14.2_fix-gh-156793.patch':
+     '60e6896201b9efee953dd1bb143e63f7364d8658d501db6b06af374b56ecb1c3'},
 ]
 
 builddependencies = [
