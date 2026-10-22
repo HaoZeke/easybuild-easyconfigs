@@ -61,6 +61,7 @@ exts_list = [
             'aiohttp-3.14.3_fix-CVE-2026-111066.patch',
             'aiohttp-3.14.3_fix-CVE-2026-111748.patch',
             'aiohttp-3.14.3_fix-CVE-2026-111063.patch',
+            'aiohttp-3.14.3_fix-CVE-2026-111064.patch',
         ],
         'checksums': [
             '9491196535a88924a60afd5b5f434b5b203b6cc616250878dbdb223a8f7844bc',
@@ -78,6 +79,8 @@ exts_list = [
              '159e40cdba5ad4ee167bb41618ebb74aa03cc1c26214422d3926fd46c1932b6f'},
             {'aiohttp-3.14.3_fix-CVE-2026-111063.patch':
              'a050363278af54d40e04e78a60fa7770bd6343e54e149c3c2ecdadad81fc2ff8'},
+            {'aiohttp-3.14.3_fix-CVE-2026-111064.patch':
+             '6d13ae5ebe5c7244099da391ac6c2c71d87769f48a8882f371a7fdf82434e738'},
         ],
     }),
     ('aioitertools', '0.13.0', {
