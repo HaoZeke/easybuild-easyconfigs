@@ -1,0 +1,540 @@
+fix for GHSA-2g87-pp6c-29x5 (several unbounded memory and CPU paths in the client, websocket reader, and cookie jar)
+
+see https://github.com/aio-libs/aiohttp/commit/09bcaa73ff084a0c539bbf16a0a78743acb7141f
+see https://github.com/aio-libs/aiohttp/commit/47babd8c23ca79e2bae6cc8dcb5752b61e369fc7
+see https://github.com/aio-libs/aiohttp/commit/d925a80539ffd227da1d93ab4a5bff123cc777db
+see https://github.com/aio-libs/aiohttp/commit/8cfbe9abe5e11b84006a10f9bdf82bf607671dab
+see https://github.com/aio-libs/aiohttp/commit/a555ab698e08e9baea7386d5b4c0761cb8956fdd
+see https://github.com/aio-libs/aiohttp/commit/6a4f6682817839313b04b8e5cea2b39c1a88ab4f
+
+author: Rohit Goswami (HaoZeke)
+
+diff --git a/aiohttp/_websocket/reader_c.pxd b/aiohttp/_websocket/reader_c.pxd
+index 5aa067f..2676915 100644
+--- a/aiohttp/_websocket/reader_c.pxd
++++ b/aiohttp/_websocket/reader_c.pxd
+@@ -71,6 +71,8 @@ cdef class WebSocketReader:
+     cdef bint _frame_fin
+     cdef int _frame_opcode
+     cdef list _payload_fragments
++    cdef bytearray _payload_buffer
++    cdef Py_ssize_t _max_fragments
+     cdef Py_ssize_t _frame_payload_len
+ 
+     cdef bytes _tail
+@@ -107,6 +109,7 @@ cdef class WebSocketReader:
+         has_mask=bint,
+         fin=bint,
+         had_fragments=Py_ssize_t,
++        partial_len=Py_ssize_t,
+         payload_bytearray=bytearray,
+     )
+     cpdef void _feed_data(self, bytes data) except *
+diff --git a/aiohttp/_websocket/reader_py.py b/aiohttp/_websocket/reader_py.py
+index ff5a5b3..38a95b2 100644
+--- a/aiohttp/_websocket/reader_py.py
++++ b/aiohttp/_websocket/reader_py.py
+@@ -6,7 +6,7 @@ from collections import deque
+ from typing import Final
+ 
+ from ..base_protocol import BaseProtocol
+-from ..compression_utils import ZLibDecompressor
++from ..compression_utils import TooManyMembersError, ZLibDecompressor
+ from ..helpers import _EXC_SENTINEL, set_exception
+ from ..streams import EofStream
+ from .helpers import UNPACK_CLOSE_CODE, UNPACK_LEN3, websocket_mask
+@@ -152,7 +152,12 @@ class WebSocketReader:
+         self._opcode: int = OP_CODE_NOT_SET
+         self._frame_fin = False
+         self._frame_opcode: int = OP_CODE_NOT_SET
++        # Reads of an in-flight frame, joined once when it completes.
+         self._payload_fragments: list[bytes] = []
++        # Fold reads into _payload_buffer past this count to bound the object
++        # count (bytes are bounded by max_msg_size).
++        self._max_fragments = max(1024, max_msg_size // 256) if max_msg_size else 0
++        self._payload_buffer = bytearray()
+         self._frame_payload_len = 0
+ 
+         self._tail: bytes = b""
+@@ -240,14 +245,20 @@ class WebSocketReader:
+                 # but internally buffer more data such that the payload is
+                 # >max_length, so we return one extra byte and if we're able
+                 # to do that, then the message is too big.
+-                payload_merged = self._decompressobj.decompress_sync(
+-                    assembled_payload + WS_DEFLATE_TRAILING,
+-                    (
+-                        self._max_msg_size + 1
+-                        if self._max_msg_size
+-                        else self._max_msg_size
+-                    ),
+-                )
++                try:
++                    payload_merged = self._decompressobj.decompress_sync(
++                        assembled_payload + WS_DEFLATE_TRAILING,
++                        (
++                            self._max_msg_size + 1
++                            if self._max_msg_size
++                            else self._max_msg_size
++                        ),
++                    )
++                except TooManyMembersError as exc:
++                    raise WebSocketError(
++                        WSCloseCode.MESSAGE_TOO_BIG,
++                        "Compressed message has too many deflate members",
++                    ) from exc
+                 if self._max_msg_size and len(payload_merged) > self._max_msg_size:
+                     raise WebSocketError(
+                         WSCloseCode.MESSAGE_TOO_BIG,
+@@ -440,11 +451,14 @@ class WebSocketReader:
+                     OP_CODE_BINARY,
+                     OP_CODE_CONTINUATION,
+                 }:
+-                    projected_size = self._payload_bytes_to_read + len(self._partial)
+-                    if projected_size >= self._max_msg_size:
++                    # partial_len declared in reader_c.pxd to keep it in C.
++                    partial_len = len(self._partial)
++                    # payload_bytes_to_read is a signed 64-bit C value,
++                    # use subtraction here to avoid an integer overflow.
++                    if self._payload_bytes_to_read >= self._max_msg_size - partial_len:
+                         raise WebSocketError(
+                             WSCloseCode.MESSAGE_TOO_BIG,
+-                            f"Message size {projected_size} "
++                            f"Message size {int(self._payload_bytes_to_read) + partial_len} "
+                             f"exceeds limit {self._max_msg_size}",
+                         )
+ 
+@@ -473,16 +487,29 @@ class WebSocketReader:
+                 start_pos = f_end_pos
+ 
+                 if self._payload_bytes_to_read != 0:
+-                    # If we don't have a complete frame, we need to save the
+-                    # data for the next call to feed_data.
+-                    self._payload_fragments.append(data_cstr[f_start_pos:f_end_pos])
++                    if f_start_pos < f_end_pos:  # skip a header-only read
++                        self._payload_fragments.append(data_cstr[f_start_pos:f_end_pos])
++                    if (
++                        self._max_fragments
++                        and len(self._payload_fragments) > self._max_fragments
++                    ):
++                        # Fold to bound the object count. Not a pause: nothing
++                        # resumes reading until the frame is queued.
++                        self._payload_buffer += b"".join(self._payload_fragments)
++                        self._payload_fragments.clear()
+                     break
+ 
+                 payload: bytes | bytearray
+                 if had_fragments:
+-                    # We have to join the payload fragments get the payload
+                     self._payload_fragments.append(data_cstr[f_start_pos:f_end_pos])
+-                    if self._has_mask:
++                    if self._payload_buffer:  # folded prefix
++                        self._payload_buffer += b"".join(self._payload_fragments)
++                        if self._has_mask:
++                            assert self._frame_mask is not None
++                            websocket_mask(self._frame_mask, self._payload_buffer)
++                        payload = self._payload_buffer
++                        self._payload_buffer = bytearray()  # detach; payload aliases it
++                    elif self._has_mask:
+                         assert self._frame_mask is not None
+                         payload_bytearray = bytearray(b"".join(self._payload_fragments))
+                         websocket_mask(self._frame_mask, payload_bytearray)
+diff --git a/aiohttp/compression_utils.py b/aiohttp/compression_utils.py
+index 9313d21..a492e7d 100644
+--- a/aiohttp/compression_utils.py
++++ b/aiohttp/compression_utils.py
+@@ -3,7 +3,7 @@ import sys
+ import zlib
+ from abc import ABC, abstractmethod
+ from concurrent.futures import Executor
+-from typing import Any, Final, Protocol, TypedDict, cast
++from typing import Any, Final, Generic, Protocol, TypedDict, TypeVar, cast
+ 
+ if sys.version_info >= (3, 12):
+     from collections.abc import Buffer
+@@ -39,6 +39,21 @@ MAX_SYNC_CHUNK_SIZE = 4096
+ ZLIB_MAX_LENGTH_UNLIMITED = 0  # zlib uses 0 to mean unlimited
+ ZSTD_MAX_LENGTH_UNLIMITED = -1  # zstd uses -1 to mean unlimited
+ 
++# Concatenated members are decoded through a window that starts small and
++# doubles. A fresh decompressor copies everything past the member it decodes
++# into unused_data, so handing it the whole remaining buffer at every boundary
++# is quadratic over a stream of small members.
++MEMBER_WINDOW_MIN = 64
++MEMBER_WINDOW_MAX = 65536
++
++# Cap on concatenated members decoded in one call. Real payloads are unlikely
++# to have more than a few members.
++MAX_DECOMPRESS_MEMBERS = 1024
++
++
++class TooManyMembersError(ValueError):
++    """A stream concatenated more members than the caller allows."""
++
+ 
+ class ZLibCompressObjProtocol(Protocol):
+     def compress(self, data: Buffer) -> bytes: ...
+@@ -155,6 +170,19 @@ def encoding_to_mode(
+     return -ZLibBackend.MAX_WBITS if suppress_deflate_header else ZLibBackend.MAX_WBITS
+ 
+ 
++class MemberDecompressObjProtocol(Protocol):
++    def decompress(self, data: Buffer, max_length: int = ...) -> bytes: ...
++
++    @property
++    def eof(self) -> bool: ...
++
++    @property
++    def unused_data(self) -> bytes: ...
++
++
++_DecompressObjT = TypeVar("_DecompressObjT", bound=MemberDecompressObjProtocol)
++
++
+ class DecompressionBaseHandler(ABC):
+     def __init__(
+         self,
+@@ -190,6 +218,73 @@ class DecompressionBaseHandler(ABC):
+         """Return True if more output is available by passing b""."""
+ 
+ 
++class ConcatDecompressionHandler(DecompressionBaseHandler, Generic[_DecompressObjT]):
++    """Handler for a codec whose streams may concatenate independent members.
++
++    Concatenated gzip/deflate members and multi-frame zstd
++    (https://datatracker.ietf.org/doc/html/rfc8878#section-3.1.1) decode the
++    same way: a decompressor handles one member, then flags eof and leaves the
++    rest of the input in unused_data, so every member after it needs a fresh
++    one.
++    """
++
++    # Sentinel this codec's decompress() takes to mean "no output limit".
++    _unlimited: int
++    _decompressor: _DecompressObjT
++    # Input a max_length-capped walk stopped short of, fed back on the next call.
++    _pending_unused_data: bytes | None = None
++
++    @abstractmethod
++    def _new_decompressor(self) -> _DecompressObjT:
++        """Return a decompressor for the next member."""
++
++    def _decompress_members(self, first: bytes, max_length: int) -> bytes:
++        """Decode the members following the one ``first`` came from."""
++        remaining = memoryview(self._decompressor.unused_data)
++        parts = [first]
++        produced = len(first)
++        pos = 0
++        window = MEMBER_WINDOW_MIN
++        budget = max_length
++        members = 1
++
++        while pos < len(remaining):
++            if self._decompressor.eof:
++                members += 1
++                if members > MAX_DECOMPRESS_MEMBERS:
++                    raise TooManyMembersError(
++                        f"Compressed stream has more than "
++                        f"{MAX_DECOMPRESS_MEMBERS} members"
++                    )
++                # Replace the spent decompressor before the budget check below
++                # can break out of the loop: it still lists these bytes in its
++                # unused_data and would hand them back on the next call.
++                self._decompressor = self._new_decompressor()
++                window = MEMBER_WINDOW_MIN
++            if max_length != self._unlimited:
++                budget = max_length - produced
++                if budget <= 0:
++                    self._pending_unused_data = bytes(remaining[pos:])
++                    break
++
++            end = min(pos + window, len(remaining))
++            chunk = self._decompressor.decompress(remaining[pos:end], budget)
++            if chunk:
++                parts.append(chunk)
++                produced += len(chunk)
++
++            if self._decompressor.eof:
++                pos = end - len(self._decompressor.unused_data)
++            else:
++                pos = end
++                # Doubling the window on each iteration avoids too many calls
++                # when a large member is present, while protecting us from
++                # quadratic usage when members are of window+1 length.
++                window = min(window * 2, MEMBER_WINDOW_MAX)
++
++        return b"".join(parts)
++
++
+ class ZLibCompressor:
+     def __init__(
+         self,
+@@ -265,7 +360,9 @@ class ZLibCompressor:
+         )
+ 
+ 
+-class ZLibDecompressor(DecompressionBaseHandler):
++class ZLibDecompressor(ConcatDecompressionHandler[ZLibDecompressObjProtocol]):
++    _unlimited = ZLIB_MAX_LENGTH_UNLIMITED
++
+     def __init__(
+         self,
+         encoding: str | None = None,
+@@ -276,9 +373,11 @@ class ZLibDecompressor(DecompressionBaseHandler):
+         super().__init__(executor=executor, max_sync_chunk_size=max_sync_chunk_size)
+         self._mode = encoding_to_mode(encoding, suppress_deflate_header)
+         self._zlib_backend: Final = ZLibBackendWrapper(ZLibBackend._zlib_backend)
+-        self._decompressor = self._zlib_backend.decompressobj(wbits=self._mode)
++        self._decompressor = self._new_decompressor()
+         self._last_empty = False
+-        self._pending_unused_data: bytes | None = None
++
++    def _new_decompressor(self) -> ZLibDecompressObjProtocol:
++        return self._zlib_backend.decompressobj(wbits=self._mode)
+ 
+     def decompress_sync(
+         self, data: Buffer, max_length: int = ZLIB_MAX_LENGTH_UNLIMITED
+@@ -289,30 +388,20 @@ class ZLibDecompressor(DecompressionBaseHandler):
+         result = self._decompressor.decompress(
+             self._decompressor.unconsumed_tail + data, max_length
+         )
++
++        # Concatenated gzip/deflate stream: decode the members after this one.
++        if self._decompressor.eof and self._decompressor.unused_data:
++            result = self._decompress_members(result, max_length)
++
+         # Only way to know that isal has no further data is checking we get no output
+         self._last_empty = result == b""
+ 
+-        # Handle concatenated gzip/deflate streams (multi-member).
+-        # After a member ends, unused_data holds the start of the next member.
+-        # Create a fresh decompressor for each subsequent member.
+-        while self._decompressor.eof and self._decompressor.unused_data:
+-            unused = self._decompressor.unused_data
+-            self._decompressor = self._zlib_backend.decompressobj(wbits=self._mode)
+-            if max_length != ZLIB_MAX_LENGTH_UNLIMITED:
+-                max_length -= len(result)
+-                if max_length <= 0:
+-                    self._pending_unused_data = unused
+-                    break
+-            chunk = self._decompressor.decompress(unused, max_length)
+-            self._last_empty = chunk == b""
+-            result += chunk
+-
+         # Member ended exactly at chunk boundary — no unused_data, but the
+         # next feed_data() call would fail on the spent decompressor.
+         # Only reset for gzip; deflate's feed_eof() relies on eof=True to
+         # confirm the stream is complete.
+         if self._decompressor.eof and self._mode > self._zlib_backend.MAX_WBITS:
+-            self._decompressor = self._zlib_backend.decompressobj(wbits=self._mode)
++            self._decompressor = self._new_decompressor()
+ 
+         return result
+ 
+@@ -384,7 +473,9 @@ class BrotliDecompressor(DecompressionBaseHandler):
+         return not self._obj.is_finished() and not self._last_empty
+ 
+ 
+-class ZSTDDecompressor(DecompressionBaseHandler):
++class ZSTDDecompressor(ConcatDecompressionHandler["ZstdDecompressor"]):
++    _unlimited = ZSTD_MAX_LENGTH_UNLIMITED
++
+     def __init__(
+         self,
+         executor: Executor | None = None,
+@@ -395,9 +486,11 @@ class ZSTDDecompressor(DecompressionBaseHandler):
+                 "The zstd decompression is not available. "
+                 "Please install `backports.zstd` module"
+             )
+-        self._obj = ZstdDecompressor()
+-        self._pending_unused_data: bytes | None = None
+         super().__init__(executor=executor, max_sync_chunk_size=max_sync_chunk_size)
++        self._decompressor = self._new_decompressor()
++
++    def _new_decompressor(self) -> "ZstdDecompressor":
++        return ZstdDecompressor()
+ 
+     def decompress_sync(
+         self, data: Buffer, max_length: int = ZLIB_MAX_LENGTH_UNLIMITED
+@@ -412,28 +505,17 @@ class ZSTDDecompressor(DecompressionBaseHandler):
+         if self._pending_unused_data is not None:
+             data = self._pending_unused_data + data
+             self._pending_unused_data = None
+-        result = self._obj.decompress(data, zstd_max_length)
+-
+-        # Handle multi-frame zstd streams.
+-        # https://datatracker.ietf.org/doc/html/rfc8878#section-3.1.1
+-        # ZstdDecompressor handles one frame only. When a frame ends,
+-        # eof becomes True and any trailing data goes to unused_data.
+-        # We create a fresh decompressor to continue with the next frame.
+-        while self._obj.eof and self._obj.unused_data:
+-            unused_data = self._obj.unused_data
+-            self._obj = ZstdDecompressor()
+-            if zstd_max_length != ZSTD_MAX_LENGTH_UNLIMITED:
+-                zstd_max_length -= len(result)
+-                if zstd_max_length <= 0:
+-                    self._pending_unused_data = unused_data
+-                    break
+-            result += self._obj.decompress(unused_data, zstd_max_length)
++        result = self._decompressor.decompress(data, zstd_max_length)
++
++        # Concatenated zstd stream: decode the frames after this one.
++        if self._decompressor.eof and self._decompressor.unused_data:
++            result = self._decompress_members(result, zstd_max_length)
+ 
+         # Frame ended exactly at chunk boundary — no unused_data, but the
+         # next feed_data() call would fail on the spent decompressor.
+         # Prepare a fresh one for the next chunk.
+-        if self._obj.eof:
+-            self._obj = ZstdDecompressor()
++        if self._decompressor.eof:
++            self._decompressor = self._new_decompressor()
+ 
+         return result
+ 
+@@ -443,5 +525,5 @@ class ZSTDDecompressor(DecompressionBaseHandler):
+     @property
+     def data_available(self) -> bool:
+         return (
+-            not self._obj.needs_input and not self._obj.eof
++            not self._decompressor.needs_input and not self._decompressor.eof
+         ) or self._pending_unused_data is not None
+diff --git a/aiohttp/http_parser.py b/aiohttp/http_parser.py
+index 0c9fd08..79deaf5 100644
+--- a/aiohttp/http_parser.py
++++ b/aiohttp/http_parser.py
+@@ -371,6 +371,8 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
+                     # any preceding body is consumed before the next request
+                     # line. Resumes via feed_data(b"") when the queue drains.
+                     self._tail = data[start_pos:]
++                    # The remainder now lives in self._tail only. Don't return it.
++                    data = EMPTY
+                     break
+                 pos = data.find(SEP, start_pos)
+                 # consume \r\n
+diff --git a/aiohttp/multipart.py b/aiohttp/multipart.py
+index b5b87f7..b7b89ac 100644
+--- a/aiohttp/multipart.py
++++ b/aiohttp/multipart.py
+@@ -61,6 +61,13 @@ __all__ = (
+ )
+ 
+ 
++# The base64 alphabet plus the padding character.
++_BASE64_CHARS = frozenset(
++    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
++)
++_NON_BASE64_BYTES = bytes(b for b in range(256) if b not in _BASE64_CHARS)
++
++
+ if TYPE_CHECKING:
+     from .client_reqrep import ClientResponse
+ 
+@@ -302,6 +309,7 @@ class BodyPartReader:
+             raise ValueError(f"invalid Content-Length: {length!r}")
+         self._length = int(length) if length is not None else None
+         self._read_bytes = 0
++        self._b64_carry = b""
+         self._unread: deque[bytes] = deque()
+         self._prev_chunk: bytes | None = None
+         self._content_eof = 0
+@@ -355,43 +363,59 @@ class BodyPartReader:
+         """
+         if self._at_eof:
+             return b""
++        carry = self._b64_carry
++        want = size - len(carry)
++        if carry:
++            self._b64_carry = b""
++            want = max(want, self._boundary_len)
+         if self._length:
+-            chunk = await self._read_chunk_from_length(size)
++            fresh = await self._read_chunk_from_length(want)
+         else:
+-            chunk = await self._read_chunk_from_stream(size)
++            fresh = await self._read_chunk_from_stream(want)
++        chunk = carry + fresh
++        self._read_bytes += len(fresh)
+ 
+-        # For the case of base64 data, we must read a fragment of size with a
+-        # remainder of 0 by dividing by 4 for string without symbols \n or \r
++        # base64 decodes in quartets and every chunk is decoded on its own, so
++        # a chunk should not end mid-quartet.
+         encoding = self.headers.get(CONTENT_TRANSFER_ENCODING)
+         if encoding and encoding.lower() == "base64":
+-            stripped_chunk = b"".join(chunk.split())
+-            remainder = len(stripped_chunk) % 4
+-
+-            while remainder != 0 and not self.at_eof():
+-                over_chunk_size = 4 - remainder
+-                over_chunk = b""
+-
+-                if self._prev_chunk:
+-                    over_chunk = self._prev_chunk[:over_chunk_size]
+-                    self._prev_chunk = self._prev_chunk[len(over_chunk) :]
+-
+-                if len(over_chunk) != over_chunk_size:
+-                    over_chunk += await self._content.read(4 - len(over_chunk))
++            chunk = self._align_base64_chunk(chunk, len(carry) + want)
+ 
+-                if not over_chunk:
+-                    self._at_eof = True
+-
+-                stripped_chunk += b"".join(over_chunk.split())
+-                chunk += over_chunk
+-                remainder = len(stripped_chunk) % 4
+-
+-        self._read_bytes += len(chunk)
+         if self._read_bytes == self._length:
+             self._at_eof = True
+         if self._at_eof and await self._content.readline() != b"\r\n":
+             raise ValueError("Reader did not read all the data or it is malformed")
+         return chunk
+ 
++    def _align_base64_chunk(self, chunk: bytes, size: int) -> bytes:
++        at_end = self._at_eof or (
++            self._length is not None and self._read_bytes >= self._length
++        )
++        if not at_end and len(chunk) > size:
++            self._b64_carry = chunk[size:]
++            chunk = chunk[:size]
++
++        remainder = len(chunk.translate(None, _NON_BASE64_BYTES)) % 4
++        if not remainder or at_end:
++            return chunk
++
++        # Walk back over the trailing partial quartet and carry it into the
++        # next chunk.
++        cut = len(chunk)
++        left = remainder
++        while left:
++            cut -= 1
++            if chunk[cut] in _BASE64_CHARS:
++                left -= 1
++        if not cut:
++            # No whole quartet to hand back, and carrying the lot would make
++            # no progress: the caller asked for this many bytes, and a part
++            # that holds no quartet within them holds none to give.
++            return chunk
++
++        self._b64_carry = chunk[cut:] + self._b64_carry
++        return chunk[:cut]
++
+     async def _read_chunk_from_length(self, size: int) -> bytes:
+         # Reads body part content chunk of the specified size.
+         # The body part must has Content-Length header with proper value.
+diff --git a/aiohttp/web_protocol.py b/aiohttp/web_protocol.py
+index f1b3844..0fa9c26 100644
+--- a/aiohttp/web_protocol.py
++++ b/aiohttp/web_protocol.py
+@@ -774,6 +774,12 @@ class RequestHandler(BaseProtocol):
+                 for msg, payload in messages:
+                     self._request_count += 1
+                     self._messages.append((msg, payload))
++                # Pause the transport, like in data_received().
++                if (
++                    not self._msg_queue_paused
++                    and len(self._messages) >= self._max_msg_queue_size
++                ):
++                    self._pause_msg_queue_reading()
+                 # This shouldn't be possible. If a future refactor results in this
+                 # failing, then the code may need to be updated to set the waiter.
+                 assert self._waiter is None
