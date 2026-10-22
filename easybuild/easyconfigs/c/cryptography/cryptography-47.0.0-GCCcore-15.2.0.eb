@@ -13,6 +13,7 @@ sources = [SOURCE_TAR_GZ]
 patches = [
     'cryptography-47.0.0_fix-CVE-2026-69249.patch',
     'cryptography-47.0.0_fix-GHSA-g6cj-pr64-35w5.patch',
+    'cryptography-47.0.0_fix-GHSA-m2h6-j472-rp4c.patch',
 ]
 
 builddependencies = [
@@ -97,6 +98,8 @@ checksums = [
      '3029c04819c2ebb3a697cf9ff0d90e00f252feb8cccfb9a7a44d0c04fdf82c5b'},
     {'cryptography-47.0.0_fix-GHSA-g6cj-pr64-35w5.patch':
      '41530f0d110cc5007ad4139bf8f25fcbf92d142dbd4eccc3a9b1b4dea02a7dc2'},
+    {'cryptography-47.0.0_fix-GHSA-m2h6-j472-rp4c.patch':
+     'c1e3169f20da2a4cce2dcd9bda302b005646585a823cc52fb462d83204020972'},
 ]
 
 moduleclass = 'tools'
