@@ -12,10 +12,12 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 sources = [SOURCELOWER_TAR_GZ]
 patches = [
     'Pillow-12.2.0_fix-CVE-2026-59200.patch',
+    'Pillow-12.2.0_fix-CVE-2026-54058.patch',
 ]
 checksums = [
     {'pillow-12.2.0.tar.gz': 'a830b1a40919539d07806aa58e1b114df53ddd43213d9c8b75847eee6c0182b5'},
     {'Pillow-12.2.0_fix-CVE-2026-59200.patch': '6a1a9141d3b429465309b94c23f66bff35421dd78d031bf566a34029554a6b98'},
+    {'Pillow-12.2.0_fix-CVE-2026-54058.patch': '00c62ec5a0acbf6a3c4cf173e5060e32729e19fd6914e03090583a05eb66dc83'},
 ]
 
 builddependencies = [
