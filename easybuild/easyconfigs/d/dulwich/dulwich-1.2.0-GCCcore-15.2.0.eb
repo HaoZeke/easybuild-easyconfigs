@@ -27,6 +27,7 @@ exts_list = [
             'dulwich-1.2.0_fix-CVE-2026-47712.patch',
             'dulwich-1.2.0_fix-CVE-2026-114096.patch',
             'dulwich-1.2.0_fix-CVE-2026-114095.patch',
+            'dulwich-1.2.0_fix-CVE-2026-52726.patch',
         ],
         'checksums': [
             'db600dae670f2b6402c2a6f201dcd9f54893a18d33262f51815de5efd99ba97e',
@@ -38,6 +39,8 @@ exts_list = [
              'ba13a2906844eadbd23f437ed81c823e2bfaa7e477a444621fe64b61588fd55b'},
             {'dulwich-1.2.0_fix-CVE-2026-114095.patch':
              '0bafa7313d0f984f93a928bde04687a5a844b8657f84fc548c547124b5becdef'},
+            {'dulwich-1.2.0_fix-CVE-2026-52726.patch':
+             '6014da993e6e4a684bbb1aaceca872998486c7634cb19578bb2d8b0a3e45d88b'},
         ],
     }),
 ]
