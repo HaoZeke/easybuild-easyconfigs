@@ -36,6 +36,7 @@ patches = [
     'expat-2.7.3_fix-CVE-2026-56411.patch',
     'expat-2.7.3_fix-CVE-2026-56412.patch',
     'expat-2.7.3_fix-CVE-2026-72522.patch',
+    'expat-2.7.3_fix-CVE-2026-66046-CVE-2026-76641.patch',
 ]
 checksums = [
     '59c31441fec9a66205307749eccfee551055f2d792f329f18d97099e919a3b2f',
@@ -60,6 +61,7 @@ checksums = [
     'e206e72f5dcb51526f4a1914484f01cb81831ae3b45194d9d9d58b9cf6d17088',
     'a11a4776cbbe1757e9c2ba8d0a20cd8bb7b8389221e13e6dfc3dc383aa998623',
     '3e8f81c82a120131d30c7add69b659b348116d4bd0d1b7994fb1a04ce852a0db',
+    'd40d8a0d544214946e945f057ff8e19817daeef9f3fccb12f713eeb55dd2639e',
 ]
 
 builddependencies = [('binutils', '2.45')]
