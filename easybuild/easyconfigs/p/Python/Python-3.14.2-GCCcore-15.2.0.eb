@@ -65,6 +65,7 @@ patches = [
     'Python-3.14.2_fix-CVE-2026-56408.patch',
     'Python-3.14.2_fix-CVE-2026-56405.patch',
     'Python-3.14.2_fix-CVE-2026-77214.patch',
+    'Python-3.14.2_fix-CVE-2026-72522.patch',
 ]
 
 # Like patches, but these will only be applied if EasyBuild is configured to filter $LD_LIBRARY_PATH
@@ -180,6 +181,8 @@ checksums = [
      '0551be765a4a028282e4c0bf30ea85abdf6cc331c5cac5019875ab90a15d8004'},
     {'Python-3.14.2_fix-CVE-2026-77214.patch':
      '31cc2e6d241c0c86ddec9f399e90b6d8e6bedf18b26235ddc856ae87fde306bd'},
+    {'Python-3.14.2_fix-CVE-2026-72522.patch':
+     '3617e512fd9095d3ebf3b56fec72bcc4aaad65f010b41b14a213615670cc5794'},
 ]
 
 builddependencies = [
