@@ -141,7 +141,14 @@ exts_list = [
         'checksums': ['cc1d4eb92a4ec1c2df3b490836ffa46922e599d34ce0bb75cf41fd2bf6303d56'],
     }),
     ('certifi', '2026.2.25', {
-        'checksums': ['e887ab5cee78ea814d3472169153c2d12cd43b14bd03329a39a9c6e2e80bfba7'],
+        'patches': [
+            'certifi-2026.2.25_fix-GHSA-6q48-6c7w-9gw2.patch',
+        ],
+        'checksums': [
+            {'certifi-2026.2.25.tar.gz': 'e887ab5cee78ea814d3472169153c2d12cd43b14bd03329a39a9c6e2e80bfba7'},
+            {'certifi-2026.2.25_fix-GHSA-6q48-6c7w-9gw2.patch':
+             '620d0cc0589f2af18a0b15fbeb52e15c5c8ac236f9d10ed81a2f2e5098aff0fa'},
+        ],
     }),
     ('urllib3', '2.6.3', {
         'checksums': ['1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed'],
