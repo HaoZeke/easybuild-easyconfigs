@@ -1,0 +1,18 @@
+# Close the tarfile hardlink fallback symlink escape (bypass of CVE-2025-4330).
+# author: Rohit Goswami (HaoZeke)
+# Upstream commit: https://github.com/python/cpython/commit/79c06bd5c6afa3c440d50faf7ee1b147c8832b4c
+
+diff --git a/Lib/tarfile.py b/Lib/tarfile.py
+index 66769ce12f..80caef4d29 100644
+--- a/Lib/tarfile.py
++++ b/Lib/tarfile.py
+@@ -2757,6 +2757,9 @@ def makelink_with_filter(self, tarinfo, targetpath,
+                     "makelink_with_filter: if filter_function is not None, "
+                     + "extraction_root must also not be None")
+             try:
++                filter_function(
++                    unfiltered.replace(name=tarinfo.name, deep=False),
++                    extraction_root)
+                 filtered = filter_function(unfiltered, extraction_root)
+             except _FILTER_ERRORS as cause:
+                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause
