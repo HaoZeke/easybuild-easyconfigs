@@ -1,0 +1,40 @@
+easyblock = 'CMakeMake'
+
+name = 'libwebsockets'
+version = '5.0.0'
+
+homepage = 'https://libwebsockets.org/'
+description = """Libwebsockets (LWS) is a flexible, lightweight pure C library for
+implementing modern network protocols easily with a tiny footprint, using a nonblocking
+event loop. It has been developed continuously since 2010 and is used in tens of millions
+of devices and by thousands of developers around the world."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+toolchainopts = {'pic': True}
+
+source_urls = ['https://github.com/warmcat/libwebsockets/archive/']
+sources = ['v%(version)s.tar.gz']
+patches = [
+    '%(name)s-4.5.8_fix-ssl.patch',
+]
+checksums = [
+    {'v5.0.0.tar.gz': 'f853c6582101cfcee3a5a9e28ae92ab19d9735c5f31f0bb2e9794b5106123962'},
+    {'libwebsockets-4.5.8_fix-ssl.patch': '0b1e27d8dc4ca9e5f9da55a7e55ac3f178abe0ccaf13093e8c9ef84af8248a22'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('CMake', '4.2.1')
+]
+
+dependencies = [('libuv', '1.52.1')]
+
+configopts = '-DLWS_WITH_LIBUV=ON'
+configopts += ' -DLWS_WITH_MINIMAL_EXAMPLES=OFF'
+
+sanity_check_paths = {
+    'files': ['lib/libwebsockets.so'],
+    'dirs': ['lib', 'bin', 'include', 'share'],
+}
+
+moduleclass = 'lib'
