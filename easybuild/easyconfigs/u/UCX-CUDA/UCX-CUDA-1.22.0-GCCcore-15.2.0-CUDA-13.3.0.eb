@@ -1,0 +1,41 @@
+easyblock = 'EB_UCX_Plugins'
+
+name = 'UCX-CUDA'
+version = '1.22.0'
+versionsuffix = '-CUDA-%(cudaver)s'
+
+homepage = 'http://www.openucx.org/'
+description = """Unified Communication X
+An open-source production grade communication framework for data centric
+and high-performance applications
+
+This module adds the UCX CUDA support.
+"""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+toolchainopts = {'pic': True}
+
+source_urls = ['https://github.com/openucx/ucx/releases/download/v%(version)s']
+sources = [{'filename': 'ucx-%(version)s.tar.gz', 'alt_location': 'UCX'}]
+patches = ['%(name)s-1.22.0_link_against_existing_UCX_libs.patch']
+checksums = [
+    {'ucx-1.22.0.tar.gz': '258941cddd14ca60d38c0d31b9b09ec1052c901086841011a498da8b55a3cb24'},
+    {'UCX-CUDA-1.22.0_link_against_existing_UCX_libs.patch':
+     'e3c8c80fefc0acf03211afbd3326dd8e8752e83c43d1e90c627fff269d784fe9'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('Autotools', '20250626'),
+    ('pkgconf', '2.5.1'),
+]
+
+dependencies = [
+    ('zlib', '2.3.2'),
+    ('UCX', version),
+    ('CUDA', '13.3.0', '', SYSTEM),
+    ('GDRCopy', '2.5.2'),
+]
+
+
+moduleclass = 'lib'
