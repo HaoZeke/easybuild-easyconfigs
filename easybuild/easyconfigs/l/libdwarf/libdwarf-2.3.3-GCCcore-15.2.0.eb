@@ -1,0 +1,33 @@
+easyblock = 'ConfigureMake'
+
+name = 'libdwarf'
+version = '2.3.3'
+
+homepage = 'https://www.prevanders.net/dwarf.html'
+description = """The DWARF Debugging Information Format is of interest to programmers working on compilers
+and debuggers (and anyone interested in reading or writing DWARF information))"""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+toolchainopts = {'pic': True}
+
+source_urls = ['https://github.com/davea42/libdwarf-code/releases/download/v%(version)s']
+sources = [SOURCE_TAR_XZ]
+checksums = ['bde13d1c49be6f2467326a6e0b3919247471455d16eefc3c6be26c7d4baca36a']
+
+builddependencies = [
+    ('binutils', '2.45'),
+]
+dependencies = [
+    ('elfutils', '0.195'),
+]
+
+configopts = "--enable-shared "
+
+sanity_check_paths = {
+    'files': ['bin/dwarfdump', 'lib/libdwarf.a', 'lib/libdwarf.%s' % SHLIB_EXT],
+    'dirs': ['include']
+}
+
+sanity_check_commands = ['dwarfdump --help']
+
+moduleclass = 'devel'
