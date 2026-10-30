@@ -1,0 +1,17 @@
+easyblock = 'PythonPackage'
+
+name = 'orloge'
+version = '1.0.0'
+
+homepage = 'https://pypi.org/project/orloge/'
+description = "OR log extractor"
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+sources = [SOURCE_TAR_GZ]
+checksums = ['6c0bf7d2867fe22e60ef6425d7e99599938c0b1611d513a0baf972fa91b71c88']
+
+builddependencies = [('binutils', '2.45')]
+dependencies = [('Python', '3.14.2'), ('cpsat-logutils', '1.0.0')]
+
+moduleclass = 'lib'
