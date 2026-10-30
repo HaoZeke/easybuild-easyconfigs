@@ -1,0 +1,17 @@
+easyblock = 'PythonPackage'
+
+name = 'typing-extensions'
+version = '4.16.0'
+
+homepage = 'https://github.com/python/typing_extensions'
+description = "Typing Extensions - Backported and Experimental Type Hints for Python"
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+sources = ['typing_extensions-%(version)s.tar.gz']
+checksums = ['dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5']
+
+builddependencies = [('binutils', '2.45')]
+dependencies = [('Python', '3.14.2')]
+
+moduleclass = 'devel'
