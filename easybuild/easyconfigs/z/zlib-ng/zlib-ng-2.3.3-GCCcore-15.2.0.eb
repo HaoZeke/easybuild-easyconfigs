@@ -1,0 +1,24 @@
+easyblock = 'ConfigureMake'
+
+name = 'zlib-ng'
+version = '2.3.3'
+
+homepage = 'https://github.com/zlib-ng/zlib-ng'
+description = """zlib data compression library for the next generation systems"""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = ['https://github.com/zlib-ng/zlib-ng/archive']
+sources = [{'download_filename': '%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
+checksums = ['f9c65aa9c852eb8255b636fd9f07ce1c406f061ec19a2e7d508b318ca0c907d1']
+
+builddependencies = [('binutils', '2.45')]
+
+sanity_check_paths = {
+    'files': [
+        'include/zconf-ng.h', 'include/zlib-ng.h', 'lib/libz-ng.a', 'lib/libz-ng.%s' % SHLIB_EXT,
+    ],
+    'dirs': [],
+}
+
+moduleclass = 'tools'
