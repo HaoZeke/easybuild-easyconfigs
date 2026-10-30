@@ -1,0 +1,20 @@
+easyblock = 'PythonPackage'
+
+name = 'psycopg'
+version = '3.3.6'
+
+homepage = 'https://psycopg.org/'
+description = "Psycopg is the most popular PostgreSQL adapter for the Python programming language."
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+sources = [SOURCE_TAR_GZ]
+checksums = ['c081f2250df751a943036e42db6df4571c66cd0aabe8291a7a506512b12007d2']
+
+builddependencies = [('binutils', '2.45')]
+dependencies = [
+    ('Python', '3.14.2'),
+    ('PostgreSQL', '18.4'),
+]
+
+moduleclass = 'lib'
