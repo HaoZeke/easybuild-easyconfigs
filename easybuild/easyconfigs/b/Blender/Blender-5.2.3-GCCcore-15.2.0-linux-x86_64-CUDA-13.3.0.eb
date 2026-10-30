@@ -1,0 +1,40 @@
+# Updated to 4.3.2
+# Missing X11 added, library paths expanded to include Blender's
+# own MESA libraries
+# Author: J. Sassmannshausen (Imperial College London/UK)
+
+easyblock = 'PackedBinary'
+
+name = 'Blender'
+version = '5.2.3'
+versionsuffix = '-linux-x86_64-CUDA-%(cudaver)s'
+
+homepage = 'https://www.blender.org/'
+description = """Blender is the free and open source 3D creation suite. It supports
+ the entirety of the 3D pipeline-modeling, rigging, animation, simulation, rendering,
+ compositing and motion tracking, even video editing and game creation."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = ['https://ftp.nluug.nl/pub/graphics/blender/release/Blender%(version_major_minor)s/']
+sources = ['blender-%(version)s-linux-x64.tar.xz']
+checksums = ['78486c018b4443efe5e75ab54c290ed8c15abafd249b862c2c9ce2530a918eec']
+
+dependencies = [
+    ('CUDA', '13.3.0', '', SYSTEM),
+    ('libdrm', '2.4.133'),
+]
+
+sanity_check_paths = {
+    'files': ['blender', 'blender-launcher'],
+    'dirs': ['%(version_major_minor)s', 'lib'],
+}
+
+sanity_check_commands = ["blender --help"]
+
+cuda_sanity_ignore_files = [
+    'lib/libOpenImageDenoise_device_cuda.so.2.5.0',
+    'lib64/libOpenImageDenoise_device_cuda.so.2.5.0',
+]
+
+moduleclass = 'vis'
