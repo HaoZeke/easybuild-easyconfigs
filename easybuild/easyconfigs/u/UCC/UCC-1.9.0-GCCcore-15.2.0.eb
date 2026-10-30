@@ -1,0 +1,41 @@
+easyblock = 'ConfigureMake'
+
+name = 'UCC'
+version = '1.9.0'
+
+homepage = 'https://www.openucx.org/'
+description = """UCC (Unified Collective Communication) is a collective
+communication operations API and library that is flexible, complete, and
+feature-rich for current and emerging programming models and runtimes.
+"""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+toolchainopts = {'pic': True}
+
+source_urls = ['https://github.com/openucx/ucc/archive/refs/tags']
+sources = ['v%(version)s.tar.gz']
+patches = ['UCC-1.1.0-multiple_component_paths.patch']
+checksums = [
+    {'v1.9.0.tar.gz': '88f9d6049f80b7215cc21e2c1be04bab8bf5cc8aac39fa42d1927995b0f8fb4a'},
+    {'UCC-1.1.0-multiple_component_paths.patch': '3081d0f694331daa4a88a0fa3fb54b9a918015248ae5eb7b3157b924abd31bee'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('Autotools', '20250626'),
+]
+
+dependencies = [
+    ('UCX', '1.20.0'),
+]
+
+preconfigopts = "./autogen.sh && "
+
+sanity_check_paths = {
+    'files': ['bin/ucc_info'],
+    'dirs': ['include', 'lib']
+}
+
+sanity_check_commands = ["ucc_info -c"]
+
+moduleclass = 'lib'
