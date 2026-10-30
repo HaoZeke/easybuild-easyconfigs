@@ -1,0 +1,23 @@
+easyblock = 'PythonPackage'
+
+name = 'pytest-rerunfailures'
+version = '16.7'
+
+homepage = 'https://github.com/pytest-dev/pytest-rerunfailures'
+description = "pytest plugin to re-run tests to eliminate flaky failures."
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = ['https://github.com/pytest-dev/pytest-rerunfailures/archive/refs/tags/']
+sources = ['%(version)s.tar.gz']
+checksums = ['ba9db7416f296f9e42a9932a36623dbd971fd29b6397bb7695d0f1d49ff363ad']
+
+builddependencies = [
+    ('binutils', '2.45'),
+]
+dependencies = [
+    ('Python', '3.14.2'),
+    ('Python-bundle-PyPI', '2026.04'),
+]
+
+moduleclass = 'tools'
