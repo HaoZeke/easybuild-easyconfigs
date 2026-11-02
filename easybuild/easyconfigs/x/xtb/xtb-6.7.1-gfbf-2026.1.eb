@@ -1,0 +1,78 @@
+easyblock = 'CMakeNinja'
+
+name = 'xtb'
+version = '6.7.1'
+# Use a post-6.7.1 snapshot for compatibility with tblite 0.6.0 and DFT-D4 4.x
+_commit = 'b31754b'
+
+homepage = 'https://xtb-docs.readthedocs.io'
+description = "xtb - An extended tight-binding semi-empirical program package."
+
+toolchain = {'name': 'gfbf', 'version': '2026.1'}
+
+github_account = 'grimme-lab'
+
+source_urls = ['https://github.com/grimme-lab/xtb/archive/']
+sources = [{
+    'download_filename': '%s.tar.gz' % _commit,
+    'filename': 'xtb-b31754b.tar.gz',
+}]
+checksums = ['8a5fde29decd562100d8a94a965abde497d36647a7593cf2e5c167c44221b997']
+
+builddependencies = [
+    ('CMake', '3.31.11'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+]
+
+dependencies = [
+    ('tblite', '0.6.0'),
+    ('CPCM-X', '1.1.0'),
+    ('DFT-D4', '4.2.0'),
+    ('Simple-DFTD3', '1.4.0'),
+]
+
+# Install the shared library and Fortran module files
+configopts = '-DBUILD_SHARED_LIBS=ON -DINSTALL_MODULES=ON '
+configopts += '-DBLAS_LIBRARIES="-lflexiblas" -DLAPACK_LIBRARIES="-lflexiblas" '
+
+pretestopts = "export OMP_NUM_THREADS=2 && "
+runtest = True
+
+# The CMake build installs only xtb-config.cmake, whose targets Meson cannot
+# guess; write the xtb.pc that the upstream Meson build would install, so
+# dependency('xtb') works in Meson consumers such as rgpot.
+postinstallcmds = [
+    "mkdir -p %(installdir)s/lib/pkgconfig && "
+    "cat > %(installdir)s/lib/pkgconfig/xtb.pc << 'EOF'\n"
+    "prefix=%(installdir)s\n"
+    "libdir=${prefix}/lib\n"
+    "includedir=${prefix}/include\n"
+    "\n"
+    "Name: xtb\n"
+    "Description: Semiempirical extended tight-binding program package\n"
+    "Version: %(version)s\n"
+    "Libs: -L${libdir} -lxtb\n"
+    "Cflags: -I${includedir}\n"
+    "EOF",
+]
+
+sanity_check_paths = {
+    'files': [
+        'bin/xtb',
+        'include/xtb.h',
+        'lib/libxtb.a',
+        f'lib/libxtb.{SHLIB_EXT}',
+        'lib/pkgconfig/xtb.pc',
+    ],
+    'dirs': ['include', 'share'],
+}
+
+sanity_check_commands = ['xtb --help']
+
+modextravars = {
+    'XTBHOME': '%(installdir)s',
+    'XTBPATH': '%(installdir)s',
+}
+
+moduleclass = 'chem'
