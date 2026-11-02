@@ -17,6 +17,7 @@ patches = [
     'HDF5-2.2.0_fix-CVE-2026-19024.patch',
     'HDF5-2.2.0_fix-CVE-2026-19029.patch',
     'HDF5-2.2.0_fix-CVE-2026-19026-CVE-2026-19027.patch',
+    'HDF5-2.2.0_fix-CVE-2026-19028.patch',
 ]
 checksums = [
     {'hdf5-2.2.0.tar.gz': '1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16'},
@@ -26,6 +27,7 @@ checksums = [
         'HDF5-2.2.0_fix-CVE-2026-19026-CVE-2026-19027.patch':
         '22cc948bfd0f1db1784b0925c71dde0cee3167aeead52815405b5e2b73095e1f',
     },
+    {'HDF5-2.2.0_fix-CVE-2026-19028.patch': '4b5f6f56f42fc6862689d145307bc40a2be45babb5292d5cde02df4cc889681a'},
 ]
 
 builddependencies = [('CMake', '4.2.1')]
