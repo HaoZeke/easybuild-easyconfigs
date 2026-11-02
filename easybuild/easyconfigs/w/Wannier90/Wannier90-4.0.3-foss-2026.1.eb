@@ -1,0 +1,40 @@
+easyblock = 'MakeCp'
+
+name = 'Wannier90'
+version = '4.0.3'
+
+homepage = 'http://www.wannier.org'
+description = """A tool for obtaining maximally-localised Wannier functions"""
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+toolchainopts = {'usempi': True}
+
+github_account = 'wannier-developers'
+source_urls = [GITHUB_LOWER_SOURCE]
+sources = [{'download_filename': 'v%(version)s.tar.gz', 'filename': SOURCELOWER_TAR_GZ}]
+checksums = [
+    '8f6577939eecba6f07ea6946b8ed09b7a86beec20159b32a5d8278e7223d58ad',  # wannier90-4.0.3.tar.gz
+]
+
+# we need that to deal with some scripts using "#!/usr/bin/env python "
+dependencies = [('Python', '3.14.2')]
+
+# first build serial library, and rename it to libwannier-serial.a
+prebuildopts = 'touch make.inc && '
+prebuildopts += 'make staticlib DYNLIBBASE=wannier F90=$F90_SEQ '
+prebuildopts += 'FCOPTS="$FFLAGS -fallow-argument-mismatch" LDOPTS="$FFLAGS" && '
+prebuildopts += 'mv libwannier.a libwannier-serial.a && make clean && '
+
+buildopts = 'wannier post w90chk2chk w90spn2spn staticlib DYNLIBBASE=wannier '
+buildopts += 'F90=$F90 MPIF90=$MPIF90 FCOPTS="$FFLAGS -fallow-argument-mismatch" LDOPTS="$FFLAGS" '
+buildopts += 'LIBS="-L$LAPACK_LIB_DIR $LIBLAPACK" COMMS=mpi'
+
+local_executables = ['wannier90.x', 'postw90.x', 'w90chk2chk.x', 'w90spn2spn.x']
+files_to_copy = [(local_executables, 'bin'), (['libwannier.a', 'libwannier-serial.a'], 'lib')]
+
+sanity_check_paths = {
+    'files': ['bin/%s' % x for x in local_executables] + ['lib/libwannier.a', 'lib/libwannier-serial.a'],
+    'dirs': []
+}
+
+moduleclass = 'chem'
