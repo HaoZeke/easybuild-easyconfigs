@@ -25,8 +25,8 @@ exts_list = [
     ('itsdangerous', '2.2.0', {
         'checksums': ['e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173'],
     }),
-    ('werkzeug', '3.1.8', {
-        'checksums': ['9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44'],
+    ('werkzeug', '3.1.9', {
+        'checksums': ['55ca7c70a75689be937aa27f8ff4b018f06ff4838fc73045560bf0f5a1291060'],
     }),
     ('asgiref', '3.11.1', {
         'checksums': ['5f184dc43b7e763efe848065441eac62229c9f7b0475f41f80e207a114eda4ce'],
