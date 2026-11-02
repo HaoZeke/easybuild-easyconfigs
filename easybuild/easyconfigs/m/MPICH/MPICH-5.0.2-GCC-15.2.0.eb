@@ -1,0 +1,25 @@
+name = 'MPICH'
+version = '5.0.2'
+
+homepage = 'https://www.mpich.org/'
+description = """MPICH is a high-performance and widely portable implementation
+of the Message Passing Interface (MPI) standard (MPI-1, MPI-2 and MPI-3)."""
+
+toolchain = {'name': 'GCC', 'version': '15.2.0'}
+toolchainopts = {
+    'extra_fflags': '-w -fallow-argument-mismatch -O2'
+}
+
+source_urls = ['https://www.mpich.org/static/downloads/%(version)s']
+sources = [SOURCELOWER_TAR_GZ]
+checksums = ['928c2f18d350a91443fe8024ad01ce2c6009e9c551e0a73e797fc567f119137d']
+
+dependencies = [
+    ('hwloc', '2.13.0'),
+    ('UCX', '1.20.0'),
+]
+
+# Also build (separate) MPI ABI
+mpi_abi = True
+
+moduleclass = 'mpi'
