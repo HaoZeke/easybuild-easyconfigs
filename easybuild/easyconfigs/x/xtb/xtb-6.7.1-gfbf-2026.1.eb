@@ -46,7 +46,9 @@ configopts = '-DBUILD_SHARED_LIBS=ON -DINSTALL_MODULES=ON '
 configopts += '-DBLAS_LIBRARIES="-lflexiblas" -DLAPACK_LIBRARIES="-lflexiblas" '
 
 pretestopts = "export OMP_NUM_THREADS=2 && "
-runtest = True
+# CMakeNinja's default test_cmd is ninja, so runtest=True never reaches ctest.
+# Same pattern as Simple-DFTD3: test_cmd is what ConfigureMake executes.
+test_cmd = 'ctest'
 
 # The CMake build installs only xtb-config.cmake, whose targets Meson cannot
 # guess; write the xtb.pc that the upstream Meson build would install, so
