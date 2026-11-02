@@ -17,12 +17,17 @@ patches = [
     'HDF5-2.1.1-fix_fortran_wrappers.patch',
     'HDF5-2.2.0_fix-CVE-2026-19024.patch',
     'HDF5-2.2.0_fix-CVE-2026-19029.patch',
+    'HDF5-2.2.0_fix-CVE-2026-19026-CVE-2026-19027.patch',
 ]
 checksums = [
     {'hdf5-2.2.0.tar.gz': '1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16'},
     {'HDF5-2.1.1-fix_fortran_wrappers.patch': '8c753aa33f48a94d5fa3e1e2c92d032b85279971298dcddb26121b663d2c86b9'},
     {'HDF5-2.2.0_fix-CVE-2026-19024.patch': 'f73c7ed242ecf383d99c9ca00b31e18352643354318c9195142858dd3ab2e998'},
     {'HDF5-2.2.0_fix-CVE-2026-19029.patch': '515a027c7501b92dd4e0c12670209f24beeeed50224dcb6830f5bff29a3ed857'},
+    {
+        'HDF5-2.2.0_fix-CVE-2026-19026-CVE-2026-19027.patch':
+        '22cc948bfd0f1db1784b0925c71dde0cee3167aeead52815405b5e2b73095e1f',
+    },
 ]
 
 builddependencies = [('CMake', '4.2.1')]
