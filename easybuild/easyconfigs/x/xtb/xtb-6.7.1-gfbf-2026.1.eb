@@ -21,16 +21,11 @@ sources = [{
 # that as a constant, so Findcpcmx ignores the installed CPCM-X and
 # FetchContent builds a copy whose tests fail to link libgfortran, libgomp
 # and FlexiBLAS.
-patches = [
-    'xtb-6.7.1_fix-find-package-quoted-found.patch',
-    'xtb-6.7.1_fix-dsygvd-workspace-query.patch',
-]
+patches = ['xtb-6.7.1_fix-find-package-quoted-found.patch']
 checksums = [
     {'xtb-b31754b.tar.gz': '8a5fde29decd562100d8a94a965abde497d36647a7593cf2e5c167c44221b997'},
     {'xtb-6.7.1_fix-find-package-quoted-found.patch':
      '4bbcd7494c67afae218268e17b8cc13e28bc2f7dbe8f185ea56461178c3a6cda'},
-    {'xtb-6.7.1_fix-dsygvd-workspace-query.patch':
-     '34852d5066939574a0426518ba4c5cacea071a653a5388c871d385c3b62b8088'},
 ]
 
 builddependencies = [
