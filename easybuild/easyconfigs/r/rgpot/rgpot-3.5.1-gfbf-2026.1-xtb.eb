@@ -65,6 +65,15 @@ configopts += '-Dwith_tests=true -Dwith_examples=true '
 # No build-time downloads: every subproject the options need is a dependency.
 configopts += '-Dwrap_mode=nodownload '
 
+# The Fortran pots are link_wholed into librgpot, so it NEEDs libgfortran.so.5.
+# xtb and tblite are further Fortran libraries, loaded from libxtb_engine.so,
+# and they need the same runtime. Meson puts -lgfortran only in Libs.private,
+# and ld does not resolve that DT_NEEDED from -L or the library RPATH.
+# Publish -lgfortran so a C++ consumer (eOn) links.
+postinstallcmds = [
+    "sed -i -e '/^Libs:/ { /-lgfortran/! s/$/ -lgfortran/ }' -e '/^Libs.private:/ s/ -lgfortran//' %(installdir)s/lib/pkgconfig/rgpot.pc",
+]
+
 # The meson suite includes TBLitetest (GFN2 and GFN1 water energies), so the
 # tblite 0.6 calculator path (RGPOT_TBLITE_XTB_CONFIG) is exercised here.
 runtest = 'meson'
@@ -95,6 +104,7 @@ sanity_check_paths = {
 
 sanity_check_commands = [
     "pkg-config --exists rgpot",
+    "pkg-config --libs rgpot | grep -q -- -lgfortran",
     "! pkg-config --exists rgpot-mpi",
     "test ! -e %(installdir)s/lib/cmake/pot",
     "test ! -e %(installdir)s/lib/librgpot_mpi." + SHLIB_EXT,

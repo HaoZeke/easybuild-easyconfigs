@@ -36,15 +36,36 @@ configopts = [
 
 github_account = 'grimme-lab'
 
+# Meson names the project cpx, so the installed pkg-config file is cpx.pc.
+# xtb's Findcpcmx.cmake looks up the module name cpcmx. libcpx NEEDs
+# libgfortran.so.5, libnumsa NEEDs libgomp.so.1, and the BLAS symbols
+# (dgetrf_, sgetrf_) come from FlexiBLAS. binutils 2.45 does not resolve
+# those DT_NEEDED entries from -L or the library RPATH, and Meson hides
+# -lflexiblas in Libs.private. Publish cpcmx.pc with them on Libs so xtb
+# links the installed library.
+postinstallcmds = [
+    "sed -e 's/^Name: cpx$/Name: cpcmx/' "
+    "-e 's/^Description:.*/Description: CPCM-X solvation model/' "
+    "-e '/^Requires\\.private:/d' "
+    "-e '/^Libs\\.private:/d' "
+    "-e '/^Libs:/ s/$/ -lflexiblas -lgfortran -lgomp/' "
+    "-e '/^Version:/ a Requires: mctc-lib, numsa' "
+    "%(installdir)s/lib/pkgconfig/cpx.pc > %(installdir)s/lib/pkgconfig/cpcmx.pc",
+]
+
 pretestopts = "export OMP_NUM_THREADS=2 && "
 runtest = 'meson'
 testopts = "test -C %(builddir)s/easybuild_obj -t 60"  # Ensure test don't timeout
 
 sanity_check_paths = {
-    'files': ['bin/cpx', 'lib/libcpx.a', f'lib/libcpx.{SHLIB_EXT}'],
+    'files': ['bin/cpx', 'lib/libcpx.a', f'lib/libcpx.{SHLIB_EXT}', 'lib/pkgconfig/cpcmx.pc'],
     'dirs': ['include'],
 }
 
-sanity_check_commands = ['cpx --help']
+sanity_check_commands = [
+    'cpx --help',
+    "pkg-config --libs cpcmx | grep -q -- -lgfortran",
+    "pkg-config --libs cpcmx | grep -q -- -lflexiblas",
+]
 
 moduleclass = 'chem'
