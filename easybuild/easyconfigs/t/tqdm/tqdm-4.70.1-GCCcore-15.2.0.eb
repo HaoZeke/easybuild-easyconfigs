@@ -1,0 +1,17 @@
+easyblock = 'PythonPackage'
+
+name = 'tqdm'
+version = '4.70.1'
+
+homepage = 'https://github.com/tqdm/tqdm'
+description = "A fast, extensible progress bar for Python and CLI"
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+sources = [SOURCE_TAR_GZ]
+checksums = ['cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4']
+
+builddependencies = [('binutils', '2.45')]
+dependencies = [('Python', '3.14.2')]
+
+moduleclass = 'lib'
