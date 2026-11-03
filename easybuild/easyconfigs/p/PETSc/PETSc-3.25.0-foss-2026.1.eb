@@ -51,13 +51,16 @@ dependencies = [
 
 configopts = '--LIBS="$LIBS -lrt" --with-mpi4py=0 '
 
-# 'make test' reads share/petsc/datafiles from the --prefix tree, which
-# 'make install' fills only after the test step. Copy them first.
-# foss enables OpenMP; one thread keeps ParMETIS partitions stable and
-# the 60s mpiexec timeout from being hit.
-pretestopts = 'mkdir -p %(installdir)s/share/petsc && '
-pretestopts += 'cp -a %(builddir)s/petsc-%(version)s/share/petsc/datafiles %(installdir)s/share/petsc/ && '
+# 'make test' reads datafiles and libpetsc.so from the prefix, and one
+# example compiles a source file from $PETSC_DIR/src. Install first, then
+# point src at the build tree. Drop that symlink before the real install.
+# One OpenMP thread and a 300s limit: the default 60s mpiexec timeout fired
+# on ex56 (real 60.37s).
+pretestopts = 'OMP_NUM_THREADS=1 make install && '
+pretestopts += 'ln -sfn %(builddir)s/petsc-%(version)s/src %(installdir)s/src && '
 pretestopts += 'OMP_NUM_THREADS=1 '
+preinstallopts = 'rm -f %(installdir)s/src && '
+testopts = 'TIMEOUT=300 '
 
 shared_libs = 1
 
