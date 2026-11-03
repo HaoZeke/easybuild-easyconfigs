@@ -41,6 +41,9 @@ libint_compiler_configopts += '--with-eri-max-am=%s ' % local_eri_max_am
 libint_compiler_configopts += '--with-eri2-max-am=%s ' % local_eri23_max_am
 libint_compiler_configopts += '--with-eri3-max-am=%s ' % local_eri23_max_am
 libint_compiler_configopts += '--enable-generic-code --disable-unrolling'
+# Point configure at the Boost dependency: without it, AX_BOOST_BASE searches /usr first and a
+# host with boost-devel installed builds against /usr/include/boost instead.
+libint_compiler_configopts += ' --with-boost=$EBROOTBOOST'
 
 with_fortran = True
 
