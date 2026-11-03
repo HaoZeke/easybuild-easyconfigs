@@ -1,0 +1,43 @@
+name = 'CP2K'
+version = '2026.2'
+
+homepage = 'https://www.cp2k.org/'
+description = """CP2K is a freely available (GPL) program, written in Fortran 95, to perform atomistic and molecular
+ simulations of solid state, liquid, molecular and biological systems. It provides a general framework for different
+ methods such as e.g. density functional theory (DFT) using a mixed Gaussian and plane waves approach (GPW), and
+ classical pair and many-body potentials. """
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+# no 'pic' or 'openmp': CP2K's CMake build turns on position-independent code by default and links OpenMP itself
+
+source_urls = ['https://github.com/cp2k/cp2k/releases/download/v%(version)s/']
+sources = [SOURCELOWER_TAR_BZ2]
+# GCC 15 with AVX2 or AVX-512 miscompiles the integer packing behind in-core HFX integrals and compressed
+# tensors, which gives wrong HFX, MP2 and GW results; the patch turns off loop vectorization for that one file
+patches = ['CP2K-2026.2_fix-hfx-compression-GCC-15.patch']
+checksums = [
+    {'cp2k-2026.2.tar.bz2': 'f9bd86f580f57a53a0768c0045d1417f9f9a1d66d851ed7f662f496200043373'},
+    {'CP2K-2026.2_fix-hfx-compression-GCC-15.patch':
+     'e21ee4c54e50bb2e010ecc807f41cd68f0aaa0bc76efc27900fdb13a31412b88'},
+]
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    # CP2K finds ELPA only through pkg-config (and tries it first for FFTW, FlexiBLAS, PLUMED and ScaLAPACK)
+    ('pkgconf', '2.5.1'),
+    # runs fypp during the build, and the regression test driver in the test step and the sanity check
+    ('Python', '3.14.2'),
+]
+
+# the CP2K easyblock enables the CP2K_USE_* option of each of these
+dependencies = [
+    ('DBCSR', '2.10.0'),
+    ('ELPA', '2026.02.002'),
+    ('Libint', '2.13.1', '-lmax-6-cp2k'),
+    ('libxc', '7.0.0'),
+    ('libvori', '220621'),
+    ('PLUMED', '2.10.0'),
+    ('spglib', '2.7.0'),
+]
+
+moduleclass = 'chem'
