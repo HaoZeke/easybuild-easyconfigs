@@ -1,0 +1,18 @@
+Honor PYTHONTZPATH in the ZoneInfo copy in Lib/test/datetimetester.py.
+That copy hardcodes zoneroot = '/usr/share/zoneinfo'.
+The toolchain glibc reads $EASYBUILD_SYSROOT/usr/share/zoneinfo instead, so IranTest_Fast.test_system_transitions fails during the profile-guided optimization run.
+Author: Rohit Goswami (SURF)
+
+diff -ru Python-3.14.8.orig/Lib/test/datetimetester.py Python-3.14.8/Lib/test/datetimetester.py
+--- Python-3.14.8.orig/Lib/test/datetimetester.py
++++ Python-3.14.8/Lib/test/datetimetester.py
+@@ -6473,7 +6473,8 @@
+     return zip(a, b)
+ 
+ class ZoneInfo(tzinfo):
+-    zoneroot = '/usr/share/zoneinfo'
++    # Match the zoneinfo tree the process libc uses when PYTHONTZPATH is set.
++    zoneroot = os.environ.get('PYTHONTZPATH', '/usr/share/zoneinfo').split(os.pathsep)[0]
+     def __init__(self, ut, ti):
+         """
+ 
