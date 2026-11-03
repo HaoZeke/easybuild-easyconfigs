@@ -1,0 +1,34 @@
+easyblock = 'PackedBinary'
+
+name = 'Blender'
+version = '5.2.1'
+versionsuffix = '-linux-x86_64-CUDA-%(cudaver)s'
+
+homepage = 'https://www.blender.org/'
+description = """Blender is the free and open source 3D creation suite. It supports
+ the entirety of the 3D pipeline-modeling, rigging, animation, simulation, rendering,
+ compositing and motion tracking, even video editing and game creation."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://ftp.nluug.nl/pub/graphics/blender/release/Blender%(version_major_minor)s/']
+sources = ['blender-%(version)s-linux-x64.tar.xz']
+checksums = ['a31f524fa99a527d3d52b7f5aaa68c34e1a19d5a1c9473f79c5cc610fd5b10e9']
+
+# 2026.1 ships CUDA 13.3.0 (SYSTEM), same toolchain shape as easyconfigs PR 26794.
+# That PR pins CUDA 12.8.0. Cycles can be compiled with CUDA 13 since Blender 4.5
+# (blender PR 145570); this packed binary is still the upstream linux-x64 tarball.
+# That tarball has no cubin for the GPUs this stack runs, so nvcc from this CUDA
+# module is what compiles one at runtime. CUDA 13 only accepts Turing and newer.
+dependencies = [
+    ('CUDA', '13.3.0', '', SYSTEM),
+]
+
+sanity_check_paths = {
+    'files': ['blender', 'blender-thumbnailer'],
+    'dirs': ['%(version_major_minor)s'],
+}
+
+sanity_check_commands = ["blender --help"]
+
+moduleclass = 'vis'
