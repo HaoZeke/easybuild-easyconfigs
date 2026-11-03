@@ -1,0 +1,16 @@
+Declare that the regression tests in xTB/regtest-3-spglib need tblite. Five of its eight inputs use
+GFN_TYPE TBLITE, and a CP2K built with spglib but without tblite aborts on them with "Built without
+TBLITE", so tests/do_regtest.py reports them as failed instead of skipping the directory.
+Backport of https://github.com/cp2k/cp2k/pull/5606 (commit f4d43ab5), merged after the 2026.2 release.
+Author: Rohit Goswami
+--- cp2k-2026.2.orig/tests/TEST_DIRS
++++ cp2k-2026.2/tests/TEST_DIRS
+@@ -218,7 +218,7 @@
+ QS/regtest-md-extrap
+ Fist/regtest-15
+ xTB/regtest-3
+-xTB/regtest-3-spglib                                        spglib
++xTB/regtest-3-spglib                                        spglib tblite
+ QS/regtest-debug-3                                          libint libxc !ifx
+ QS/regtest-lrigpw-2
+ QS/regtest-hybrid-4                                         libint libxc !ifx
