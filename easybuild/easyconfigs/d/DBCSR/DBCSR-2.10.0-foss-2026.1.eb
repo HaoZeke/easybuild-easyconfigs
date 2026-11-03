@@ -1,0 +1,43 @@
+easyblock = 'CMakeMake'
+
+name = 'DBCSR'
+version = '2.10.0'
+
+homepage = 'https://cp2k.github.io/dbcsr/'
+description = """DBCSR stands for Distributed Blocked Compressed Sparse Row. DBCSR is a library designed to
+ efficiently perform sparse matrix-matrix multiplication, among other operations."""
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+toolchainopts = {'openmp': True, 'usempi': True, 'pic': True}
+
+source_urls = ['https://github.com/cp2k/dbcsr/releases/download/v%(version)s/']
+sources = [SOURCELOWER_TAR_GZ]
+checksums = ['3d897220fbb4498215331efad6905eb7744881b4cf04eb5c5fb4db7c48a56ef9']
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    # runs the fypp preprocessor that is bundled in the source tarball
+    ('Python', '3.14.2'),
+]
+
+# MPI with the mpi_f08 module, and OpenMP, as CP2K 2026.2 builds DBCSR (tools/toolchain/scripts/stage9/install_dbcsr.sh)
+configopts = '-DUSE_MPI=ON -DUSE_MPI_F08=ON -DUSE_OPENMP=ON '
+# DBCSR only uses LIBXSMM through LIBXS (USE_LIBXSMM depends on USE_LIBXS), and there is no LIBXS easyconfig
+configopts += '-DUSE_LIBXS=OFF '
+configopts += '-DBLA_VENDOR=FlexiBLAS '
+# the examples have no install rules, they would only add build time
+configopts += '-DWITH_EXAMPLES=OFF '
+# CP2K's toolchain script builds DBCSR with BUILD_TESTING=NO; keep the unit tests for the test step
+configopts += '-DBUILD_TESTING=ON'
+
+build_shared_libs = True
+
+runtest = True
+
+sanity_check_paths = {
+    'files': ['include/dbcsr_api.mod', 'include/dbcsr_tensor_api.mod', 'include/dbcsr.h',
+              f'lib/libdbcsr.{SHLIB_EXT}', f'lib/libdbcsr_c.{SHLIB_EXT}', 'lib/cmake/dbcsr/DBCSRConfig.cmake'],
+    'dirs': [],
+}
+
+moduleclass = 'chem'
