@@ -39,7 +39,7 @@ builddependencies = [
 dependencies = [
     ('DBCSR', '2.10.0'),
     ('ELPA', '2026.02.002'),
-    ('Libint', '2.13.1', '-lmax-6-cp2k'),
+    ('Libint', '2.12.0', '-lmax-6-cp2k'),
     ('libxc', '7.0.0'),
     ('libvori', '220621'),
     ('PLUMED', '2.10.0'),
