@@ -1,0 +1,13 @@
+Set MINOR to 10 in util/version_utils.py so the PyWavelets 1.10.0 sdist reports version 1.10.0 instead of 1.8.0.
+Author: Rohit Goswami
+--- a/util/version_utils.py	2026-09-07 16:45:19.000000000 +0000
++++ b/util/version_utils.py	2026-11-03 17:09:57.691499320 +0000
+@@ -3,7 +3,7 @@
+ import subprocess
+ 
+ MAJOR = 1
+-MINOR = 8
++MINOR = 10
+ MICRO = 0
+ ISRELEASED = True
+ VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)

@@ -9,7 +9,11 @@ description = "PyWavelets is open source wavelet transform software for Python."
 toolchain = {'name': 'foss', 'version': '2026.1'}
 
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['f3cb8640225a8f3fdcbc3f6f3bd112c78927c9407cbfa65a5ff303990a6a3e32']
+patches = ['PyWavelets-1.10.0_version_utils.patch']
+checksums = [
+    {'pywavelets-1.10.0.tar.gz': 'f3cb8640225a8f3fdcbc3f6f3bd112c78927c9407cbfa65a5ff303990a6a3e32'},
+    {'PyWavelets-1.10.0_version_utils.patch': '99962ec44a5ed630c5ad4537ad5f3efc8abf5b0824f60d5d701b25d8e06ec342'},
+]
 
 builddependencies = [
     ('Cython', '3.2.9'),
