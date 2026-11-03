@@ -12,13 +12,19 @@ toolchain = {'name': 'foss', 'version': '2026.1'}
 
 source_urls = ['https://github.com/cp2k/cp2k/releases/download/v%(version)s/']
 sources = [SOURCELOWER_TAR_BZ2]
-# GCC 15 with AVX2 or AVX-512 miscompiles the integer packing behind in-core HFX integrals and compressed
-# tensors, which gives wrong HFX, MP2 and GW results; the patch turns off loop vectorization for that one file
-patches = ['CP2K-2026.2_fix-hfx-compression-GCC-15.patch']
+patches = [
+    # GCC 15 with AVX2 or AVX-512 miscompiles the integer packing behind in-core HFX integrals and compressed
+    # tensors, which gives wrong HFX, MP2 and GW results; the patch turns off loop vectorization for that one file
+    'CP2K-2026.2_fix-hfx-compression-GCC-15.patch',
+    # without tblite, the tblite inputs of xTB/regtest-3-spglib abort instead of being skipped (fixed after 2026.2)
+    'CP2K-2026.2_regtest-3-spglib-requires-tblite.patch',
+]
 checksums = [
     {'cp2k-2026.2.tar.bz2': 'f9bd86f580f57a53a0768c0045d1417f9f9a1d66d851ed7f662f496200043373'},
     {'CP2K-2026.2_fix-hfx-compression-GCC-15.patch':
      'e21ee4c54e50bb2e010ecc807f41cd68f0aaa0bc76efc27900fdb13a31412b88'},
+    {'CP2K-2026.2_regtest-3-spglib-requires-tblite.patch':
+     'e2db90466e96080d6e2afc3522937fc0eec5c046f66aca05936a1351b675ede8'},
 ]
 
 builddependencies = [
