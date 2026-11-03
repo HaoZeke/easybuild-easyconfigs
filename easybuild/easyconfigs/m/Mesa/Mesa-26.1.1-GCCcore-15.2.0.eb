@@ -1,0 +1,75 @@
+# Standalone Mesa matching the Mesa component of OpenGL-2026.05-GCCcore-15.2.0,
+# which is what EESSI 2026.06 builds (software-layer easystack
+# additional_arch/riscv64/generic/eessi-2026.06-eb-5.4.0-2026.1.yml,
+# from easyconfigs PR 27026). Software rendering via Gallium and libglvnd:
+# libglvnd can choose system NVIDIA libGLX/libEGL or this Mesa.
+#
+# Gallium drivers are pinned to llvmpipe,radeonsi, the same list as that
+# OpenGL bundle, rather than the easyblock's host-only default.
+# shared-llvm=disabled links LLVM statically, so LLVM is a build dependency.
+# radeonsi requires libelf (Mesa meson.build errors without it) and libclc.
+
+name = 'Mesa'
+version = '26.1.1'
+
+homepage = 'https://www.mesa3d.org/'
+description = """Mesa is an open-source implementation of the OpenGL specification -
+ a system for rendering interactive 3D graphics."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = [
+    'https://archive.mesa3d.org/',
+    'https://archive.mesa3d.org/older-versions/%(version_major)s.x/',
+]
+sources = [SOURCELOWER_TAR_XZ]
+patches = ['Mesa-26.1.1_add-orcjit-to-llvm-modules.patch']
+checksums = [
+    {'mesa-26.1.1.tar.xz': '8bd36c031cc6d0edfec04617527609454ee3a09ad53bdf983b45fc2c1e129b2e'},
+    {'Mesa-26.1.1_add-orcjit-to-llvm-modules.patch':
+     '473c3042bc610e2c310b5ee7f17bf36288283a97c5b3c05b651d74b032847bb3'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('Bison', '3.8.2'),
+    ('Mako', '1.3.12'),
+    ('Meson', '1.10.2'),
+    ('Ninja', '1.13.2'),
+    ('PyYAML', '6.0.3'),
+    ('flex', '2.6.4'),
+    ('expat', '2.7.3'),
+    ('glslang-SPIRV', '16.3.0'),
+    ('libclc', '21.1.8'),
+    ('pkgconf', '2.5.1'),
+    # static LLVM, same as OpenGL-2026.05 (-Dshared-llvm=disabled)
+    ('LLVM', '21.1.8'),
+]
+
+dependencies = [
+    ('Wayland', '1.25.0'),
+    ('X11', '20260518'),
+    ('elfutils', '0.195'),
+    ('libdrm', '2.4.133'),
+    ('libglvnd', '1.7.0'),
+    ('libunwind', '1.8.3'),
+    ('zlib', '2.3.2'),
+]
+
+configopts = "-Dplatforms=x11,wayland -Dvulkan-drivers='swrast,amd' -Dvulkan-layers='device-select' "
+configopts += "-Dllvm=enabled -Dshared-llvm=disabled -Dlibunwind=enabled -Degl=enabled -Dglvnd=enabled "
+configopts += "-Dglx=auto -Dgbm=enabled -Dgles1=enabled -Dgles2=enabled -Dgallium-drivers=llvmpipe,radeonsi "
+configopts += "-Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc,av1dec,av1enc,vp9dec "
+
+# symlink indirect to mesa GLX, similar to Debian, see
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=881789
+# This helps in certain X forwarding situations (e.g. XQuartz)
+postinstallcmds = ["ln -s libGLX_mesa.so.0 %(installdir)s/lib/libGLX_indirect.so.0"]
+
+modextrapaths = {
+    'VK_ADD_DRIVER_FILES': 'share/vulkan/icd.d/',
+    'VK_ADDITIONAL_IMPLICIT_LAYER_PATH_ENV_VAR': 'share/vulkan/implicit_layer.d/',
+    'VK_ADDITIONAL_EXPLICIT_LAYER_PATH_ENV_VAR': 'share/vulkan/explicit_layer.d/',
+}
+
+moduleclass = 'vis'
