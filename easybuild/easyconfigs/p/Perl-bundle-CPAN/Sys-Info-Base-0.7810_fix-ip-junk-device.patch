@@ -1,0 +1,13 @@
+Delete junk device names from the interface hash instead of the unset IP scalar.
+Author: Rohit Goswami (SURF)
+--- a/lib/Sys/Info/OS.pm
++++ b/lib/Sys/Info/OS.pm
+@@ -115,7 +115,7 @@
+             $_ =~ RE_IS_JUNK_DEVICE
+         } @devs;
+ 
+-        delete @{ $ip }->{ @junk_keys}
++        delete @{$int}{@junk_keys}
+             if @junk_keys;
+ 
+         for my $type ( keys %{ $int } ) {

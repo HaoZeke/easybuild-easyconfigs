@@ -2091,9 +2091,14 @@ exts_list = [
         'checksums': ['dff394faa704e6f5e834df0a92e8b22645c1d027108c57dbd4a8bb1d3ab9894d'],
     }),
     ('Sys::Info::Base', '0.7810', {
+        'patches': ['Sys-Info-Base-0.7810_fix-ip-junk-device.patch'],
         'source_tmpl': 'Sys-Info-Base-%(version)s.tar.gz',
         'source_urls': ['https://cpan.metacpan.org/authors/id/B/BU/BURAK'],
-        'checksums': ['21bc494695d19282645b03c4819f31df25da4a510a364b0be08c6eb15d49c070'],
+        'checksums': [
+            {'Sys-Info-Base-0.7810.tar.gz': '21bc494695d19282645b03c4819f31df25da4a510a364b0be08c6eb15d49c070'},
+            {'Sys-Info-Base-0.7810_fix-ip-junk-device.patch':
+             'b332bdebe22d488246f4b89eab715ad66b02075ff7d29c0851adda6cc5ebb9ab'},
+        ],
     }),
     ('Sys::Info::Driver::Unknown', '0.79', {
         'source_tmpl': 'Sys-Info-Driver-Unknown-%(version)s.tar.gz',
