@@ -1,0 +1,50 @@
+name = 'QMCPACK'
+version = '4.3.0'
+versionsuffix = '-CUDA-%(cudaver)s'
+
+homepage = 'https://qmcpack.org'
+description = """QMCPACK is an open-source quantum Monte Carlo simulation code."""
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+toolchainopts = {'usempi': True, 'openmp': True}
+
+github_account = 'QMCPACK'
+source_urls = [GITHUB_SOURCE]
+sources = [
+    {
+        'download_filename': 'v%(version)s.tar.gz',
+        'filename': SOURCELOWER_TAR_GZ,
+    },
+]
+checksums = [
+    '511d5f368db002f2f77504619e1ada8d4a3034200d25feef6773d12a6ed6d18e',
+]
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+]
+
+dependencies = [
+    ('CUDA', '13.3.0', '', SYSTEM),
+    ('Boost', '1.90.0'),
+    ('HDF5', '2.1.1'),
+    ('Python', '3.14.2'),
+    ('libxml2', '2.15.1'),
+]
+
+# v4.3.0 requires CUDAToolkit >= 12.3 (release notes and CMakeLists.txt).
+# foss is GCC. CMake/GNUCompilers.cmake warns that OpenMP offload is not ready
+# for GCC and aborts when QMC_GPU_ARCHS lists more than one architecture. The
+# CUDA language path uses nvcc, which takes every cuda_compute_capabilities
+# entry. CUDA 13 dropped Maxwell, Pascal and Volta, so do not pass those.
+gpu = 'cuda'
+gpu_openmp_offload = False
+
+# The QMCPACK easyblock sets QMC_COMPLEX from the versionsuffix, QMC_MPI and QMC_OMP
+# from the toolchain, builds AFQMC, runs the deterministic ctest label and derives the
+# sanity check from the same values.
+runtest = True
+
+moduleclass = 'chem'
