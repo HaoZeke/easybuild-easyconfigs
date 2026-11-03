@@ -1,0 +1,45 @@
+Add cmake/FindSCOTCH.cmake: imported SCOTCH targets for a Makefile-built SCOTCH (no SCOTCHConfig.cmake).
+Author: Rohit Goswami (SURF)
+--- /dev/null
++++ b/cmake/FindSCOTCH.cmake
+@@ -0,0 +1,40 @@
++# Imported targets for a SCOTCH built with its own Makefiles, which installs no SCOTCHConfig.cmake
++# (EasyBuild's SCOTCH easyblock, as in EESSI 2026.06: static libraries, zlib, pthread).
++# Provides SCOTCH::scotch, SCOTCH::scotcherr, SCOTCH::ptscotch, SCOTCH::ptscotcherr, the names a
++# CMake-built SCOTCH exports and SeisSol links.
++find_path(SCOTCH_INCLUDE_DIR ptscotch.h HINTS ENV EBROOTSCOTCH ENV SCOTCH_ROOT PATH_SUFFIXES include)
++foreach(_lib scotch scotcherr ptscotch ptscotcherr)
++  find_library(SCOTCH_${_lib}_LIBRARY NAMES ${_lib} HINTS ENV EBROOTSCOTCH ENV SCOTCH_ROOT PATH_SUFFIXES lib lib64)
++endforeach()
++
++include(FindPackageHandleStandardArgs)
++find_package_handle_standard_args(SCOTCH REQUIRED_VARS SCOTCH_INCLUDE_DIR
++  SCOTCH_scotch_LIBRARY SCOTCH_scotcherr_LIBRARY SCOTCH_ptscotch_LIBRARY SCOTCH_ptscotcherr_LIBRARY)
++
++if(SCOTCH_FOUND AND NOT TARGET SCOTCH::ptscotch)
++  find_package(MPI REQUIRED COMPONENTS C)
++  find_package(Threads REQUIRED)
++  find_package(ZLIB REQUIRED)
++  set(_scotch_sys ZLIB::ZLIB Threads::Threads m)
++  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
++    list(APPEND _scotch_sys rt)
++  endif()
++  foreach(_lib scotcherr ptscotcherr)
++    add_library(SCOTCH::${_lib} UNKNOWN IMPORTED)
++    set_target_properties(SCOTCH::${_lib} PROPERTIES
++      IMPORTED_LOCATION "${SCOTCH_${_lib}_LIBRARY}"
++      INTERFACE_INCLUDE_DIRECTORIES "${SCOTCH_INCLUDE_DIR}")
++  endforeach()
++  add_library(SCOTCH::scotch UNKNOWN IMPORTED)
++  set_target_properties(SCOTCH::scotch PROPERTIES
++    IMPORTED_LOCATION "${SCOTCH_scotch_LIBRARY}"
++    INTERFACE_INCLUDE_DIRECTORIES "${SCOTCH_INCLUDE_DIR}"
++    INTERFACE_LINK_LIBRARIES "SCOTCH::scotcherr;${_scotch_sys}")
++  add_library(SCOTCH::ptscotch UNKNOWN IMPORTED)
++  set_target_properties(SCOTCH::ptscotch PROPERTIES
++    IMPORTED_LOCATION "${SCOTCH_ptscotch_LIBRARY}"
++    INTERFACE_INCLUDE_DIRECTORIES "${SCOTCH_INCLUDE_DIR}"
++    INTERFACE_LINK_LIBRARIES "SCOTCH::scotch;SCOTCH::ptscotcherr;MPI::MPI_C;${_scotch_sys}")
++endif()
++mark_as_advanced(SCOTCH_INCLUDE_DIR SCOTCH_scotch_LIBRARY SCOTCH_scotcherr_LIBRARY
++  SCOTCH_ptscotch_LIBRARY SCOTCH_ptscotcherr_LIBRARY)
