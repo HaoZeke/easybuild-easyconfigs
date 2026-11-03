@@ -22,8 +22,10 @@ builddependencies = [
     ('googletest', '1.17.0'),
 ]
 
-# the googletest unit and functional tests are built by default (SPGLIB_WITH_TESTS)
+# the googletest unit and functional tests are built by default (SPGLIB_WITH_TESTS);
+# test-FetchContent clones the develop branch of spglib from GitHub, so it does not test this version
 runtest = True
+testopts = "--exclude-regex '^test-FetchContent$'"
 
 postinstallcmds = ["cd %(installdir)s/include && mkdir spglib && ln -s ../spglib.h spglib/"]
 
