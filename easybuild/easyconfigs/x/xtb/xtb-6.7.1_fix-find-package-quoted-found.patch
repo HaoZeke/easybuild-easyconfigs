@@ -1,0 +1,31 @@
+Drop the quotes around ${package}_FOUND and ${_pkg_uc}_FOUND in the if()
+checks of cmake/modules/xtb-utils.cmake. xtb requires CMake 3.17, so policy
+CMP0054 is NEW and a quoted if() argument is never dereferenced as a
+variable. if("${package}_FOUND") then tests the literal string, which is
+always false, so a dependency found by find_package or pkg-config is ignored
+and the fetch method builds its own copy.
+author: Rohit Goswami (rgoswami@ieee.org)
+
+--- a/cmake/modules/xtb-utils.cmake
++++ b/cmake/modules/xtb-utils.cmake
+@@ -49,7 +49,10 @@
+          set("${package}_DIR" "${_pkg_uc}_DIR")
+       endif()
+       find_package("${package}" CONFIG QUIET)
+-      if("${package}_FOUND")
++      # Quoted if("..._FOUND") is a constant under CMP0054 (cmake_minimum_required
++      # 3.17) and never sees the variable, so an installed package is ignored
++      # and the fetch method always runs.
++      if(${package}_FOUND)
+          message(STATUS "Found ${package} via CMake config")
+          break()
+       endif()
+@@ -58,7 +61,7 @@
+    elseif("${method}" STREQUAL "pkgconf")
+       find_package("PkgConfig" QUIET) # built-in Find script
+       pkg_check_modules("${_pkg_uc}" QUIET "${package}") # check if it is a pkg-config module
+-      if("${_pkg_uc}_FOUND")
++      if(${_pkg_uc}_FOUND)
+          message(STATUS "Found ${package} via pkg-config")
+          add_library("${package}::${package}" INTERFACE IMPORTED GLOBAL) # interface library
+          target_link_libraries(
