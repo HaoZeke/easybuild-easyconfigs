@@ -1,0 +1,13 @@
+Size reverse_index in tddfpt_guess_vectors by the spin components that exist. nmo has maxspins = 2
+entries and the loop that fills it runs over nspins, so in a closed-shell run nmo(2) is never set and
+MAXVAL(nmo(:)) takes whatever the stack holds: 1068944951 in a GCC 15.2.0 build for Sapphire Rapids,
+for which every MPI rank allocated and zeroed 4 GiB on each call of the TDDFPT initial guess.
+Author: Rohit Goswami
+--- cp2k-2026.2.orig/src/qs_tddfpt2_utils.F
++++ cp2k-2026.2/src/qs_tddfpt2_utils.F
+@@ -1122,4 +1122,4 @@
+-      i = MAXVAL(nmo(:))
++      i = MAXVAL(nmo(1:nspins))
+       ALLOCATE (reverse_index(i, nspins))
+       reverse_index = 0
+       DO ispin = 1, nspins
