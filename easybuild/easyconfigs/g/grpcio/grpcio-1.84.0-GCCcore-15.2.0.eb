@@ -31,6 +31,9 @@ exts_list = [
         'preinstallopts': (
             # patch hardcoded /usr paths to prefix them with alternate sysroot path (if defined)
             "sed -i 's@/usr@%(sysroot)s/usr@g' setup.py && "
+            # zlib is filtered on EESSI, so the ebroot patch's os.path.join(EBROOTZLIB, ...)
+            # gets None and raises TypeError during metadata generation
+            'if [ -z "${EBROOTZLIB:-}" ]; then export EBROOTZLIB="%(sysroot)s/usr"; fi && '
             "export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=%(parallel)s && "
             # Required to avoid building with non-default C++ standard but keep other flags,
             # see https://github.com/grpc/grpc/issues/34256
