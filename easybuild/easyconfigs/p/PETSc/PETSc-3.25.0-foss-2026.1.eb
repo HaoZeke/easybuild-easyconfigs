@@ -43,6 +43,14 @@ dependencies = [
 
 configopts = '--LIBS="$LIBS -lrt" --with-mpi4py=0 '
 
+# 'make test' reads share/petsc/datafiles from the --prefix tree, which
+# 'make install' fills only after the test step. Copy them first.
+# foss enables OpenMP; one thread keeps ParMETIS partitions stable and
+# the 60s mpiexec timeout from being hit.
+pretestopts = 'mkdir -p %(installdir)s/share/petsc && '
+pretestopts += 'cp -a %(builddir)s/petsc-%(version)s/share/petsc/datafiles %(installdir)s/share/petsc/ && '
+pretestopts += 'OMP_NUM_THREADS=1 '
+
 shared_libs = 1
 
 # only required when building PETSc in a SLURM job environment
