@@ -15,7 +15,11 @@ source_urls = [
     'https://web.cels.anl.gov/projects/petsc/download/release-snapshots',
 ]
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['dc1c018c16bd9dcf40596959875725edb4ba8b854a0b67bbce62a0d4be1bd3be']
+patches = ['PETSc-3.25.0_ex55-filter-install-path.patch']
+checksums = [
+    'dc1c018c16bd9dcf40596959875725edb4ba8b854a0b67bbce62a0d4be1bd3be',
+    'a9a60f3394b36dcfbf45fc63019679d1e687d2a8cd7b4935f5c0b44c084f1695',
+]
 
 builddependencies = [
     ('CMake', '4.2.1'),
