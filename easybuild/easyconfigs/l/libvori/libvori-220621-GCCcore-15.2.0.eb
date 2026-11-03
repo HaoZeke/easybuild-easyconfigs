@@ -9,13 +9,15 @@ file format. The present version of libvori is a very early development
 version, which is hard-coded to work with the CP2k program package."""
 
 toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+# libvori only builds a static library, which the CMake build of CP2K links into its shared library libcp2k
+toolchainopts = {'pic': True}
 
 source_urls = ['https://brehm-research.de/files/']
 sources = [SOURCE_TAR_GZ]
 checksums = ['1cfa98c564814bddacf1c0e7f11582137d758668f6307e6eb392c72317984c14']
 
 builddependencies = [
-    ('CMake', '3.31.11'),
+    ('CMake', '4.2.1'),
     ('binutils', '2.45'),
 ]
 
