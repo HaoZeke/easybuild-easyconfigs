@@ -1,0 +1,22 @@
+Pass each cccdlflags token to gcc as its own argument so the EESSI sysroot flag stays separate.
+Author: Rohit Goswami (SURF)
+--- a/t/getrandom.t
++++ b/t/getrandom.t
+@@ -50,7 +50,7 @@
+ }
+ _OUT_
+ 			my $binary_path = './getrandom.so';
+-			my $result = system { $Config{cc} } $Config{cc}, $Config{cccdlflags}, '-shared', '-o', $binary_path, $c_path;
++			my $result = system { $Config{cc} } $Config{cc}, split(' ', $Config{cccdlflags}), '-shared', '-o', $binary_path, $c_path;
+ 			ok($result == 0, "Compiled a LD_PRELOAD binary at $binary_path:$?");
+ 			my $handle = FileHandle->new();
+ 
+@@ -88,7 +88,7 @@
+ 	return $failed_number_of_bytes;
+ }
+ _OUT_
+-			$result = system { $Config{cc} } $Config{cc}, $Config{cccdlflags}, '-shared', '-o', $binary_path, $c_path;
++			$result = system { $Config{cc} } $Config{cc}, split(' ', $Config{cccdlflags}), '-shared', '-o', $binary_path, $c_path;
+ 			ok($result == 0, "Compiled a LD_PRELOAD binary at $binary_path:$!");
+ 			$handle = FileHandle->new();
+ 
