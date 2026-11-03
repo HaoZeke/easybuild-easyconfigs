@@ -1,0 +1,31 @@
+# #
+# This is a contribution from HPCNow! (http://hpcnow.com)
+# Copyright::   HPCNow!
+# Authors::     Jonney Huang <jonney.huang@hpcnow.com>
+# License::     GPL-v3.0
+# #
+
+easyblock = 'PythonPackage'
+
+name = 'chainforge'
+version = '0.0.3'
+
+homepage = 'https://github.com/SeisSol/chainforge'
+description = "Code generator for fused GEMM chains used by SeisSol."
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+
+github_account = 'SeisSol'
+source_urls = ['https://github.com/%(github_account)s/%(name)s/archive/refs/tags/']
+sources = ['v%(version)s.tar.gz']
+checksums = ['d3280c19d3dc3e2b8a57bf950ceb85bc7cbf75e8e8ec1ea2e9f1f532be7dd257']
+
+dependencies = [
+    ('Python', '3.14.2'),
+]
+
+# yateto at the SeisSol v1.3.2 pin (35001bd2) requires this version exactly:
+# yateto/codegen/fused_gemms/factory.py raises unless chainforge == 0.0.3.
+# setup.py at tag v0.0.3 has no install_requires.
+
+moduleclass = 'lib'
