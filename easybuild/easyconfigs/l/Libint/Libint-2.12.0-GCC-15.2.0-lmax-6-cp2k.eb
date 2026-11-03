@@ -58,6 +58,9 @@ libint_compiler_configopts = (
     f'--with-eri3-max-am={local_eri23_max_am} '
     f'--with-opt-am={local_opt_am} --disable-unrolling'
 )
+# AX_BOOST_BASE searches /usr before the Boost dependency; on a host with boost-devel the
+# generator then builds against /usr/include/boost instead of the Boost build dependency.
+libint_compiler_configopts += ' --with-boost=$EBROOTBOOST'
 
 # 2.12 renamed the generated library's Fortran option from ENABLE_FORTRAN to
 # LIBINT2_ENABLE_FORTRAN (export/cmake/CMakeLists.txt.export). The easyblock
