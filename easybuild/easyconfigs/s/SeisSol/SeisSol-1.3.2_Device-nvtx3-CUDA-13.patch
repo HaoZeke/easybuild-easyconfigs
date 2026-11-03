@@ -1,0 +1,43 @@
+Link CUDA::nvtx3 on CUDA 13 and keep CUDA::nvToolsExt on older toolkits.
+Author: Rohit Goswami (SURF)
+--- a/submodules/Device/cuda.cmake
++++ b/submodules/Device/cuda.cmake
+@@ -47,4 +47,18 @@
+ endif()
+ 
+ find_package(CUDAToolkit REQUIRED)
+-target_link_libraries(device PUBLIC CUDA::cudart CUDA::cuda_driver CUDA::nvToolsExt)
++target_link_libraries(device PUBLIC CUDA::cudart CUDA::cuda_driver)
++
++# NVTX is compiled only when ENABLE_PROFILING_MARKERS defines PROFILING_ENABLED
++# (CMakeLists.txt). Backport of Device ac61a84409 (guard the link) and a072a56b69
++# (CUDA::nvtx3). CUDA 13 removed libnvToolsExt; older toolkits keep CUDA::nvToolsExt.
++# FindCUDAToolkit.cmake documents CUDA::nvtx3 as include <nvtx3/nvToolsExt.h>.
++if (ENABLE_PROFILING_MARKERS)
++    # CUDA 13.0 is the release that dropped the nvToolsExt library.
++    set(DEVICE_CUDA13_MAJOR 13)
++    if (CUDAToolkit_VERSION VERSION_GREATER_EQUAL ${DEVICE_CUDA13_MAJOR})
++        target_link_libraries(device PUBLIC CUDA::nvtx3)
++    else()
++        target_link_libraries(device PUBLIC CUDA::nvToolsExt)
++    endif()
++endif()
+--- a/submodules/Device/interfaces/cuda/Control.cu
++++ b/submodules/Device/interfaces/cuda/Control.cu
+@@ -7,8 +7,16 @@
+ #include <string>
+ 
+ #ifdef PROFILING_ENABLED
++// CUDA_VERSION is major * 1000 + minor * 10 (cuda.h). CUDA 13.0 is 13000.
++// CUDA 13 ships header-only NVTX at nvtx3/nvToolsExt.h. CUDA::nvtx3 adds the
++// toolkit include dir (FindCUDAToolkit.cmake), so the include is <nvtx3/nvToolsExt.h>.
++#define DEVICE_CUDA13_VERSION 13000
++#if CUDA_VERSION >= DEVICE_CUDA13_VERSION
++#include <nvtx3/nvToolsExt.h>
++#else
+ #include <nvToolsExt.h>
+ #endif
++#endif
+ 
+ #include "CudaWrappedAPI.h"
+ #include "Internals.h"
