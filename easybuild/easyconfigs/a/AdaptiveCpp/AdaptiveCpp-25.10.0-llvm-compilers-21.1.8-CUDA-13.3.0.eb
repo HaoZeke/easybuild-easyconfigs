@@ -1,0 +1,70 @@
+easyblock = 'CMakeMake'
+
+name = 'AdaptiveCpp'
+version = '25.10.0'
+versionsuffix = '-CUDA-%(cudaver)s'
+
+homepage = 'https://adaptivecpp.github.io/'
+description = '''
+AdaptiveCpp is the independent, community-driven modern platform for C++-based
+heterogeneous programming models targeting CPUs and GPUs from all major vendors.
+AdaptiveCpp lets applications adapt themselves to all the hardware found in the
+system. This includes use cases where a single binary needs to be able to target
+all supported hardware, or utilize hardware from different vendors simultaneously.
+'''
+
+# llvm-compilers 21.1.8 is the EESSI 2026.06 LLVM, and it sits on GCCcore 15.2.0
+# (llvm-compilers-21.1.8.eb, local_gcc_version). Same generation as foss/2026.1.
+toolchain = {'name': 'llvm-compilers', 'version': '21.1.8'}
+
+github_account = 'AdaptiveCpp'
+source_urls = [GITHUB_SOURCE]
+sources = [V_VERSION_TAR_GZ]
+checksums = ['334b16ebff373bd2841f83332c2ae9a45ec192f2cf964d5fdfe94e1140776059']
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    ('git', '2.52.0'),  # AdaptiveCpp tries to find out its version during the build
+]
+
+dependencies = [
+    ('Python', '3.14.2'),
+    # foss/2026.1 pairs with CUDA 13.3.0 (CUDA-13.3.0.eb).
+    ('CUDA', '13.3.0', '', SYSTEM),
+]
+
+# Same list as NCCL-2.30.4-GCCcore-15.2.0-CUDA-13.3.0.eb.
+# CUDA 13 drops compute capabilities below 7.5.
+cuda_compute_capabilities = ['7.5', '8.0', '8.6', '9.0', '10.0', '12.0']
+
+local_configopts = [
+    # LLVM backend. Resource headers live in lib/clang/21/include
+    # (the directory that holds __clang_cuda_runtime_wrapper.h).
+    '-DLLVM_ROOT=$EBROOTLLVM',
+    '-DCLANG_EXECUTABLE_PATH=$EBROOTLLVM/bin/clang++',
+    '-DCLANG_INCLUDE_PATH=$EBROOTLLVM/lib/clang/21/include',
+    # 25.10.0 CMakeLists.txt rejects LLVM_VERSION_MAJOR greater than 20
+    # unless this flag is set.
+    '-DACPP_EXPERIMENTAL_LLVM=ON',
+    # CUDA backend
+    '-DWITH_CUDA_BACKEND=ON',
+    '-DCUDA_TOOLKIT_ROOT_DIR=$EBROOTCUDA',
+    # ROCm backend
+    '-DWITH_ROCM_BACKEND=OFF',
+    # OpenCL backend (for e.g. Intel GPUs)
+    '-DWITH_OPENCL_BACKEND=OFF',
+    # CPU/OpenMP path stays in the full profile.
+    '-DACPP_COMPILER_FEATURE_PROFILE=full',
+]
+configopts = ' '.join(local_configopts)
+
+sanity_check_paths = {
+    'files': ['bin/acpp', 'lib/libacpp-clang.so', 'etc/AdaptiveCpp/acpp-core.json'],
+    'dirs': ['include/AdaptiveCpp', 'lib/cmake/AdaptiveCpp/'],
+}
+sanity_check_commands = [
+    'acpp --version',
+    'acpp --acpp-version | grep "AdaptiveCpp version: 25.10.0"',
+]
+
+moduleclass = 'lang'
