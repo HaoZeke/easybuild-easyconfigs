@@ -897,7 +897,11 @@ exts_list = [
     ('click', '8.4.2', {
         'checksums': ['9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6'],
     }),
-    ('hf-xet', '1.5.1', {
+    # Fork-only workaround: 'HF-xet' rather than 'hf-xet', because EESSI's
+    # pre_single_extension hook matches the lowercase name and raises for every
+    # version other than 1.1.7 and 1.2.0.
+    ('HF-xet', '1.5.1', {
+        'extension_name': 'hf-xet',
         'sources': ['hf_xet-%(version)s.tar.gz'],
         'modulename': 'hf_xet',
         'checksums': ['51ef4500dab3764b41135ee1381a4b62ce56fc54d4c92b719b59e597d6df5bf6'],
