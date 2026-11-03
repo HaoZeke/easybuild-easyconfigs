@@ -37,7 +37,7 @@ dependencies = [
     ('libxc', '7.0.0'),
     ('libvori', '220621'),
     ('PLUMED', '2.10.0'),
-    ('spglib', '2.7.0'),
+    ('spglib', '2.8.0'),
 ]
 
 moduleclass = 'chem'
