@@ -1,0 +1,47 @@
+# Contribution from the Crick HPC team
+# uploaded by J. Sassmannshausen
+# updated by Valentin Plugaru <valentin.plugaru@uni.lu> 2019-09-26
+# updated by Paul Melis <paul.melis@surf.nl> 2022-10-07, 2023-08-18, 2025-08-08
+
+easyblock = 'CMakeMake'
+
+name = 'VirtualGL'
+version = '3.1.5'
+
+homepage = 'https://virtualgl.org/'
+description = """VirtualGL is an open source toolkit that gives any Linux or
+Unix remote display software the ability to run OpenGL applications with full
+hardware acceleration."""
+
+toolchain = {'name': 'GCC', 'version': '15.2.0'}
+
+# 3.1.5 release notes: the official source is VirtualGL-%(version)s.tar.gz.
+# The GitHub archive tarball used by older easyconfigs is not a supported asset.
+source_urls = ['https://github.com/VirtualGL/virtualgl/releases/download/%(version)s/']
+sources = ['VirtualGL-%(version)s.tar.gz']
+checksums = ['8a3249c4fa8eea928362ca97b8fe16e5b356e3a18cd16d87e3efa72a870750b6']
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('CMake', '4.2.1'),
+]
+
+dependencies = [
+    ('libjpeg-turbo', '3.1.4.1'),
+    ('OpenGL', '2026.05'),
+    ('pocl', '7.2'),
+    ('X11', '20260518'),
+]
+
+local_binaries = [
+    'cpustat', 'glreadtest', 'glxinfo', 'glxspheres64', 'nettest', 'tcbench',
+    'vglclient', 'vglconfig', 'vglconnect', 'vglgenkey', 'vgllogin', 'vglrun',
+    'vglserver_config',
+]
+
+sanity_check_paths = {
+    'files': [f'bin/{binary}' for binary in local_binaries],
+    'dirs': ['lib64', 'share', 'include'],
+}
+
+moduleclass = 'vis'
