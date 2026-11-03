@@ -1,0 +1,39 @@
+Post DEVICE_MONITOR_STARTED before dropping start_thread, so that
+gst_device_monitor_stop() joins the start thread, and flush the bus after the
+join. Without this, a stale DEVICE_MONITOR_STARTED from the previous start
+reaches the next start ahead of DEVICE_ADDED and test_device_monitor in
+tests/check/gst/gstdevice.c fails.
+author: Rohit Goswami (rgoswami@ieee.org)
+--- gstreamer-1.29.2.orig/gst/gstdevicemonitor.c
++++ gstreamer-1.29.2/gst/gstdevicemonitor.c
+@@ -567,9 +567,18 @@
+     monitor->priv->started = FALSE;
+   }
+ 
++  /* Post before dropping start_thread. stop() joins that thread; if the
++   * post runs after the reference is cleared, stop() cannot wait for it. */
++  GST_OBJECT_UNLOCK (monitor);
++  gst_bus_post (monitor->priv->bus,
++      gst_message_new_device_monitor_started (GST_OBJECT (monitor),
++          started != NULL));
++  GST_OBJECT_LOCK (monitor);
+   g_clear_pointer (&monitor->priv->start_thread, g_thread_unref);
+   g_cond_broadcast (&monitor->priv->started_cond);
+   GST_OBJECT_UNLOCK (monitor);
++  gst_object_unref (monitor);
++  return NULL;
+ 
+ done:
+   gst_bus_post (monitor->priv->bus,
+@@ -689,6 +698,11 @@
+     g_thread_join (thread);
+   }
+ 
++  /* gst_bus_post() can queue DEVICE_MONITOR_STARTED after the flush at the
++   * top of this function. Drop that message so the next start does not
++   * observe it ahead of DEVICE_ADDED. */
++  gst_bus_set_flushing (monitor->priv->bus, TRUE);
++
+   while (started) {
+     GstDeviceProvider *provider = started->data;
+ 
