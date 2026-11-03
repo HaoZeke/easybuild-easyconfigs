@@ -21,7 +21,7 @@ checksums = [
     {'gstreamer-1.29.2.tar.xz': 'e4e1dccc92cb4be7c34dc513216f0ffc3610fe071d87e28ceecf784b43d6ccf3'},
     {'GStreamer-1.24_fix_bad_suid.patch': 'e40c8b195cc9d44f2d9b92e57608e097ef8dac6fa761c5610fcb836f88610cb1'},
     {'GStreamer-1.29.2_drop-stale-device-monitor-started.patch':
-     '403485e47ddc7879b8c4ee2f4139ea0057eb80da5837954d2d49ee4d76e69305'},
+     'fc21c01c8f00f1fb53e1307c05146139a0a7c59bb52f375fbb28b173214949a9'},
 ]
 
 builddependencies = [

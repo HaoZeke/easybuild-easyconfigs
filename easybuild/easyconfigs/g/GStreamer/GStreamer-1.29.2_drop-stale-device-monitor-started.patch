@@ -3,7 +3,7 @@ gst_device_monitor_stop() joins the start thread, and flush the bus after the
 join. Without this, a stale DEVICE_MONITOR_STARTED from the previous start
 reaches the next start ahead of DEVICE_ADDED and test_device_monitor in
 tests/check/gst/gstdevice.c fails.
-author: Rohit Goswami (rgoswami@ieee.org)
+Author: Rohit Goswami (rgoswami@ieee.org)
 --- gstreamer-1.29.2.orig/gst/gstdevicemonitor.c
 +++ gstreamer-1.29.2/gst/gstdevicemonitor.c
 @@ -567,9 +567,18 @@
