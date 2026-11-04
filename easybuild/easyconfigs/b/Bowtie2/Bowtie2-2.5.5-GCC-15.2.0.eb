@@ -46,4 +46,20 @@ sanity_check_commands = [
     "%(namelower)s-build --help",
 ]
 
+# bowtie_main.cpp check_x86_64_v3() appends this suffix to argv[0] and execvp()s it.
+# The Makefile builds bowtie2-align-s-v256 and bowtie2-align-l-v256 when ENABLE_V256
+# is on (x86_64). EB_Bowtie2.install_step copies a fixed file list and drops them.
+local_v256_suffix = '-v256'
+local_v256_align_bins = [
+    'bowtie2-align-s' + local_v256_suffix,
+    'bowtie2-align-l' + local_v256_suffix,
+]
+if ARCH == 'x86_64':
+    postinstallcmds = [
+        'cp -a ' + ' '.join(local_v256_align_bins) + ' %(installdir)s/bin/',
+    ]
+    sanity_check_commands += [
+        'test -x %(installdir)s/bin/' + name for name in local_v256_align_bins
+    ]
+
 moduleclass = 'bio'
