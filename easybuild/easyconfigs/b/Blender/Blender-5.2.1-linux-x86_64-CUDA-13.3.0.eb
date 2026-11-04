@@ -24,6 +24,14 @@ dependencies = [
     ('CUDA', '13.3.0', '', SYSTEM),
 ]
 
+# The bundled OpenImageDenoise CUDA device library carries cubins for sm_75, sm_80, sm_90,
+# sm_100 and sm_120 and no PTX. A100 (8.0) and H100 (9.0) run those cubins; the CUDA sanity
+# check flags the file because it has no PTX and no sm_90a build.
+cuda_sanity_ignore_files = [
+    'lib/libOpenImageDenoise_device_cuda.so.2.5.0',
+    'lib64/libOpenImageDenoise_device_cuda.so.2.5.0',
+]
+
 sanity_check_paths = {
     'files': ['blender', 'blender-thumbnailer'],
     'dirs': ['%(version_major_minor)s'],
