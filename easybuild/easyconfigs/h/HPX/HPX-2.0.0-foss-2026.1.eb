@@ -59,6 +59,9 @@ dependencies = [
 
 # stdexec and Asio are used from the extra sources above (they are installed
 # alongside HPX), nothing is downloaded at configure time
+# The examples (sine_client) link component libraries installed in lib/hpx; with RPATH
+# linking that directory has to be on the RPATH explicitly.
+preconfigopts = 'export LDFLAGS="$LDFLAGS -Wl,-rpath=%(installdir)s/lib/%(namelower)s" && '
 configopts = '-DFETCHCONTENT_FULLY_DISCONNECTED=ON '
 configopts += '-DHPX_WITH_FETCH_STDEXEC=ON '
 configopts += '-DFETCHCONTENT_SOURCE_DIR_STDEXEC=%%(builddir)s/stdexec-%s ' % local_stdexec_commit
