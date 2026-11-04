@@ -1,0 +1,22 @@
+Keep the ex55 help filter from matching version inside an install path that contains versions.
+Author: Rohit Goswami
+--- petsc-3.26.0/src/sys/tests/options/ex55.c	2026-11-03 18:11:29.490600793 +0000
++++ petsc-3.26.0/src/sys/tests/options/ex55.c	2026-11-03 18:11:29.494600798 +0000
+@@ -61,7 +61,7 @@
+    testset:
+       # test -help / -help intro / -help false / -version from command line
+       localrunfiles: ex55options .petscrc petscrc
+-      filter: grep -E -e "(version|help|^See)"
++      filter: grep -E -e "((^|[^/])version|help|^See)"
+       args: -options_left -options_view -options_monitor
+       test:
+         suffix: 5a
+@@ -78,7 +78,7 @@
+    testset:
+       # test -help / -help intro / -version from file
+       localrunfiles: ex55options rc_help rc_help_intro rc_version
+-      filter: grep -E -e "(version|help|^See)"
++      filter: grep -E -e "((^|[^/])version|help|^See)"
+       args: -skip_petscrc
+       args: -options_left -options_view -options_monitor
+       test:
