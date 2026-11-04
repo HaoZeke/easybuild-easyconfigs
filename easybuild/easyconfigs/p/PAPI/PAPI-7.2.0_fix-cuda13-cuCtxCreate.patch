@@ -1,0 +1,204 @@
+Build the CUDA component tests of PAPI 7.2.0 against CUDA 13, where cuCtxCreate takes
+a CUctxCreateParams argument before the flags. Each call goes through a macro that
+picks the signature from CUDA_VERSION, so CUDA 12 builds are unchanged.
+Author: Rohit Goswami (SURF)
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/concurrent_profiling.cu papi-7.2.0/src/components/cuda/tests/concurrent_profiling.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/concurrent_profiling.cu
++++ papi-7.2.0/src/components/cuda/tests/concurrent_profiling.cu
+@@ -52,6 +52,13 @@
+ using ::std::vector;
+ 
+ #include <algorithm>
++
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
+ using ::std::find;
+ 
+ #define PRINT(quiet, format, args...) {if (!quiet) {fprintf(stderr, format, ## args);}}
+@@ -350,7 +357,7 @@
+         // config.maxLaunchesPerPass = 1;     // Must be >= maxRangesPerPass.  Set this to the largest count of kernel launches which may be encountered in any Pass in this Session
+ 
+         // // Device 0 has max of 3 passes; other devices only run one pass in this sample code
+-        DRIVER_API_CALL(cuCtxCreate(&(config.context), 0, device)); // Either set to a context, or may be NULL if a default context has been created
++        DRIVER_API_CALL(PAPI_TEST_CU_CTX_CREATE(&(config.context), 0, device)); // Either set to a context, or may be NULL if a default context has been created
+         deviceData[device].config = config;// Save this device config
+ 
+         // Initialize CUPTI Profiling structures
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/cudaOpenMP.cu papi-7.2.0/src/components/cuda/tests/cudaOpenMP.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/cudaOpenMP.cu
++++ papi-7.2.0/src/components/cuda/tests/cudaOpenMP.cu
+@@ -50,6 +50,13 @@
+ #include <omp.h>
+ #include <stdio.h>  // stdio functions are used since C++ streams aren't necessarily thread safe
+ 
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
++
+ #define PRINT(quiet, format, args...) {if (!quiet) {fprintf(stderr, format, ## args);}}
+ int quiet;
+ 
+@@ -170,7 +177,7 @@
+     int num_threads = (num_gpus > MAX_THREADS) ? MAX_THREADS : num_gpus;
+     // Create a gpu context for every thread
+     for (i=0; i < num_threads; i++) {
+-        DRIVER_API_CALL(cuCtxCreate(&(ctx_arr[i]), 0, i % num_gpus));  // "% num_gpus" allows more CPU threads than GPU devices
++        DRIVER_API_CALL(PAPI_TEST_CU_CTX_CREATE(&(ctx_arr[i]), 0, i % num_gpus));  // "% num_gpus" allows more CPU threads than GPU devices
+         DRIVER_API_CALL(cuCtxPopCurrent(&(ctx_arr[i])));
+     }
+ 
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/HelloWorld.cu papi-7.2.0/src/components/cuda/tests/HelloWorld.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/HelloWorld.cu
++++ papi-7.2.0/src/components/cuda/tests/HelloWorld.cu
+@@ -41,6 +41,13 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
++
+ #ifdef PAPI
+ #include "papi.h"
+ #include "papi_test.h"
+@@ -172,7 +179,7 @@
+     // simpleMultiGPU.cu.
+ 
+     // Context Create. We will use this one to run our kernel.
+-    cuError = cuCtxCreate(&sessionCtx, 0, 0); // Create a context, NULL flags, Device 0.
++    cuError = PAPI_TEST_CU_CTX_CREATE(&sessionCtx, 0, 0); // Create a context, NULL flags, Device 0.
+     if (cuError != CUDA_SUCCESS) {
+         fprintf(stderr, "Failed to create cuContext: %d\n", cuError);
+         exit(-1);
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/pthreads.cu papi-7.2.0/src/components/cuda/tests/pthreads.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/pthreads.cu
++++ papi-7.2.0/src/components/cuda/tests/pthreads.cu
+@@ -10,6 +10,13 @@
+ #include <unistd.h>
+ #include "gpu_work.h"
+ 
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
++
+ #ifdef PAPI
+ #include <papi.h>
+ #include "papi_test.h"
+@@ -232,7 +239,7 @@
+     for(i = 0; i < numGPUs; i++)
+     {
+         tid[i] = i;
+-        DRIVER_API_CALL(cuCtxCreate(&(cuCtx[i]), 0, i % numGPUs));
++        DRIVER_API_CALL(PAPI_TEST_CU_CTX_CREATE(&(cuCtx[i]), 0, i % numGPUs));
+         DRIVER_API_CALL(cuCtxPopCurrent(&(cuCtx[i])));
+ 
+         rc = pthread_create(&tidarr[i], NULL, thread_gpu, &(tid[i]));
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/simpleMultiGPU.cu papi-7.2.0/src/components/cuda/tests/simpleMultiGPU.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/simpleMultiGPU.cu
++++ papi-7.2.0/src/components/cuda/tests/simpleMultiGPU.cu
+@@ -67,6 +67,13 @@
+ 
+ #include "simpleMultiGPU.h"
+ 
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
++
+ // //////////////////////////////////////////////////////////////////////////////
+ // Data configuration
+ // //////////////////////////////////////////////////////////////////////////////
+@@ -235,7 +242,7 @@
+     // to as late as PAPI_start(), but they are needed to
+     // create streams, alloc memory, etc.
+     for (i = 0; i < num_gpus; i++) {
+-        CHECK_CU_ERROR( cuCtxCreate( &(ctx[i]), 0, device[i] ), "cuCtxCreate" ); // automatically pushes the new context on the stack.
++        CHECK_CU_ERROR( PAPI_TEST_CU_CTX_CREATE( &(ctx[i]), 0, device[i] ), "cuCtxCreate" ); // automatically pushes the new context on the stack.
+         CHECK_CU_ERROR( cuCtxPopCurrent(&poppedCtx), "cuCtxPopCurrent" );        // ... so take it off.
+     }
+ 
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/test_2thr_1gpu_not_allowed.cu papi-7.2.0/src/components/cuda/tests/test_2thr_1gpu_not_allowed.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/test_2thr_1gpu_not_allowed.cu
++++ papi-7.2.0/src/components/cuda/tests/test_2thr_1gpu_not_allowed.cu
+@@ -10,6 +10,13 @@
+ #include <unistd.h>
+ #include "gpu_work.h"
+ 
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
++
+ #ifdef PAPI
+ #include <papi.h>
+ #include <papi_test.h>
+@@ -151,7 +158,7 @@
+     for(i = 0; i < NUM_THREADS; i++)
+     {
+         data[i].idx = i;
+-        DRIVER_API_CALL(cuCtxCreate(&(data[i].cuCtx), 0, 0));
++        DRIVER_API_CALL(PAPI_TEST_CU_CTX_CREATE(&(data[i].cuCtx), 0, 0));
+         DRIVER_API_CALL(cuCtxPopCurrent(&(data[i].cuCtx)));
+ 
+         rc = pthread_create(&data[i].tid, NULL, thread_gpu, &(data[i]));
+diff -ru papi-7.2.0.orig/src/components/cuda/tests/test_multi_read_and_reset.cu papi-7.2.0/src/components/cuda/tests/test_multi_read_and_reset.cu
+--- papi-7.2.0.orig/src/components/cuda/tests/test_multi_read_and_reset.cu
++++ papi-7.2.0/src/components/cuda/tests/test_multi_read_and_reset.cu
+@@ -7,6 +7,13 @@
+ #include <stdio.h>
+ #include "gpu_work.h"
+ 
++/* CUDA 13 adds a CUctxCreateParams argument to cuCtxCreate. */
++#if CUDA_VERSION >= 13000
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), NULL, (flags), (dev))
++#else
++#define PAPI_TEST_CU_CTX_CREATE(ctx, flags, dev) cuCtxCreate((ctx), (flags), (dev))
++#endif
++
+ #ifdef PAPI
+ #include <papi.h>
+ #include "papi_test.h"
+@@ -77,7 +84,7 @@
+ {
+     CUcontext ctx;
+     int papi_errno, i;
+-    papi_errno = cuCtxCreate(&ctx, 0, 0);
++    papi_errno = PAPI_TEST_CU_CTX_CREATE(&ctx, 0, 0);
+     if (papi_errno != CUDA_SUCCESS) {
+         fprintf(stderr, "cuda error: failed to create cuda context.\n");
+         exit(1);
+@@ -171,7 +178,7 @@
+ {
+     CUcontext ctx;
+     int papi_errno, i;
+-    papi_errno = cuCtxCreate(&ctx, 0, 0);
++    papi_errno = PAPI_TEST_CU_CTX_CREATE(&ctx, 0, 0);
+     if (papi_errno != CUDA_SUCCESS) {
+         fprintf(stderr, "cuda error: failed to create cuda context.\n");
+         exit(1);
+@@ -256,7 +263,7 @@
+ {
+     int papi_errno, i;
+     CUcontext ctx;
+-    papi_errno = cuCtxCreate(&ctx, 0, 0);
++    papi_errno = PAPI_TEST_CU_CTX_CREATE(&ctx, 0, 0);
+     if (papi_errno != CUDA_SUCCESS) {
+         fprintf(stderr, "cuda error: failed to create cuda context.\n");
+         exit(1);
