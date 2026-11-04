@@ -1,0 +1,19 @@
+# Use the CMake packages provided by the environment (pybind11, Abseil,
+# pybind11_abseil, dssp and its libcifpp dependency) instead of fetching
+# and building them with FetchContent.
+#
+# Author: Rohit Goswami
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -95,7 +95,10 @@
+   URL_HASH SHA256=6cf3068527117e9a613728633a62f489af8890d5c30e7db919183b470e972258
+   EXCLUDE_FROM_ALL)
+ 
+-FetchContent_MakeAvailable(pybind11 abseil-cpp pybind11_abseil cifpp dssp)
++find_package(pybind11 CONFIG REQUIRED)
++find_package(absl CONFIG REQUIRED)
++find_package(pybind11_abseil CONFIG REQUIRED)
++find_package(dssp CONFIG REQUIRED)
+ 
+ find_package(
+   Python3

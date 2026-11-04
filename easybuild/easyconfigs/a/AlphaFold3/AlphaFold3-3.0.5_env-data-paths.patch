@@ -1,0 +1,21 @@
+# Use AF3_MODEL_DIR and DB_DIR as the default locations of the model
+# parameters and the public databases.
+#
+# Author: Rohit Goswami
+--- a/run_alphafold.py
++++ b/run_alphafold.py
+@@ -65,8 +65,12 @@
+ import tokamax
+ 
+ _HOME_DIR = epath.Path('~').expanduser()
+-_DEFAULT_MODEL_DIR = _HOME_DIR / 'models'
+-_DEFAULT_DB_DIR = _HOME_DIR / 'public_databases'
++_DEFAULT_MODEL_DIR = epath.Path(
++    os.environ.get('AF3_MODEL_DIR', (_HOME_DIR / 'models').as_posix())
++)
++_DEFAULT_DB_DIR = epath.Path(
++    os.environ.get('DB_DIR', (_HOME_DIR / 'public_databases').as_posix())
++)
+ 
+ 
+ @enum.unique
