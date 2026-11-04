@@ -72,8 +72,14 @@ sanity_check_paths = {
     'dirs': [],
 }
 
-modextravars = {
-    'PAPI_CUDA_ROOT': '$EBROOTCUDA',
-}
+# PAPI finds CUPTI through PAPI_CUDA_ROOT. Set it from the CUDA dependency only when that is
+# loaded: a plain modextravars entry passes nil to setenv when EBROOTCUDA is not yet set, and
+# Lmod then refuses the module (seen in the sanity check under EESSI 2026.06).
+modluafooter = '''
+local cuda_root = os.getenv("EBROOTCUDA")
+if cuda_root then
+    setenv("PAPI_CUDA_ROOT", cuda_root)
+end
+'''
 
 moduleclass = 'perf'
