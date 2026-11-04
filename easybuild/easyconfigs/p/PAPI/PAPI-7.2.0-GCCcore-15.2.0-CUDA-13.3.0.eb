@@ -34,7 +34,7 @@ patches = [
 checksums = [
     {'papi-7.2.0.tar.gz': 'a9bff89ccf39915d729e08ae0a0c6a71ce0ebbe98411e9a2eb3c83c8db0af39c'},
     {'PAPI-7.2.0-fix-internal-pfmlib.patch': '8ba5eca4c905b1773320f6ee444dac5ca1771226efddec29db269297cbe49e38'},
-    {'PAPI-7.2.0_fix-cuda13-cuCtxCreate.patch': '66705ad3456ace8c2dba7380e302ec49c3473341479ca2dd2b507e6218265347'},
+    {'PAPI-7.2.0_fix-cuda13-cuCtxCreate.patch': '03c04ed68a6ed053bd8145d1873114054d1fa7c8db432430484166bb2647848c'},
 ]
 
 builddependencies = [

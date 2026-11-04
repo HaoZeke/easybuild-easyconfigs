@@ -1,7 +1,7 @@
 Build the CUDA component tests of PAPI 7.2.0 against CUDA 13, where cuCtxCreate takes
 a CUctxCreateParams argument before the flags. Each call goes through a macro that
 picks the signature from CUDA_VERSION, so CUDA 12 builds are unchanged.
-Author: Rohit Goswami (SURF)
+Author: Rohit Goswami
 diff -ru papi-7.2.0.orig/src/components/cuda/tests/concurrent_profiling.cu papi-7.2.0/src/components/cuda/tests/concurrent_profiling.cu
 --- papi-7.2.0.orig/src/components/cuda/tests/concurrent_profiling.cu
 +++ papi-7.2.0/src/components/cuda/tests/concurrent_profiling.cu
