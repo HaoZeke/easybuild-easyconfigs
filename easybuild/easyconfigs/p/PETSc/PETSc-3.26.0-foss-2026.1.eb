@@ -15,10 +15,14 @@ source_urls = [
     'https://web.cels.anl.gov/projects/petsc/download/release-snapshots',
 ]
 sources = [SOURCELOWER_TAR_GZ]
-patches = ['PETSc-3.26.0_ex55-eessi-filter.patch']
+patches = [
+    'PETSc-3.26.0_ex55-eessi-filter.patch',
+    'PETSc-3.26.0_parmetis-alt-output.patch',
+]
 checksums = [
     'f5230023e6e22ee607802a13c82bc25f3d81e71654ad386a5b9bdff17fed93df',  # petsc-3.26.0.tar.gz
     '3342d7b5b299f066fa5e9d956ba985706877f5b47336fdfa3edc63504b460563',  # PETSc-3.26.0_ex55-eessi-filter.patch
+    '7fa13d55e01fd5014abfe51143383574a5731fb131daac05c76e9d264c9b787f',  # PETSc-3.26.0_parmetis-alt-output.patch
 ]
 
 builddependencies = [

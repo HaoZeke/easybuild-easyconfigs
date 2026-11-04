@@ -1,0 +1,1318 @@
+Add ParMETIS 4.0.3 partition output as gmakegentest alternate files.
+Author: Rohit Goswami
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tests/output/ex16_1_alt.out
+@@ -0,0 +1,35 @@
++DM Object: box 3 MPI processes
++  type: plex
++box in 2 dimensions:
++  Number of 0-cells per rank: 182 190 180
++  Number of 1-cells per rank: 334 352 333
++  Number of 2-cells per rank: 153 163 154
++Labels:
++  depth: 3 strata with value/size (0 (182), 1 (334), 2 (153))
++  marker: 1 strata with value/size (1 (71))
++  Face Sets: 3 strata with value/size (1 (8), 2 (20), 3 (7))
++  celltype: 3 strata with value/size (0 (182), 1 (334), 4 (153))
++DM Object: Submesh (sub_) 3 MPI processes
++  type: plex
++Submesh in 2 dimensions:
++  Number of 0-cells per rank: 115 107 141
++  Number of 1-cells per rank: 201 189 241
++  Number of 2-cells per rank: 87 83 101
++Labels:
++  celltype: 3 strata with value/size (0 (115), 1 (201), 4 (87))
++  depth: 3 strata with value/size (0 (115), 1 (201), 2 (87))
++  marker: 1 strata with value/size (1 (37))
++  Face Sets: 2 strata with value/size (1 (8), 2 (10))
++  cells: 1 strata with value/size (1 (403))
++DM Object: Submesh (sub_) 3 MPI processes
++  type: plex
++Submesh in 2 dimensions:
++  Number of 0-cells per rank: 118 140 108
++  Number of 1-cells per rank: 205 239 189
++  Number of 2-cells per rank: 88 100 82
++Labels:
++  celltype: 3 strata with value/size (0 (118), 1 (205), 4 (88))
++  depth: 3 strata with value/size (0 (118), 1 (205), 2 (88))
++  marker: 1 strata with value/size (1 (40))
++  Face Sets: 3 strata with value/size (1 (2), 2 (10), 3 (7))
++  cells: 1 strata with value/size (1 (411))
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tests/output/ex16_2_alt.out
+@@ -0,0 +1,35 @@
++DM Object: box 3 MPI processes
++  type: plex
++box in 2 dimensions:
++  Number of 0-cells per rank: 182 190 180
++  Number of 1-cells per rank: 334 352 333
++  Number of 2-cells per rank: 153 163 154
++Labels:
++  depth: 3 strata with value/size (0 (182), 1 (334), 2 (153))
++  marker: 1 strata with value/size (1 (71))
++  Face Sets: 3 strata with value/size (1 (8), 2 (20), 3 (7))
++  celltype: 3 strata with value/size (0 (182), 1 (334), 4 (153))
++DM Object: Submesh (sub_) 3 MPI processes
++  type: plex
++Submesh in 2 dimensions:
++  Number of 0-cells per rank: 0 132 (132) 132 (132)
++  Number of 1-cells per rank: 0 241 (241) 241 (241)
++  Number of 2-cells per rank: 0 110 (110) 110 (110)
++Labels:
++  celltype: 0 strata with value/size ()
++  depth: 3 strata with value/size (0 (0), 1 (0), 2 (0))
++  marker: 0 strata with value/size ()
++  Face Sets: 0 strata with value/size ()
++  cells: 0 strata with value/size ()
++DM Object: Submesh (sub_) 3 MPI processes
++  type: plex
++Submesh in 2 dimensions:
++  Number of 0-cells per rank: 182 70 60
++  Number of 1-cells per rank: 334 122 103
++  Number of 2-cells per rank: 153 53 44
++Labels:
++  celltype: 3 strata with value/size (0 (182), 1 (334), 4 (153))
++  depth: 3 strata with value/size (0 (182), 1 (334), 2 (153))
++  marker: 1 strata with value/size (1 (71))
++  Face Sets: 3 strata with value/size (1 (8), 2 (20), 3 (7))
++  cells: 1 strata with value/size (1 (669))
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tests/output/ex1_part_parmetis_0_alt.out
+@@ -0,0 +1,64 @@
++[0]Nv: 4
++[0]  1 2 [0-2)
++[0]  0 3 [2-4)
++[0]  0 3 [4-6)
++[0]  1 2 [6-8)
++[1]Nv: 0
++Graph Partitioner: 2 MPI Processes
++  type: parmetis
++  edge cut: 2
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++DM Object: box 2 MPI processes
++  type: plex
++  Cell balance: 1.00 (max 8, min 8, empty 0)
++  Edge Cut: 4 (on node 1.000)
++[0]Nv: 8
++[0]  1 3 9 [0-3)
++[0]  0 2 [3-5)
++[0]  1 3 5 [5-8)
++[0]  0 2 4 10 [8-12)
++[0]  3 5 7 13 [12-16)
++[0]  2 4 6 [16-19)
++[0]  5 7 [19-21)
++[0]  4 6 14 [21-24)
++[1]Nv: 8
++[1]  9 11 [0-2)
++[1]  0 8 10 [2-5)
++[1]  3 9 11 13 [5-9)
++[1]  8 10 12 [9-12)
++[1]  11 13 15 [12-15)
++[1]  4 10 12 14 [15-19)
++[1]  7 13 15 [19-22)
++[1]  12 14 [22-24)
++Graph Partitioner: 2 MPI Processes
++  type: parmetis
++  edge cut: 4
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++Minimum number of neighbors: 1
++DM Object: Parallel Mesh 2 MPI processes
++  type: plex
++  Cell balance: 1.00 (max 8, min 8, empty 0)
++  Edge Cut: 4 (on node 1.000)
++DM Object: Generated Mesh 2 MPI processes
++  type: plex
++Generated Mesh in 2 dimensions:
++  Number of 0-cells per rank: 15 15
++  Number of 1-cells per rank: 22 22
++  Number of 2-cells per rank: 8 8
++Labels:
++  depth: 3 strata with value/size (0 (15), 1 (22), 2 (8))
++  celltype: 3 strata with value/size (0 (15), 1 (22), 4 (8))
++  marker: 1 strata with value/size (1 (17))
++  Face Sets: 3 strata with value/size (1 (3), 3 (3), 4 (6))
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tutorials/output/ex13_extrude_1_dist_alt.out
+@@ -0,0 +1,11 @@
++DM Object: TPS 2 MPI processes
++  type: plex
++TPS in 3 dimensions:
++  Number of 0-cells per rank: 464 464
++  Number of 1-cells per rank: 1212 1212
++  Number of 2-cells per rank: 1032 1032
++  Number of 3-cells per rank: 288 288
++Labels:
++  celltype: 4 strata with value/size (0 (464), 1 (1212), 4 (1032), 7 (288))
++  depth: 4 strata with value/size (0 (464), 1 (1212), 2 (1032), 3 (288))
++  Face Sets: 5 strata with value/size (2 (112), 3 (112), 4 (112), 5 (112), 6 (112))
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tutorials/output/ex5_0_outformat-hdf5_petsc_parmetis_alt.out
+@@ -0,0 +1,100 @@
++Begin cycle 0
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 2 strata with value/size (0 (45), 1 (14))
++  celltype: 2 strata with value/size (0 (45), 7 (14))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 1-cells per rank: 93 93 93 93
++  Number of 2-cells per rank: 63 63 63 63
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  celltype: 4 strata with value/size (0 (45), 1 (93), 4 (63), 7 (14))
++  depth: 4 strata with value/size (0 (45), 1 (93), 2 (63), 3 (14))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 41 42 46 42
++  Number of 1-cells per rank: 86 88 95 88
++  Number of 2-cells per rank: 60 61 64 61
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 4 strata with value/size (0 (41), 1 (86), 2 (60), 3 (14))
++  celltype: 4 strata with value/size (0 (41), 1 (86), 4 (60), 7 (14))
++End   cycle 0
++--------
++Begin cycle 1
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0 0 0
++  Number of 1-cells per rank: 295 0 0 0
++  Number of 2-cells per rank: 226 0 0 0
++  Number of 3-cells per rank: 56 0 0 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++Loaded mesh distributed? FALSE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0 0 0
++  Number of 1-cells per rank: 295 0 0 0
++  Number of 2-cells per rank: 226 0 0 0
++  Number of 3-cells per rank: 56 0 0 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 42 42 46 41
++  Number of 1-cells per rank: 88 88 95 86
++  Number of 2-cells per rank: 61 61 64 60
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 4 strata with value/size (0 (42), 1 (88), 2 (61), 3 (14))
++  celltype: 4 strata with value/size (0 (42), 1 (88), 4 (61), 7 (14))
++End   cycle 1
++--------
++Begin cycle 2
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0 0 0
++  Number of 1-cells per rank: 295 0 0 0
++  Number of 2-cells per rank: 226 0 0 0
++  Number of 3-cells per rank: 56 0 0 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++Loaded mesh distributed? FALSE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0 0 0
++  Number of 1-cells per rank: 295 0 0 0
++  Number of 2-cells per rank: 226 0 0 0
++  Number of 3-cells per rank: 56 0 0 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 46 41 42 42
++  Number of 1-cells per rank: 95 86 88 88
++  Number of 2-cells per rank: 64 60 61 61
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 4 strata with value/size (0 (46), 1 (95), 2 (64), 3 (14))
++  celltype: 4 strata with value/size (0 (46), 1 (95), 4 (64), 7 (14))
++End   cycle 2
++--------
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tutorials/output/ex5_0_outformat-hdf5_xdmf_parmetis_alt.out
+@@ -0,0 +1,96 @@
++Begin cycle 0
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 2 strata with value/size (0 (45), 1 (14))
++  celltype: 2 strata with value/size (0 (45), 7 (14))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 1-cells per rank: 93 93 93 93
++  Number of 2-cells per rank: 63 63 63 63
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  celltype: 4 strata with value/size (0 (45), 1 (93), 4 (63), 7 (14))
++  depth: 4 strata with value/size (0 (45), 1 (93), 2 (63), 3 (14))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 41 42 46 42
++  Number of 1-cells per rank: 86 88 95 88
++  Number of 2-cells per rank: 60 61 64 61
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 4 strata with value/size (0 (41), 1 (86), 2 (60), 3 (14))
++  celltype: 4 strata with value/size (0 (41), 1 (86), 4 (60), 7 (14))
++End   cycle 0
++--------
++Begin cycle 1
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 41 42 46 42
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 2 strata with value/size (0 (41), 1 (14))
++  celltype: 2 strata with value/size (0 (41), 7 (14))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 41 42 46 42
++  Number of 1-cells per rank: 86 88 95 88
++  Number of 2-cells per rank: 60 61 64 61
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  celltype: 4 strata with value/size (0 (41), 1 (86), 4 (60), 7 (14))
++  depth: 4 strata with value/size (0 (41), 1 (86), 2 (60), 3 (14))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 42 46 44 46
++  Number of 1-cells per rank: 88 93 93 95
++  Number of 2-cells per rank: 61 61 65 64
++  Number of 3-cells per rank: 14 13 15 14
++Labels:
++  depth: 4 strata with value/size (0 (42), 1 (88), 2 (61), 3 (14))
++  celltype: 4 strata with value/size (0 (42), 1 (88), 4 (61), 7 (14))
++End   cycle 1
++--------
++Begin cycle 2
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 42 54 44 46
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 2 strata with value/size (0 (42), 1 (14))
++  celltype: 2 strata with value/size (0 (42), 7 (14))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 42 54 44 46
++  Number of 1-cells per rank: 88 105 92 95
++  Number of 2-cells per rank: 61 67 63 64
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  celltype: 4 strata with value/size (0 (42), 1 (88), 4 (61), 7 (14))
++  depth: 4 strata with value/size (0 (42), 1 (88), 2 (61), 3 (14))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 44 46 40 46
++  Number of 1-cells per rank: 91 93 86 95
++  Number of 2-cells per rank: 62 61 62 64
++  Number of 3-cells per rank: 14 13 15 14
++Labels:
++  depth: 4 strata with value/size (0 (44), 1 (91), 2 (62), 3 (14))
++  celltype: 4 strata with value/size (0 (44), 1 (91), 4 (62), 7 (14))
++End   cycle 2
++--------
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tutorials/output/ex5_1_outformat-hdf5_petsc_parmetis_alt.out
+@@ -0,0 +1,100 @@
++Begin cycle 0
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 2 strata with value/size (0 (45), 1 (14))
++  celltype: 2 strata with value/size (0 (45), 7 (14))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 1-cells per rank: 93 93 93 93
++  Number of 2-cells per rank: 63 63 63 63
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  celltype: 4 strata with value/size (0 (45), 1 (93), 4 (63), 7 (14))
++  depth: 4 strata with value/size (0 (45), 1 (93), 2 (63), 3 (14))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 41 42 46 42
++  Number of 1-cells per rank: 86 88 95 88
++  Number of 2-cells per rank: 60 61 64 61
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 4 strata with value/size (0 (41), 1 (86), 2 (60), 3 (14))
++  celltype: 4 strata with value/size (0 (41), 1 (86), 4 (60), 7 (14))
++End   cycle 0
++--------
++Begin cycle 1
++DM Object: DMPlex Object (loaded_) 3 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0 0
++  Number of 1-cells per rank: 295 0 0
++  Number of 2-cells per rank: 226 0 0
++  Number of 3-cells per rank: 56 0 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++Loaded mesh distributed? FALSE
++DM Object: DMPlex Object (interpolated_) 3 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0 0
++  Number of 1-cells per rank: 295 0 0
++  Number of 2-cells per rank: 226 0 0
++  Number of 3-cells per rank: 56 0 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++DM Object: DMPlex Object (redistributed_) 3 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 62 55 54
++  Number of 1-cells per rank: 127 117 115
++  Number of 2-cells per rank: 84 82 81
++  Number of 3-cells per rank: 18 19 19
++Labels:
++  depth: 4 strata with value/size (0 (62), 1 (127), 2 (84), 3 (18))
++  celltype: 4 strata with value/size (0 (62), 1 (127), 4 (84), 7 (18))
++End   cycle 1
++--------
++Begin cycle 2
++DM Object: DMPlex Object (loaded_) 2 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0
++  Number of 1-cells per rank: 295 0
++  Number of 2-cells per rank: 226 0
++  Number of 3-cells per rank: 56 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++Loaded mesh distributed? FALSE
++DM Object: DMPlex Object (interpolated_) 2 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 125 0
++  Number of 1-cells per rank: 295 0
++  Number of 2-cells per rank: 226 0
++  Number of 3-cells per rank: 56 0
++Labels:
++  depth: 4 strata with value/size (0 (125), 1 (295), 2 (226), 3 (56))
++  celltype: 4 strata with value/size (0 (125), 1 (295), 4 (226), 7 (56))
++DM Object: DMPlex Object (redistributed_) 2 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 75 70
++  Number of 1-cells per rank: 165 156
++  Number of 2-cells per rank: 119 115
++  Number of 3-cells per rank: 28 28
++Labels:
++  depth: 4 strata with value/size (0 (75), 1 (165), 2 (119), 3 (28))
++  celltype: 4 strata with value/size (0 (75), 1 (165), 4 (119), 7 (28))
++End   cycle 2
++--------
+--- /dev/null
++++ petsc-3.26.0/src/dm/impls/plex/tutorials/output/ex5_1_outformat-hdf5_xdmf_parmetis_alt.out
+@@ -0,0 +1,96 @@
++Begin cycle 0
++DM Object: DMPlex Object (loaded_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 2 strata with value/size (0 (45), 1 (14))
++  celltype: 2 strata with value/size (0 (45), 7 (14))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 45 45 45 45
++  Number of 1-cells per rank: 93 93 93 93
++  Number of 2-cells per rank: 63 63 63 63
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  celltype: 4 strata with value/size (0 (45), 1 (93), 4 (63), 7 (14))
++  depth: 4 strata with value/size (0 (45), 1 (93), 2 (63), 3 (14))
++DM Object: DMPlex Object (redistributed_) 4 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 41 42 46 42
++  Number of 1-cells per rank: 86 88 95 88
++  Number of 2-cells per rank: 60 61 64 61
++  Number of 3-cells per rank: 14 14 14 14
++Labels:
++  depth: 4 strata with value/size (0 (41), 1 (86), 2 (60), 3 (14))
++  celltype: 4 strata with value/size (0 (41), 1 (86), 4 (60), 7 (14))
++End   cycle 0
++--------
++Begin cycle 1
++DM Object: DMPlex Object (loaded_) 3 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 63 70 60
++  Number of 3-cells per rank: 19 19 18
++Labels:
++  depth: 2 strata with value/size (0 (63), 1 (19))
++  celltype: 2 strata with value/size (0 (63), 7 (19))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 3 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 63 70 60
++  Number of 1-cells per rank: 129 141 121
++  Number of 2-cells per rank: 86 91 81
++  Number of 3-cells per rank: 19 19 18
++Labels:
++  celltype: 4 strata with value/size (0 (63), 1 (129), 4 (86), 7 (19))
++  depth: 4 strata with value/size (0 (63), 1 (129), 2 (86), 3 (19))
++DM Object: DMPlex Object (redistributed_) 3 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 59 60 49
++  Number of 1-cells per rank: 121 126 107
++  Number of 2-cells per rank: 81 86 78
++  Number of 3-cells per rank: 18 19 19
++Labels:
++  depth: 4 strata with value/size (0 (59), 1 (121), 2 (81), 3 (18))
++  celltype: 4 strata with value/size (0 (59), 1 (121), 4 (81), 7 (18))
++End   cycle 1
++--------
++Begin cycle 2
++DM Object: DMPlex Object (loaded_) 2 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 91 86
++  Number of 3-cells per rank: 28 28
++Labels:
++  depth: 2 strata with value/size (0 (91), 1 (28))
++  celltype: 2 strata with value/size (0 (91), 7 (28))
++Loaded mesh distributed? TRUE
++DM Object: DMPlex Object (interpolated_) 2 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 91 86
++  Number of 1-cells per rank: 191 179
++  Number of 2-cells per rank: 128 123
++  Number of 3-cells per rank: 28 28
++Labels:
++  celltype: 4 strata with value/size (0 (91), 1 (191), 4 (128), 7 (28))
++  depth: 4 strata with value/size (0 (91), 1 (191), 2 (128), 3 (28))
++DM Object: DMPlex Object (redistributed_) 2 MPI processes
++  type: plex
++DMPlex Object in 3 dimensions:
++  Number of 0-cells per rank: 80 70
++  Number of 1-cells per rank: 172 157
++  Number of 2-cells per rank: 120 117
++  Number of 3-cells per rank: 27 29
++Labels:
++  depth: 4 strata with value/size (0 (80), 1 (172), 2 (120), 3 (27))
++  celltype: 4 strata with value/size (0 (80), 1 (172), 4 (120), 7 (27))
++End   cycle 2
++--------
+--- /dev/null
++++ petsc-3.26.0/src/dm/partitioner/tests/output/ex33_parmetis_nsize-3_nparts-2_alt.out
+@@ -0,0 +1,111 @@
++[0]Nv: 0
++[1]Nv: 0
++[2]Nv: 0
++Graph Partitioner: 3 MPI Processes
++  type: parmetis
++  edge cut: 0
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++PetscSection Object: NULL SECTION 3 MPI processes
++  type not yet set
++Process 0:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++Process 1:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++Process 2:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++IS Object: NULL PARTITION 3 MPI processes
++  type: general
++[0] Number of indices in set 0
++[1] Number of indices in set 0
++[2] Number of indices in set 0
++[0]Nv: 0
++[1]Nv: 0
++[2]Nv: 4
++[2]  3 1 [0-2)
++[2]  0 2 [2-4)
++[2]  1 3 [4-6)
++[2]  2 0 [6-8)
++Graph Partitioner: 3 MPI Processes
++  type: parmetis
++  edge cut: 0
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++PetscSection Object: SEQ SECTION 3 MPI processes
++  type not yet set
++Process 0:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++Process 1:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++Process 2:
++  (   0) dof  2 offset   0
++  (   1) dof  2 offset   2
++IS Object: SEQ PARTITION 3 MPI processes
++  type: general
++[0] Number of indices in set 0
++[1] Number of indices in set 0
++[2] Number of indices in set 4
++[2] 0 2
++[2] 1 3
++[2] 2 0
++[2] 3 1
++[0]Nv: 4
++[0]  7 1 [0-2)
++[0]  0 2 [2-4)
++[0]  1 3 [4-6)
++[0]  2 4 [6-8)
++[1]Nv: 0
++[2]Nv: 4
++[2]  3 5 [0-2)
++[2]  4 6 [2-4)
++[2]  5 7 [4-6)
++[2]  6 0 [6-8)
++Graph Partitioner: 3 MPI Processes
++  type: parmetis
++  edge cut: 2
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++PetscSection Object: PARVOID SECTION 3 MPI processes
++  type not yet set
++Process 0:
++  (   0) dof  1 offset   0
++  (   1) dof  3 offset   1
++Process 1:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++Process 2:
++  (   0) dof  3 offset   0
++  (   1) dof  1 offset   3
++IS Object: PARVOID PARTITION 3 MPI processes
++  type: general
++[0] Number of indices in set 4
++[0] 0 0
++[0] 1 1
++[0] 2 2
++[0] 3 3
++[1] Number of indices in set 0
++[2] Number of indices in set 4
++[2] 0 1
++[2] 1 2
++[2] 2 3
++[2] 3 0
+--- /dev/null
++++ petsc-3.26.0/src/dm/partitioner/tests/output/ex33_parmetis_nsize-3_nparts-3_alt.out
+@@ -0,0 +1,120 @@
++[0]Nv: 0
++[1]Nv: 0
++[2]Nv: 0
++Graph Partitioner: 3 MPI Processes
++  type: parmetis
++  edge cut: 0
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++PetscSection Object: NULL SECTION 3 MPI processes
++  type not yet set
++Process 0:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++  (   2) dof  0 offset   0
++Process 1:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++  (   2) dof  0 offset   0
++Process 2:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++  (   2) dof  0 offset   0
++IS Object: NULL PARTITION 3 MPI processes
++  type: general
++[0] Number of indices in set 0
++[1] Number of indices in set 0
++[2] Number of indices in set 0
++[0]Nv: 0
++[1]Nv: 0
++[2]Nv: 4
++[2]  3 1 [0-2)
++[2]  0 2 [2-4)
++[2]  1 3 [4-6)
++[2]  2 0 [6-8)
++Graph Partitioner: 3 MPI Processes
++  type: parmetis
++  edge cut: 0
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++PetscSection Object: SEQ SECTION 3 MPI processes
++  type not yet set
++Process 0:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++  (   2) dof  0 offset   0
++Process 1:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++  (   2) dof  0 offset   0
++Process 2:
++  (   0) dof  0 offset   0
++  (   1) dof  2 offset   0
++  (   2) dof  2 offset   2
++IS Object: SEQ PARTITION 3 MPI processes
++  type: general
++[0] Number of indices in set 0
++[1] Number of indices in set 0
++[2] Number of indices in set 4
++[2] 0 0
++[2] 1 1
++[2] 2 2
++[2] 3 3
++[0]Nv: 4
++[0]  7 1 [0-2)
++[0]  0 2 [2-4)
++[0]  1 3 [4-6)
++[0]  2 4 [6-8)
++[1]Nv: 0
++[2]Nv: 4
++[2]  3 5 [0-2)
++[2]  4 6 [2-4)
++[2]  5 7 [4-6)
++[2]  6 0 [6-8)
++Graph Partitioner: 3 MPI Processes
++  type: parmetis
++  edge cut: 3
++  balance: 0
++  use vertex weights: 1
++  use edge weights: 0
++  ParMETIS type: kway
++  load imbalance ratio 1.05
++  debug flag 0
++  random seed -1
++PetscSection Object: PARVOID SECTION 3 MPI processes
++  type not yet set
++Process 0:
++  (   0) dof  0 offset   0
++  (   1) dof  3 offset   0
++  (   2) dof  1 offset   3
++Process 1:
++  (   0) dof  0 offset   0
++  (   1) dof  0 offset   0
++  (   2) dof  0 offset   0
++Process 2:
++  (   0) dof  2 offset   0
++  (   1) dof  0 offset   2
++  (   2) dof  2 offset   2
++IS Object: PARVOID PARTITION 3 MPI processes
++  type: general
++[0] Number of indices in set 4
++[0] 0 1
++[0] 1 2
++[0] 2 3
++[0] 3 0
++[1] Number of indices in set 0
++[2] Number of indices in set 4
++[2] 0 0
++[2] 1 1
++[2] 2 2
++[2] 3 3
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex11_1_alt.out
+@@ -0,0 +1,14 @@
++Mat Object: 2 MPI processes
++  type: mpiadj
++row 0: 1 
++row 1: 0  3 
++row 2: 3 
++row 3: 1  2 
++IS Object: 2 MPI processes
++  type: general
++[0] Number of indices in set 2
++[0] 0 1
++[0] 1 1
++[1] Number of indices in set 2
++[1] 0 0
++[1] 1 0
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex11f_1_alt.out
+@@ -0,0 +1,14 @@
++Mat Object: 2 MPI processes
++  type: mpiadj
++row 0: 1 
++row 1: 0  3 
++row 2: 3 
++row 3: 1  2 
++IS Object: 2 MPI processes
++  type: general
++[0] Number of indices in set 2
++[0] 0 1
++[0] 1 1
++[1] Number of indices in set 2
++[1] 0 0
++[1] 1 0
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_1_alt_2.out
+@@ -0,0 +1,15 @@
++IS Object: 3 MPI processes
++  type: general
++[0] Number of indices in set 4
++[0] 0 0
++[0] 1 0
++[0] 2 0
++[0] 3 2
++[1] Number of indices in set 3
++[1] 0 2
++[1] 1 2
++[1] 2 1
++[2] Number of indices in set 3
++[2] 0 1
++[2] 1 1
++[2] 2 1
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_1_alt_3.out
+@@ -0,0 +1,15 @@
++IS Object: 3 MPI processes
++  type: general
++[0] Number of indices in set 4
++[0] 0 0
++[0] 1 0
++[0] 2 0
++[0] 3 2
++[1] Number of indices in set 3
++[1] 0 2
++[1] 1 2
++[1] 2 1
++[2] Number of indices in set 3
++[2] 0 1
++[2] 1 1
++[2] 2 1
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_5_alt_2.out
+@@ -0,0 +1,105 @@
++IS Object: 3 MPI processes
++  type: general
++[0] Number of indices in set 34
++[0] 0 1
++[0] 1 1
++[0] 2 1
++[0] 3 1
++[0] 4 1
++[0] 5 1
++[0] 6 1
++[0] 7 1
++[0] 8 1
++[0] 9 1
++[0] 10 3
++[0] 11 3
++[0] 12 3
++[0] 13 3
++[0] 14 3
++[0] 15 3
++[0] 16 3
++[0] 17 3
++[0] 18 3
++[0] 19 3
++[0] 20 2
++[0] 21 2
++[0] 22 2
++[0] 23 2
++[0] 24 2
++[0] 25 2
++[0] 26 2
++[0] 27 2
++[0] 28 2
++[0] 29 2
++[0] 30 7
++[0] 31 7
++[0] 32 7
++[0] 33 7
++[1] Number of indices in set 33
++[1] 0 7
++[1] 1 7
++[1] 2 7
++[1] 3 7
++[1] 4 7
++[1] 5 7
++[1] 6 9
++[1] 7 9
++[1] 8 9
++[1] 9 9
++[1] 10 9
++[1] 11 9
++[1] 12 9
++[1] 13 9
++[1] 14 9
++[1] 15 9
++[1] 16 8
++[1] 17 8
++[1] 18 8
++[1] 19 8
++[1] 20 8
++[1] 21 8
++[1] 22 8
++[1] 23 8
++[1] 24 8
++[1] 25 8
++[1] 26 0
++[1] 27 0
++[1] 28 0
++[1] 29 0
++[1] 30 0
++[1] 31 0
++[1] 32 0
++[2] Number of indices in set 33
++[2] 0 0
++[2] 1 0
++[2] 2 0
++[2] 3 4
++[2] 4 4
++[2] 5 4
++[2] 6 4
++[2] 7 4
++[2] 8 4
++[2] 9 4
++[2] 10 4
++[2] 11 4
++[2] 12 4
++[2] 13 6
++[2] 14 6
++[2] 15 6
++[2] 16 6
++[2] 17 6
++[2] 18 6
++[2] 19 6
++[2] 20 6
++[2] 21 6
++[2] 22 6
++[2] 23 5
++[2] 24 5
++[2] 25 5
++[2] 26 5
++[2] 27 5
++[2] 28 5
++[2] 29 5
++[2] 30 5
++[2] 31 5
++[2] 32 5
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_5_alt_3.out
+@@ -0,0 +1,105 @@
++IS Object: 3 MPI processes
++  type: general
++[0] Number of indices in set 34
++[0] 0 1
++[0] 1 1
++[0] 2 1
++[0] 3 1
++[0] 4 1
++[0] 5 1
++[0] 6 1
++[0] 7 1
++[0] 8 1
++[0] 9 1
++[0] 10 3
++[0] 11 3
++[0] 12 3
++[0] 13 3
++[0] 14 3
++[0] 15 3
++[0] 16 3
++[0] 17 3
++[0] 18 3
++[0] 19 3
++[0] 20 2
++[0] 21 2
++[0] 22 2
++[0] 23 2
++[0] 24 2
++[0] 25 2
++[0] 26 2
++[0] 27 2
++[0] 28 2
++[0] 29 2
++[0] 30 7
++[0] 31 7
++[0] 32 7
++[0] 33 7
++[1] Number of indices in set 33
++[1] 0 7
++[1] 1 7
++[1] 2 7
++[1] 3 7
++[1] 4 7
++[1] 5 7
++[1] 6 9
++[1] 7 9
++[1] 8 9
++[1] 9 9
++[1] 10 9
++[1] 11 9
++[1] 12 9
++[1] 13 9
++[1] 14 9
++[1] 15 9
++[1] 16 8
++[1] 17 8
++[1] 18 8
++[1] 19 8
++[1] 20 8
++[1] 21 8
++[1] 22 8
++[1] 23 8
++[1] 24 8
++[1] 25 8
++[1] 26 0
++[1] 27 0
++[1] 28 0
++[1] 29 0
++[1] 30 0
++[1] 31 0
++[1] 32 0
++[2] Number of indices in set 33
++[2] 0 0
++[2] 1 0
++[2] 2 0
++[2] 3 4
++[2] 4 4
++[2] 5 4
++[2] 6 4
++[2] 7 4
++[2] 8 4
++[2] 9 4
++[2] 10 4
++[2] 11 4
++[2] 12 4
++[2] 13 6
++[2] 14 6
++[2] 15 6
++[2] 16 6
++[2] 17 6
++[2] 18 6
++[2] 19 6
++[2] 20 6
++[2] 21 6
++[2] 22 6
++[2] 23 5
++[2] 24 5
++[2] 25 5
++[2] 26 5
++[2] 27 5
++[2] 28 5
++[2] 29 5
++[2] 30 5
++[2] 31 5
++[2] 32 5
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_6_alt_2.out
+@@ -0,0 +1,105 @@
++IS Object: 3 MPI processes
++  type: general
++[0] Number of indices in set 34
++[0] 0 1
++[0] 1 1
++[0] 2 1
++[0] 3 1
++[0] 4 1
++[0] 5 1
++[0] 6 1
++[0] 7 1
++[0] 8 1
++[0] 9 1
++[0] 10 1
++[0] 11 1
++[0] 12 1
++[0] 13 1
++[0] 14 1
++[0] 15 1
++[0] 16 1
++[0] 17 1
++[0] 18 1
++[0] 19 1
++[0] 20 3
++[0] 21 3
++[0] 22 3
++[0] 23 3
++[0] 24 3
++[0] 25 3
++[0] 26 3
++[0] 27 3
++[0] 28 3
++[0] 29 3
++[0] 30 3
++[0] 31 3
++[0] 32 3
++[0] 33 3
++[1] Number of indices in set 33
++[1] 0 3
++[1] 1 3
++[1] 2 3
++[1] 3 2
++[1] 4 2
++[1] 5 2
++[1] 6 2
++[1] 7 2
++[1] 8 2
++[1] 9 2
++[1] 10 2
++[1] 11 2
++[1] 12 2
++[1] 13 8
++[1] 14 8
++[1] 15 8
++[1] 16 8
++[1] 17 8
++[1] 18 8
++[1] 19 8
++[1] 20 8
++[1] 21 8
++[1] 22 8
++[1] 23 7
++[1] 24 7
++[1] 25 7
++[1] 26 7
++[1] 27 7
++[1] 28 7
++[1] 29 7
++[1] 30 7
++[1] 31 7
++[1] 32 9
++[2] Number of indices in set 33
++[2] 0 9
++[2] 1 9
++[2] 2 9
++[2] 3 9
++[2] 4 9
++[2] 5 9
++[2] 6 0
++[2] 7 0
++[2] 8 0
++[2] 9 0
++[2] 10 0
++[2] 11 0
++[2] 12 0
++[2] 13 6
++[2] 14 6
++[2] 15 6
++[2] 16 6
++[2] 17 6
++[2] 18 6
++[2] 19 6
++[2] 20 4
++[2] 21 4
++[2] 22 4
++[2] 23 4
++[2] 24 4
++[2] 25 4
++[2] 26 5
++[2] 27 5
++[2] 28 5
++[2] 29 5
++[2] 30 5
++[2] 31 5
++[2] 32 5
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_7_alt_2.out
+@@ -0,0 +1,104 @@
++IS Object: 2 MPI processes
++  type: general
++[0] Number of indices in set 50
++[0] 0 0
++[0] 1 0
++[0] 2 0
++[0] 3 0
++[0] 4 0
++[0] 5 0
++[0] 6 0
++[0] 7 0
++[0] 8 0
++[0] 9 0
++[0] 10 1
++[0] 11 1
++[0] 12 1
++[0] 13 1
++[0] 14 1
++[0] 15 1
++[0] 16 1
++[0] 17 1
++[0] 18 1
++[0] 19 1
++[0] 20 8
++[0] 21 8
++[0] 22 8
++[0] 23 8
++[0] 24 8
++[0] 25 8
++[0] 26 8
++[0] 27 8
++[0] 28 8
++[0] 29 8
++[0] 30 9
++[0] 31 9
++[0] 32 9
++[0] 33 9
++[0] 34 9
++[0] 35 9
++[0] 36 9
++[0] 37 9
++[0] 38 9
++[0] 39 9
++[0] 40 4
++[0] 41 4
++[0] 42 4
++[0] 43 4
++[0] 44 4
++[0] 45 4
++[0] 46 4
++[0] 47 4
++[0] 48 4
++[0] 49 4
++[1] Number of indices in set 50
++[1] 0 5
++[1] 1 5
++[1] 2 5
++[1] 3 5
++[1] 4 5
++[1] 5 5
++[1] 6 5
++[1] 7 5
++[1] 8 5
++[1] 9 5
++[1] 10 2
++[1] 11 2
++[1] 12 2
++[1] 13 2
++[1] 14 2
++[1] 15 2
++[1] 16 2
++[1] 17 2
++[1] 18 2
++[1] 19 2
++[1] 20 3
++[1] 21 3
++[1] 22 3
++[1] 23 3
++[1] 24 3
++[1] 25 3
++[1] 26 3
++[1] 27 3
++[1] 28 3
++[1] 29 3
++[1] 30 6
++[1] 31 6
++[1] 32 6
++[1] 33 6
++[1] 34 6
++[1] 35 6
++[1] 36 6
++[1] 37 6
++[1] 38 6
++[1] 39 6
++[1] 40 7
++[1] 41 7
++[1] 42 7
++[1] 43 7
++[1] 44 7
++[1] 45 7
++[1] 46 7
++[1] 47 7
++[1] 48 7
++[1] 49 7
+--- /dev/null
++++ petsc-3.26.0/src/mat/tutorials/output/ex15_8_alt.out
+@@ -0,0 +1,14 @@
++IS Object: 2 MPI processes
++  type: general
++[0] Number of indices in set 5
++[0] 0 0
++[0] 1 0
++[0] 2 0
++[0] 3 2
++[0] 4 2
++[1] Number of indices in set 5
++[1] 0 2
++[1] 1 1
++[1] 2 1
++[1] 3 1
++[1] 4 1
