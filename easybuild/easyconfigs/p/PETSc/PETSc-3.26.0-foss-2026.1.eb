@@ -54,11 +54,13 @@ configopts = '--LIBS="$LIBS -lrt" --with-mpi4py=0 '
 # make test runs before the install step, but generated tests read data files
 # from the --prefix tree. Copy them first. One OpenMP thread and one test at a
 # time keep ParMETIS output stable and stop 8-rank examples oversubscribing.
-# PFSTRING and -library_preload compile a .so under /tmp/${USERNAME}.
+# PFSTRING compiles a shared library from the prefix src tree, so link src.
+# -library_preload dlopens ${PETSC_LIB_DIR}/libpetsc.so, which is not installed yet.
 # The ex55 filter matches the substring "version"; EESSI's prefix contains "versions".
-pretestopts = 'export OMP_NUM_THREADS=1 USERNAME="${USERNAME:-$USER}" && mkdir -p %(installdir)s/share/petsc && cp -a share/petsc/datafiles %(installdir)s/share/petsc/ && ln -sfn "$PWD/src" %(installdir)s/src && '
+# make test uses -@ and returns 0 when TAP still contains not ok lines.
+pretestopts = 'export OMP_NUM_THREADS=1 USERNAME="${USERNAME:-$USER}" && mkdir -p %(installdir)s/share/petsc %(installdir)s/lib && cp -a share/petsc/datafiles %(installdir)s/share/petsc/ && ln -sfn "$PWD/src" %(installdir)s/src && for so in "$PWD"/arch-*/lib/libpetsc.so; do ln -sfn "$so" %(installdir)s/lib/libpetsc.so; done && '
 test_parallel = 1
-testopts = 'TIMEOUT=600'
+testopts = 'TIMEOUT=600 ; tapf=$(ls arch-*/tests/test_*_tap.log | head -1); if grep -q "not ok " "$tapf"; then echo "PETSc TAP failures:"; grep "not ok " "$tapf"; exit 1; fi'
 
 shared_libs = 1
 
