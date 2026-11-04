@@ -59,9 +59,6 @@ dependencies = [
 
 # stdexec and Asio are used from the extra sources above (they are installed
 # alongside HPX), nothing is downloaded at configure time
-# The examples (sine_client) link component libraries installed in lib/hpx; with RPATH
-# linking that directory has to be on the RPATH explicitly.
-preconfigopts = 'export LDFLAGS="$LDFLAGS -Wl,-rpath=%(installdir)s/lib/%(namelower)s" && '
 configopts = '-DFETCHCONTENT_FULLY_DISCONNECTED=ON '
 configopts += '-DHPX_WITH_FETCH_STDEXEC=ON '
 configopts += '-DFETCHCONTENT_SOURCE_DIR_STDEXEC=%%(builddir)s/stdexec-%s ' % local_stdexec_commit
@@ -96,6 +93,10 @@ local_lib_names = [
     'libhpx_throttle',
     'libhpx_unordered',
 ]
+
+# The sine example links libhpx_sine from the component directory lib/hpx, which is not on its
+# RUNPATH ($ORIGIN/../lib is); link the library into lib so bin/sine_client finds it.
+postinstallcmds = ['cd %(installdir)s/lib && ln -s hpx/libhpx_sine.so* .']
 
 sanity_check_paths = {
     'files': ['lib/%s.%s' % (x, SHLIB_EXT) for x in local_lib_names] +
