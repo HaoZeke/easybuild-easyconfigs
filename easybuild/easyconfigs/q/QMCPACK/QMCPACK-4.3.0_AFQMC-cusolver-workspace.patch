@@ -1,0 +1,52 @@
+Reuse the caller-owned cuSOLVER workspace in the handle stream.
+Author: Rohit Goswami (SURF)
+
+--- a/src/AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp
++++ b/src/AFQMC/Numerics/detail/CUDA/cusolver_wrapper.hpp
+@@ -16,6 +16,7 @@
+ #define CUSOLVER_FUNCTIONDEFS_H
+ 
+ #include <cassert>
++#include <cstddef>
+ #include <cuda_runtime.h>
+ #include "cusolverDn.h"
+ #include "AFQMC/Memory/CUDA/cuda_utilities.h"
+@@ -464,32 +465,19 @@
+                                              int* devInfo,
+                                              int batchsize)
+ {
+-  using qmc_cuda::afqmc_cuda_streams;
+-  if (afqmc_cuda_streams.size() < batchsize)
+-  {
+-    int n0 = afqmc_cuda_streams.size();
+-    for (int n = n0; n < batchsize; n++)
+-    {
+-      afqmc_cuda_streams.emplace_back(cudaStream_t{});
+-      cudaStreamCreate(&(afqmc_cuda_streams.back()));
+-    }
+-  }
+-
+-  cudaStream_t s0;
+-  qmc_cuda::cusolver_check(cusolverDnGetStream(handle, &s0), "cusolverDnGetStream");
+-
++  // LWORK bounds the caller's workspace. The handle's stream orders each
++  // matrix operation before another strided matrix reuses that storage.
+   for (int i = 0; i < batchsize; i++)
+   {
+-    qmc_cuda::cusolver_check(cusolverDnSetStream(handle, afqmc_cuda_streams[i]), "cusolverDnSetStream");
++    const auto batch = static_cast<std::ptrdiff_t>(i);
+     cusolverStatus_t success =
+-        cusolverDnZungqr(handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A) + i * Astride, lda,
+-                         reinterpret_cast<cuDoubleComplex const*>(tau) + i * tstride,
+-                         reinterpret_cast<cuDoubleComplex*>(work) + i * lwork, lwork, devInfo + i);
++        cusolverDnZungqr(handle, m, n, k, reinterpret_cast<cuDoubleComplex*>(A) + batch * Astride, lda,
++                         reinterpret_cast<cuDoubleComplex const*>(tau) + batch * tstride,
++                         reinterpret_cast<cuDoubleComplex*>(work), lwork, devInfo + i);
+     qmc_cuda::cusolver_check(success, "cusolver_gqr_strided_status");
+   }
+   qmc_cuda::cuda_check(cudaDeviceSynchronize(), "cusolver_gqr_strided_sync");
+   qmc_cuda::cuda_check(cudaGetLastError(), "cusolver_gqr_strided_error");
+-  qmc_cuda::cusolver_check(cusolverDnSetStream(handle, s0), "cusolverDnSetStream");
+ 
+   return CUSOLVER_STATUS_SUCCESS;
+ }
