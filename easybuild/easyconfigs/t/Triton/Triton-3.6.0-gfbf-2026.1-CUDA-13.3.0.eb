@@ -158,8 +158,8 @@ modextrapaths = {
 }
 modextravars = {
     # Search for "_path_to_binary" in Triton sources
-    'TRITON_CUOBJDUMP_PATH': '$CUDA_HOME/bin/cuobjdump',
-    'TRITON_LIBDEVICE_PATH': '$CUDA_HOME/nvvm/libdevice/libdevice.10.bc',
+    'TRITON_CUOBJDUMP_PATH': '$EBROOTCUDA/bin/cuobjdump',
+    'TRITON_LIBDEVICE_PATH': '$EBROOTCUDA/nvvm/libdevice/libdevice.10.bc',
 }
 
 moduleclass = 'devel'
