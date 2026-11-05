@@ -1,0 +1,40 @@
+easyblock = 'CMakeMake'
+
+name = 'tblite'
+version = '0.6.0'
+versionsuffix = '-cp2k'
+
+homepage = 'https://github.com/tblite/tblite'
+description = """Light-weight tight-binding framework with the dispersion gradient
+ corrections used by CP2K. This profile provides the CMake library interface."""
+
+toolchain = {'name': 'gfbf', 'version': '2026.1'}
+toolchainopts = {'openmp': True, 'pic': True}
+
+# The release bundle includes the CMake sources of its pinned dependencies.
+source_urls = ['https://www.cp2k.org/static/downloads/']
+sources = ['%(name)s-%(version)s.tar.xz']
+patches = ['tblite-0.6.0_cp2k-dispersion-gradients.patch']
+checksums = [
+    {'tblite-0.6.0.tar.xz': '372281aedb89234168d00eb691addb303197a9462a9c55d145c835f2cf5e8b42'},
+    {'tblite-0.6.0_cp2k-dispersion-gradients.patch': '10946f6fe3a47b718387468d4cf3671b98ae4ac4d530a301ae8c71fe3defc6a0'},
+]
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    ('pkgconf', '2.5.1'),
+]
+
+build_shared_libs = True
+configopts = '-DBLA_VENDOR=FlexiBLAS -DWITH_OpenMP=ON -DWITH_TESTS=ON'
+
+test_cmd = 'ctest --output-on-failure'
+runtest = ''
+
+sanity_check_paths = {
+    'files': ['bin/tblite', 'include/tblite.h', 'lib/libtblite.%s' % SHLIB_EXT],
+    'dirs': ['include/tblite', 'lib/cmake', 'lib/pkgconfig'],
+}
+sanity_check_commands = ['tblite --version']
+
+moduleclass = 'chem'
