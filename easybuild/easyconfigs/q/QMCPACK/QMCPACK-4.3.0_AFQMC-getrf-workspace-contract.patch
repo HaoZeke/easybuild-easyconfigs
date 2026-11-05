@@ -1,0 +1,56 @@
+Make the AFQMC CUDA getrf callers honour the queried getrf workspace and propagate getrf_bufferSize failures.
+
+--- a/src/AFQMC/SlaterDeterminantOperations/SlaterDetOperations_base.hpp
++++ b/src/AFQMC/SlaterDeterminantOperations/SlaterDetOperations_base.hpp
+@@ -200,9 +200,10 @@
+     using std::get;
+     int NAEA = get<1>(A.sizes());
+     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+-    TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
++    TVector WORK(iextensions<1u>{std::max(work_size, NAEA * NAEA)},
++                 buffer_manager.get_generator().template get_allocator<T>());
+     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
+-    return SlaterDeterminantOperations::base::Overlap<T>(A, A, LogOverlapFactor, TNN, IWORK, TNN2.elements(), false);
++    return SlaterDeterminantOperations::base::Overlap<T>(A, A, LogOverlapFactor, TNN, IWORK, WORK, false);
+   }
+ 
+   template<class MatA, class MatB>
+@@ -211,9 +212,10 @@
+     using std::get;
+     int NAEA = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
+     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+-    TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
++    TVector WORK(iextensions<1u>{std::max(work_size, NAEA * NAEA)},
++                 buffer_manager.get_generator().template get_allocator<T>());
+     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
+-    return SlaterDeterminantOperations::base::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), herm);
++    return SlaterDeterminantOperations::base::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, WORK, herm);
+   }
+ 
+   template<class MatA, class MatB>
+@@ -222,9 +224,10 @@
+     using std::get;
+     int NAEA = get<1>(A.sizes());
+     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
+-    TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
++    TVector WORK(iextensions<1u>{std::max(work_size, NAEA * NAEA)},
++                 buffer_manager.get_generator().template get_allocator<T>());
+     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
+-    return SlaterDeterminantOperations::base::Overlap<T>(A, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), false);
++    return SlaterDeterminantOperations::base::Overlap<T>(A, B, LogOverlapFactor, TNN, IWORK, WORK, false);
+   }
+ 
+   // routines for PHMSD
+--- a/src/AFQMC/Numerics/detail/CUDA/lapack_cuda_gpu_ptr.hpp
++++ b/src/AFQMC/Numerics/detail/CUDA/lapack_cuda_gpu_ptr.hpp
+@@ -59,7 +59,9 @@
+ template<typename T>
+ inline static void getrf_bufferSize(const int n, const int m, device_pointer<T> a, int lda, int& lwork)
+ {
+-  cusolver::cusolver_getrf_bufferSize(*a.handles.cusolverDn_handle, n, m, to_address(a), lda, &lwork);
++  if (CUSOLVER_STATUS_SUCCESS !=
++      cusolver::cusolver_getrf_bufferSize(*a.handles.cusolverDn_handle, n, m, to_address(a), lda, &lwork))
++    throw std::runtime_error("Error: cusolver_getrf_bufferSize returned error code.");
+ }
+ 
+ template<typename T, typename R, typename I>
