@@ -17,10 +17,15 @@ sources = [
     },
 ]
 # The batched QR call owns one LWORK-sized workspace, shared in stream order.
-patches = ['QMCPACK-4.3.0_AFQMC-cusolver-workspace.patch']
+# The device regression checks that storage past LWORK stays untouched.
+patches = [
+    'QMCPACK-4.3.0_AFQMC-cusolver-workspace.patch',
+    'QMCPACK-4.3.0_AFQMC-gqr-strided-workspace-test.patch',
+]
 checksums = [
     '511d5f368db002f2f77504619e1ada8d4a3034200d25feef6773d12a6ed6d18e',
     'e8138991ce8a493f7c03d89d7df103dabb42156c75f57108ecee1f397fd8a4d3',
+    'c3246fdc4fbb44920de0a4c0af8a27be0061959352e77a2b2abf7ae56915fd4c',
 ]
 
 builddependencies = [

@@ -1,0 +1,85 @@
+Add a device regression for the batched QR workspace bound.
+
+--- a/src/AFQMC/Numerics/tests/test_dense_numerics.cpp
++++ b/src/AFQMC/Numerics/tests/test_dense_numerics.cpp
+@@ -758,6 +758,80 @@
+     test_dense_batched_gemm<Alloc>(alloc);
+   }
+ }
++
++// gqrStrided receives LWORK elements of workspace for the whole batch, as returned by the
++// single-matrix gqr buffer query. Storage past those LWORK elements belongs to the caller.
++template<class Allocator>
++void test_dense_gqr_strided_workspace_bound_device(Allocator& alloc)
++{
++  using T          = typename Allocator::value_type;
++  using IAllocator = typename Allocator::template rebind<int>::other;
++  const int nbatch = 3;
++  vector<T> a      = {37., 45., 59., 53., 81., 97., 87., 105., 129., 10., 23., 35.};
++  vector<T> id     = {1., 0., 0., 0., 1., 0., 0., 0., 1.};
++  const T sentinel(-7.25, 3.5);
++
++  array<T, 3, Allocator> A({nbatch, 3, 4}, alloc);
++  array<T, 3, Allocator> Q1({nbatch, 3, 4}, alloc);
++  for (int b = 0; b < nbatch; b++)
++  {
++    vector<T> ab(a);
++    for (auto& x : ab)
++      x += T(b) * T(1.0, 0.5);
++    copy_n(ab.data(), ab.size(), A[b].base());
++    copy_n(ab.data(), ab.size(), Q1[b].base());
++  }
++
++  const int sz = std::max(ma::geqrf_optimal_workspace_size(A[0]), ma::gqr_optimal_workspace_size(A[0]));
++  REQUIRE(sz > 0);
++  array<T, 1, Allocator> WORK(iextensions<1u>{nbatch * sz}, alloc);
++  vector<T> guard(static_cast<std::size_t>(nbatch - 1) * sz, sentinel);
++  copy_n(guard.data(), guard.size(), WORK.base() + sz);
++  array<T, 2, Allocator> TAU({nbatch, 4}, alloc);
++  array<int, 1, IAllocator> info(iextensions<1u>{nbatch}, IAllocator{alloc});
++
++  geqrfStrided(4, 3, A.base(), 4, 12, TAU.base(), 4, info.base(), nbatch);
++  gqrStrided(4, 3, 3, A.base(), 4, 12, TAU.base(), 4, WORK.base(), sz, info.base(), nbatch);
++
++  vector<int> info_h(nbatch, -1);
++  copy_n(info.base(), info_h.size(), info_h.data());
++  for (int b = 0; b < nbatch; b++)
++    CHECK(info_h[b] == 0);
++
++  vector<T> guard_h(guard.size());
++  copy_n(WORK.base() + sz, guard_h.size(), guard_h.data());
++  std::size_t guard_overwritten = 0;
++  for (auto const& w : guard_h)
++    if (w != sentinel)
++      guard_overwritten++;
++  CHECK(guard_overwritten == 0);
++
++  array<T, 1, Allocator> WORK1(iextensions<1u>{sz}, alloc);
++  array<T, 2, Allocator> TAU1({1, 4}, alloc);
++  array<int, 1, IAllocator> info1(iextensions<1u>{1}, IAllocator{alloc});
++  array<T, 2, Allocator> Id({3, 3}, alloc);
++  array_ref<T, 2> Id2(id.data(), {3, 3});
++  for (int b = 0; b < nbatch; b++)
++  {
++    geqrfStrided(4, 3, Q1[b].base(), 4, 12, TAU1.base(), 4, info1.base(), 1);
++    gqrStrided(4, 3, 3, Q1[b].base(), 4, 12, TAU1.base(), 4, WORK1.base(), sz, info1.base(), 1);
++    verify_approx(A[b], Q1[b]);
++    ma::product(A[b], ma::H(A[b]), Id);
++    verify_approx(Id, Id2);
++  }
++}
++
++TEST_CASE("dense_gqr_strided_workspace_bound_device_complex", "[matrix_operations]")
++{
++  auto world = boost::mpi3::environment::get_world_instance();
++  auto node  = world.split_shared(world.rank());
++  arch::INIT(node);
++  {
++    using Alloc = device::device_allocator<std::complex<double>>;
++    Alloc alloc{};
++    test_dense_gqr_strided_workspace_bound_device<Alloc>(alloc);
++  }
++}
+ #endif
+ 
+ } // namespace qmcplusplus
