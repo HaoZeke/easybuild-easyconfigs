@@ -17,7 +17,8 @@ sources = ['%(name)s-%(version)s.tar.xz']
 patches = ['tblite-0.6.0_cp2k-dispersion-gradients.patch']
 checksums = [
     {'tblite-0.6.0.tar.xz': '372281aedb89234168d00eb691addb303197a9462a9c55d145c835f2cf5e8b42'},
-    {'tblite-0.6.0_cp2k-dispersion-gradients.patch': '10946f6fe3a47b718387468d4cf3671b98ae4ac4d530a301ae8c71fe3defc6a0'},
+    {'tblite-0.6.0_cp2k-dispersion-gradients.patch':
+     '10946f6fe3a47b718387468d4cf3671b98ae4ac4d530a301ae8c71fe3defc6a0'},
 ]
 
 builddependencies = [
@@ -32,7 +33,7 @@ test_cmd = 'ctest --output-on-failure'
 runtest = ''
 
 sanity_check_paths = {
-    'files': ['bin/tblite', 'include/tblite.h', 'lib/libtblite.%s' % SHLIB_EXT],
+    'files': ['bin/tblite', 'include/tblite.h', f'lib/libtblite.{SHLIB_EXT}'],
     'dirs': ['include/tblite', 'lib/cmake', 'lib/pkgconfig'],
 }
 sanity_check_commands = ['tblite --version']
