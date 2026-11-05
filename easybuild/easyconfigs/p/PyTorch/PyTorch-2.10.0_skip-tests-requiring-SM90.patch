@@ -1,0 +1,54 @@
+Avoid test_intra_node_comm_all_reduce failing on e.g. A100:
+
+> [rank1]:E1022 09:55:08.823000 3580472 torch/testing/_internal/common_distributed.py:721] RuntimeError: CUDA error: device-side assert triggered...
+> [rank1]:E1022 09:55:08.823000 3580472 torch/testing/_internal/common_distributed.py:721]  exiting process 1 with exit code: 10
+> ...
+> :318: st_vec: block: [0,0,0], thread: [87,0,0] Assertion `false` failed.
+> /pytorch-v2.7.1/torch/csrc/distributed/c10d/CUDASymmetricMemory-inl.h:318: st_vec: block: [0,0,0], thread: [88,0,0] Assertion `false` failed.
+
+test_fused_all_gather_scaled_matmul fails with a NCCL error due to FP8 usage and hangs forever.
+See https://github.com/pytorch/pytorch/issues/171796
+
+test_fused_scaled_matmul_reduce_scatter fails with
+> RuntimeError: torch._scaled_mm is only supported on CUDA devices with compute capability >= 9.0 or 8.9, or ROCm MI300+
+
+
+Author: Alexander Grund (TU Dresden)
+
+diff --git a/test/distributed/test_c10d_nccl.py b/test/distributed/test_c10d_nccl.py
+--- a/test/distributed/test_c10d_nccl.py
++++ b/test/distributed/test_c10d_nccl.py
+@@ -4287,7 +4287,7 @@
+     @runOnRocmArch(MI300_ARCH)
+     def test_intra_node_comm_all_reduce(self):
+         from torch._C._distributed_c10d import _get_intra_node_comm_usage_counter
+-        from torch.testing._internal.common_cuda import SM80OrLater
++        from torch.testing._internal.common_cuda import SM90OrLater
+ 
+         for peer in range(self.world_size):
+             if peer == self.rank:
+@@ -4295,8 +4295,8 @@
+             if not torch._C._cuda_canDeviceAccessPeer(self.rank, peer):
+                 raise SkipTest("Test requires p2p access")
+ 
+-        if not SM80OrLater:
+-            raise SkipTest("Test requires sm>=80")
++        if not SM90OrLater:
++            raise SkipTest("Test requires sm>=90")
+ 
+         store = c10d.FileStore(self.file_name, self.world_size)
+         os.environ["ENABLE_INTRA_NODE_COMM"] = "1"
+diff --git a/test/distributed/test_symmetric_memory.py b/test/distributed/test_symmetric_memory.py
+--- a/test/distributed/test_symmetric_memory.py
++++ b/test/distributed/test_symmetric_memory.py
+@@ -504,6 +504,10 @@
+     )
+     @skip_if_lt_x_gpu(2)
+     @skipUnless(SM89OrLater, "Requires compute capability >= 8.9")
++    @skipIf(
++        not SM90OrLater,
++        "_fused_all_gather_scaled_matmul_fallback w/ FP8 only supports sm>=90",
++    )
+     @parametrize("gather_dim", [0, 1])
+     @parametrize(
+         "scale_mode", ["tensor-wise", "row-wise-replicated", "row-wise-sharded"]

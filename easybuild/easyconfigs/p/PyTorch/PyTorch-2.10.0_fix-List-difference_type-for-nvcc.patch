@@ -1,0 +1,20 @@
+The host-compiler pass of nvcc 13.3 rewrites
+    static_cast<typename decltype(impl_->list)::difference_type>(pos)
+into a qualified form without `typename`, which GCC (12, 13 and 15) rejects in
+C++17 mode ("need 'typename' before ..."). PyTorch 2.10 and its C++/CUDA extensions
+are compiled as C++17, so .cu files including ATen/core/List.h are affected.
+Name the type directly: impl_ is always a c10::intrusive_ptr<c10::detail::ListImpl>,
+so the type is non-dependent and identical (std::vector<IValue>::difference_type).
+
+diff --git a/aten/src/ATen/core/List_inl.h b/aten/src/ATen/core/List_inl.h
+--- a/aten/src/ATen/core/List_inl.h
++++ b/aten/src/ATen/core/List_inl.h
+@@ -198,7 +198,7 @@
+ template<class T>
+ typename List<T>::internal_reference_type List<T>::operator[](size_type pos) {
+   static_cast<void>(impl_->list.at(pos)); // Throw the exception if it is out of range.
+-  return {impl_->list.begin() + static_cast<typename decltype(impl_->list)::difference_type>(pos)};
++  return {impl_->list.begin() + static_cast<c10::detail::ListImpl::list_type::difference_type>(pos)};
+ }
+ 
+ template<class T>
