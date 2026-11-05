@@ -15,7 +15,8 @@ description = """Libint library is used to evaluate the traditional (electron re
  matrix elements (integrals) over Cartesian Gaussian functions used in modern atomic and molecular theory."""
 
 toolchain = {'name': 'GCC', 'version': '15.2.0'}
-toolchainopts = {'pic': True, 'cstd': 'c++11'}
+# Eigen 5 requires C++14 for the C++ API and installed-library tests.
+toolchainopts = {'pic': True, 'cstd': 'c++14'}
 
 source_urls = ['https://github.com/evaleev/libint/archive']
 sources = ['v%(version)s.tar.gz']
