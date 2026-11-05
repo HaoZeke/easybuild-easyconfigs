@@ -27,13 +27,13 @@ sources = [
         # HPX 2.0.0 is tested against this stdexec commit, it is normally
         # fetched at configure time
         'source_urls': ['https://github.com/NVIDIA/stdexec/archive/'],
-        'download_filename': '%s.tar.gz' % local_stdexec_commit,
-        'filename': 'stdexec-%s.tar.gz' % local_stdexec_commit,
+        'download_filename': f'{local_stdexec_commit}.tar.gz',
+        'filename': f'stdexec-{local_stdexec_commit}.tar.gz',
     },
     {
         'source_urls': ['https://github.com/chriskohlhoff/asio/archive/'],
-        'download_filename': '%s.tar.gz' % local_asio_tag,
-        'filename': '%s.tar.gz' % local_asio_tag,
+        'download_filename': f'{local_asio_tag}.tar.gz',
+        'filename': f'{local_asio_tag}.tar.gz',
     },
 ]
 checksums = [
@@ -99,7 +99,7 @@ local_lib_names = [
 postinstallcmds = ['cd %(installdir)s/lib && ln -s hpx/libhpx_sine.so* .']
 
 sanity_check_paths = {
-    'files': ['lib/%s.%s' % (x, SHLIB_EXT) for x in local_lib_names] +
+    'files': [f'lib/{x}.{SHLIB_EXT}' for x in local_lib_names] +
              ['include/hpx/hpx.hpp', 'include/asio.hpp', 'include/stdexec/execution.hpp',
               'lib/cmake/HPX/HPXConfig.cmake', 'bin/hpxcxx', 'bin/hpxrun.py'],
     'dirs': [local_plugin_dir],
