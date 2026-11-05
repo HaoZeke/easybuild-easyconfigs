@@ -1,0 +1,34 @@
+Disable SLP vectorization of copyable elements before running the LLVM optimization pipeline.
+Vectorizing copyable elements (lanes filled with an idempotent `add x, 0` / `lshr x, 0`)
+produces packed PTX that ptxas 12.8.93 miscompiles on sm_90 / sm_100, giving wrong results e.g. in
+test_comprehensive_nn_functional_max_pool2d_cuda_float32 (not reproduced on sm_80).
+See https://github.com/pytorch/pytorch/issues/165691 and https://github.com/pytorch/pytorch/issues/167339
+Setting DISABLE_LLVM_OPT=slp-copyable-elements re-enables the vectorization.
+
+Backport of https://github.com/triton-lang/triton/pull/9035 (commit 9844da955a9d) which is part of
+the v3.6.0 release but not of commit 8fedd49bbfc4 pinned by PyTorch 2.10.0.
+
+diff --git a/python/src/llvm.cc b/python/src/llvm.cc
+--- a/python/src/llvm.cc
++++ b/python/src/llvm.cc
+@@ -520,11 +520,19 @@
+          bool enable_fp_fusion) {
+         if (mlir::triton::tools::getBoolEnv("DISABLE_LLVM_OPT"))
+           return;
++        auto options = llvm::cl::getRegisteredOptions();
++        // Hack for the 3.6 release only. Vectorization of copyable elements
++        // exposed a bug in ptxas. Manually disable it by modifying the command
++        // line option for it. Note that we can abuse DISABLE_LLVM_OPT to
++        // override this, since setting it to slp-copyable-elements will set the
++        // flag back to true.
++        auto it = options.find("slp-copyable-elements");
++        if (it != options.end())
++          *static_cast<llvm::cl::opt<bool> *>(it->second) = false;
+         // Check to see if we are passing a list of flags to disable
+         // optimizations.
+         auto flagList = mlir::triton::tools::getStrEnv("DISABLE_LLVM_OPT");
+         if (!flagList.empty()) {
+-          auto options = llvm::cl::getRegisteredOptions();
+           llvm::SmallVector<StringRef, 3> split;
+           StringRef(flagList.c_str()).split(split, ',');
+           for (auto flag : split) {

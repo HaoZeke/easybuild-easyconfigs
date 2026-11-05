@@ -129,9 +129,14 @@ exts_list = [
             'download_filename': f'{local_commit}.tar.gz',
             'filename': f'%(namelower)s-%(version)s-{local_commit[:12]}.tar.gz',
         }],
-        'patches': ['Triton-3.6.0_fix-ptxas-blackwell-env-var.patch'],
+        'patches': [
+            'Triton-3.6.0_disable-slp-copyable-elements.patch',
+            'Triton-3.6.0_fix-ptxas-blackwell-env-var.patch',
+        ],
         'checksums': [
             {'triton-3.6.0-8fedd49bbfc4.tar.gz': '6f1863af27d4454a89dea58190d8305f3fa14a9d1ffa6258886d2a62e4a1abac'},
+            {'Triton-3.6.0_disable-slp-copyable-elements.patch':
+             '6f3a40136b3b56e91d52003c29c12ebef61e068f8098853e84c67755db95a61d'},
             {'Triton-3.6.0_fix-ptxas-blackwell-env-var.patch':
              '57d53426b10b7fa7bbb2b44156044edc1031dfad00f1ab56ea6ac4ca30e60ab9'},
         ],
