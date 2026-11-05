@@ -135,13 +135,13 @@ exts_list = [
             'Triton-3.6.0_exclude-annotate-from-aggregate-hash.patch',
         ],
         'checksums': [
-            {'Triton-3.6.0_exclude-annotate-from-aggregate-hash.patch':
-             '086b57e6530240b8f4a8ce0eac6edf7d8fa7ed571e3c6eb16ef2fe018a654b20'},
             {'triton-3.6.0-8fedd49bbfc4.tar.gz': '6f1863af27d4454a89dea58190d8305f3fa14a9d1ffa6258886d2a62e4a1abac'},
             {'Triton-3.6.0_disable-slp-copyable-elements.patch':
              '8e43fd5cdf7be3b93239d16b7361333e98e15a6db1dadd4a9d25694abdfd5c17'},
             {'Triton-3.6.0_fix-ptxas-blackwell-env-var.patch':
              '57d53426b10b7fa7bbb2b44156044edc1031dfad00f1ab56ea6ac4ca30e60ab9'},
+            {'Triton-3.6.0_exclude-annotate-from-aggregate-hash.patch':
+             '086b57e6530240b8f4a8ce0eac6edf7d8fa7ed571e3c6eb16ef2fe018a654b20'},
         ],
     }),
 ]
