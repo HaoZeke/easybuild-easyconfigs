@@ -31,7 +31,8 @@ checksums = [
     'e8138991ce8a493f7c03d89d7df103dabb42156c75f57108ecee1f397fd8a4d3',
     'c3246fdc4fbb44920de0a4c0af8a27be0061959352e77a2b2abf7ae56915fd4c',
     '931051480982ef470f1abba498aff5a72c09c3608851baa80acc8d0cc47aff4f',
-    {'QMCPACK-4.3.0_AFQMC-getrf-workspace-contract.patch': '065734c57a638f49de8618c4e5d049d599c1ad161b8c2c37fd894e0f90b1e2de'},
+    {'QMCPACK-4.3.0_AFQMC-getrf-workspace-contract.patch':
+     '065734c57a638f49de8618c4e5d049d599c1ad161b8c2c37fd894e0f90b1e2de'},
 ]
 
 builddependencies = [
