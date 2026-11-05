@@ -87,8 +87,11 @@ patches = [
     'PyTorch-2.9.1_skip-tests-requiring-MKLDNN.patch',
     'PyTorch-2.10.0_fix-List-difference_type-for-nvcc.patch',
     'PyTorch-2.10.0_fix-MAGMA-2.10-version-encoding.patch',
+    'PyTorch-2.10.0_fix-GlooDeviceFactory-with-ibverbs.patch',
 ]
 checksums = [
+    {'PyTorch-2.10.0_fix-GlooDeviceFactory-with-ibverbs.patch':
+     '8d3c2db0575d2e637570d2dc943d1ce33ed14ccb70840aa44cb77d43ed8b0695'},
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
     {'PyTorch-2.10.0-disabled-tests.json': '8f3d88d038aea1c36be3e65cd3bdec36f28673340f00f8ffa10d1a06823b9259'},
     {'six-1.11.0.tar.gz': '70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9'},
