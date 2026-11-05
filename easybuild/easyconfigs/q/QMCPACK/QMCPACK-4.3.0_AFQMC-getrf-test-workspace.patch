@@ -1,0 +1,15 @@
+Size the dense numerical fixture's LU scratch from the backend workspace query.
+
+--- a/src/AFQMC/Numerics/tests/test_dense_numerics.cpp
++++ b/src/AFQMC/Numerics/tests/test_dense_numerics.cpp
+@@ -696,8 +696,9 @@
+     getrfBatched(3, A_array.data(), 4, ma::pointer_dispatch(piv.origin()), ma::pointer_dispatch(info.origin()), 2);
+     copy_n(a2.data(), a2.size(), B.origin());
+     using ma::getrf;
++    array<T, 1, Allocator> WORK_TRF(iextensions<1u>{std::max(1, ma::getrf_optimal_workspace_size(B))}, alloc);
+     getrf(3, 3, ma::pointer_dispatch(B.origin()), 3, ma::pointer_dispatch(spiv.data()), status,
+-          ma::pointer_dispatch(WORK.data()));
++          ma::pointer_dispatch(WORK_TRF.data()));
+   }
+   //SECTION("getri_batched")
+   {
