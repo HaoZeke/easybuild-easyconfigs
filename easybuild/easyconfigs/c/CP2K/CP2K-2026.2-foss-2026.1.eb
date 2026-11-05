@@ -16,7 +16,7 @@ patches = [
     # GCC 15 with AVX2 or AVX-512 miscompiles the integer packing behind in-core HFX integrals and compressed
     # tensors, which gives wrong HFX, MP2 and GW results; the patch turns off loop vectorization for that one file
     'CP2K-2026.2_fix-hfx-compression-GCC-15.patch',
-    # without tblite, the tblite inputs of xTB/regtest-3-spglib abort instead of being skipped (fixed after 2026.2)
+    # The directory requires tblite; the declared dependency keeps these xTB cases enabled.
     'CP2K-2026.2_regtest-3-spglib-requires-tblite.patch',
     # closed-shell TDDFPT sized an index array by an unset entry of nmo, gigabytes per MPI rank
     'CP2K-2026.2_fix-tddfpt-guess-reverse-index.patch',
@@ -48,6 +48,7 @@ dependencies = [
     ('libvori', '220621'),
     ('PLUMED', '2.10.0'),
     ('spglib', '2.8.0'),
+    ('tblite', '0.6.0', '-cp2k'),
 ]
 
 moduleclass = 'chem'
