@@ -1,0 +1,30 @@
+Keep the dispersion-library cutoff defaults compatible with upstream reference energies.
+Smoothing remains available through explicit widths and environment overrides.
+
+diff --git a/subprojects/s-dftd3/src/dftd3/cutoff.f90 b/subprojects/s-dftd3/src/dftd3/cutoff.f90
+--- a/subprojects/s-dftd3/src/dftd3/cutoff.f90
++++ b/subprojects/s-dftd3/src/dftd3/cutoff.f90
+@@ -51,7 +51,8 @@
+       real(wp) :: disp3 = disp3_default
+ 
+       !> Width of smooth two-body interaction cutoff
+-      real(wp) :: width2 = 0.05_wp
++      ! Callers select smoothing explicitly; the default retains upstream energies.
++      real(wp) :: width2 = 0.0_wp
+ 
+       !> Width of smooth three-body interaction cutoff
+       real(wp) :: width3 = 0.0_wp
+diff --git a/subprojects/dftd4/src/dftd4/cutoff.f90 b/subprojects/dftd4/src/dftd4/cutoff.f90
+--- a/subprojects/dftd4/src/dftd4/cutoff.f90
++++ b/subprojects/dftd4/src/dftd4/cutoff.f90
+@@ -53,7 +53,8 @@
+       real(wp) :: disp3 = disp3_default
+ 
+       !> Width of smooth two-body interaction cutoff
+-      real(wp) :: width2 = 0.05_wp
++      ! Callers select smoothing explicitly; the default retains upstream energies.
++      real(wp) :: width2 = 0.0_wp
+ 
+       !> Width of smooth three-body interaction cutoff
+       real(wp) :: width3 = 0.0_wp
+

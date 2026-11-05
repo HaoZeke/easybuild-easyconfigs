@@ -14,11 +14,16 @@ toolchainopts = {'openmp': True, 'pic': True}
 # The release bundle includes the CMake sources of its pinned dependencies.
 source_urls = ['https://www.cp2k.org/static/downloads/']
 sources = ['%(name)s-%(version)s.tar.xz']
-patches = ['tblite-0.6.0_cp2k-dispersion-gradients.patch']
+patches = [
+    'tblite-0.6.0_cp2k-dispersion-gradients.patch',
+    'tblite-0.6.0_preserve-dispersion-cutoff-defaults.patch',
+]
 checksums = [
     {'tblite-0.6.0.tar.xz': '372281aedb89234168d00eb691addb303197a9462a9c55d145c835f2cf5e8b42'},
     {'tblite-0.6.0_cp2k-dispersion-gradients.patch':
      '10946f6fe3a47b718387468d4cf3671b98ae4ac4d530a301ae8c71fe3defc6a0'},
+    {'tblite-0.6.0_preserve-dispersion-cutoff-defaults.patch':
+     '471bf6a008d405693b46a3000a3e353c52e2a64a430f022253c3e91d2d8cd9b1'},
 ]
 
 builddependencies = [
@@ -39,3 +44,4 @@ sanity_check_paths = {
 sanity_check_commands = ['tblite --version']
 
 moduleclass = 'chem'
+
