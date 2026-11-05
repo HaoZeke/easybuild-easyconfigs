@@ -69,8 +69,13 @@ configopts += '-DHPX_WITH_HWLOC=ON '
 configopts += '-DHPX_WITH_NETWORKING=ON '
 configopts += '-DHPX_WITH_PARCELPORT_MPI=ON '
 configopts += '-DHPX_WITH_PARCELPORT_TCP=ON '
-configopts += '-DHPX_WITH_TESTS=OFF '
+configopts += '-DHPX_WITH_TESTS=ON '
 configopts += '-DHPX_WITH_EXAMPLES=ON '
+
+# HPX excludes its tests from the default build target.
+buildopts = 'all tests'
+pretestopts = 'CTEST_OUTPUT_ON_FAILURE=1 '
+runtest = 'test'
 
 local_plugin_dir = 'lib/%(namelower)s'
 
