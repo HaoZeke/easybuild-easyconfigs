@@ -26,4 +26,9 @@ sanity_check_paths = {
     'dirs': [],
 }
 
+# a non-PIC archive fails this link the way it fails in libcp2k (relocation R_X86_64_32 ... recompile with -fPIC)
+sanity_check_commands = [
+    "g++ -shared -o libvori-pic-check.so -Wl,--whole-archive %(installdir)s/lib/libvori.a -Wl,--no-whole-archive",
+]
+
 moduleclass = 'lib'
