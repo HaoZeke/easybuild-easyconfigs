@@ -26,6 +26,7 @@ patches = [
     'QMCPACK-4.3.0_LCAO-GCC15-novector.patch',
     'QMCPACK-4.3.0_AFQMC-getrf-workspace-contract.patch',
     'QMCPACK-4.3.0_AFQMC-getrf-test-workspace.patch',
+    'QMCPACK-4.3.0_AFQMC-workspace-per-operand.patch',
 ]
 checksums = [
     '511d5f368db002f2f77504619e1ada8d4a3034200d25feef6773d12a6ed6d18e',
@@ -36,6 +37,8 @@ checksums = [
      '065734c57a638f49de8618c4e5d049d599c1ad161b8c2c37fd894e0f90b1e2de'},
     {'QMCPACK-4.3.0_AFQMC-getrf-test-workspace.patch':
      '5e5675ff04be77ae9b4292c219d611867de99ca6bbbfc5436c0e6b15dc105069'},
+    {'QMCPACK-4.3.0_AFQMC-workspace-per-operand.patch':
+     '8825f6273c50e7072abd966afd04eb09ba6ffbeb87e5bdd0c1162bcfbcb1dc28'},
 ]
 
 builddependencies = [
