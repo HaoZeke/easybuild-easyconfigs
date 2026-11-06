@@ -47,4 +47,10 @@ sanity_check_paths = {
     'dirs': ['data', 'tests'],
 }
 
+# cp2kflags of the features the dependencies provide; tests/TEST_DIRS selects test directories on them
+local_cp2kflags = ['libint', 'libxc', 'libvori', 'plumed2', 'hdf5', 'sirius']
+if ARCH == 'x86_64':
+    local_cp2kflags.append('xsmm')
+sanity_check_commands = [f"cp2k.psmp --version | grep 'cp2kflags:' | grep -w {flag}" for flag in local_cp2kflags]
+
 moduleclass = 'chem'
