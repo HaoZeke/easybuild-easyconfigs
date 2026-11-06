@@ -1,0 +1,20 @@
+Turn off floating-point contraction after -ffast-math in the QMCPACK GNU compiler flags.
+GCC 15 with -ffast-math fuses multiplies and adds in the complex multi-Slater ratio.
+test_multi_slater_determinant.cpp:139 then returns (0.557348,0) instead of 1.374307585.
+Author: Rohit Goswami (SURF)
+
+diff --git a/CMake/GNUCompilers.cmake b/CMake/GNUCompilers.cmake
+index cd7929e..a1f370b 100644
+--- a/CMake/GNUCompilers.cmake
++++ b/CMake/GNUCompilers.cmake
+@@ -87,8 +87,8 @@ if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9.2)
+ endif()
+ 
+ # Set extra optimization specific flags
+-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math")
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
++set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffast-math -ffp-contract=off")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -ffp-contract=off")
+ 
+ #--------------------------------------
+ # Special architectural flags
