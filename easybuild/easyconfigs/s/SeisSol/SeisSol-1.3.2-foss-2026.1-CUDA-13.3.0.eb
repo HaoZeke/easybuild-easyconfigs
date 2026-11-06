@@ -79,14 +79,12 @@ dependencies = [
     ('AdaptiveCpp', '25.10.0', versionsuffix, ('llvm-compilers', '21.1.8')),
 ]
 
-# A100 is compute capability 8.0. SeisSol spells that sm_80
-# (cmake/process_users_input.cmake, DEVICE_ARCH_OPTIONS).
-# One build takes one DEVICE_ARCH. H100 is sm_90.
-local_device_arch = 'sm_80'
-local_cuda_cc = '8.0'
-cuda_compute_capabilities = [local_cuda_cc]
+# One build takes one DEVICE_ARCH. Keep an A100 default while allowing the
+# command-line CUDA capability to select a native A100 (8.0) or H100 (9.0)
+# shard. The SeisSol easyblock maps the single capability to sm_80 or sm_90.
+cuda_compute_capabilities = ['8.0']
 device_backend = 'cuda'
-device_arch = local_device_arch
+device_arch = 'auto'
 
 # The SeisSol easyblock sets HOST_ARCH, and for a GPU build DEVICE_BACKEND and
 # DEVICE_ARCH. The installed binary is then
