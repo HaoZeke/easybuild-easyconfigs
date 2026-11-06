@@ -23,7 +23,7 @@ checksums = [
     {'tblite-0.6.0_cp2k-dispersion-gradients.patch':
      '10946f6fe3a47b718387468d4cf3671b98ae4ac4d530a301ae8c71fe3defc6a0'},
     {'tblite-0.6.0_preserve-dispersion-cutoff-defaults.patch':
-     '471bf6a008d405693b46a3000a3e353c52e2a64a430f022253c3e91d2d8cd9b1'},
+     '125044edbdc6e713edaa395c6d2295d8705822b463df2ec719235e3f031a6574'},
 ]
 
 builddependencies = [
