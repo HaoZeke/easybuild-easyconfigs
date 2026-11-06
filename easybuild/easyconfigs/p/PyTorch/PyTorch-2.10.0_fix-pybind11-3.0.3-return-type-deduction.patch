@@ -1,0 +1,68 @@
+pybind11 >= 3.0.3 returns `typing::Tuple<Args...>` from `py::make_tuple` (PyTorch 2.10.0 bundles 3.0.1, the
+easyconfig uses pybind11 3.0.4 via USE_SYSTEM_PYBIND11), so lambdas and `?:` expressions returning tuples of
+different element types no longer compile:
+> torch/csrc/jit/python/init.cpp:1833:32: error: inconsistent types 'pybind11::typing::Tuple<pybind11::none, pybind11::none>'
+>   and 'pybind11::typing::Tuple<pybind11::cpp_function&, pybind11::list&>' deduced for lambda return type
+> torch/csrc/utils/python_arg_parser.cpp:763:7: error: operands to '?:' have different types
+>   'pybind11::typing::Tuple<pybind11::handle, pybind11::handle>' and 'pybind11::typing::Tuple<pybind11::handle, pybind11::handle, pybind11::handle>'
+> torch/csrc/distributed/c10d/init.cpp:897:36: error: inconsistent types ... deduced for lambda return type
+Add explicit return types.
+
+Upstream commit b248ebc17075c0c3ad2b2532970d2ada32b2cf94 (https://github.com/pytorch/pytorch/pull/179277),
+included in PyTorch 2.12.0; regenerated against the v2.10.0 sources.
+
+diff --git a/torch/csrc/distributed/c10d/init.cpp b/torch/csrc/distributed/c10d/init.cpp
+index 4b18e8f6552d..051e0cdc2ca7 100644
+--- a/torch/csrc/distributed/c10d/init.cpp
++++ b/torch/csrc/distributed/c10d/init.cpp
+@@ -884,7 +884,7 @@
+             return ::c10d::ReduceOp(self);
+           })
+       .def(py::pickle(
+-          [](const ::c10d::ReduceOp& r) {
++          [](const ::c10d::ReduceOp& r) -> py::tuple {
+             // __getstate__
+             if (r.op_ != ::c10d::ReduceOp::RedOpType::PREMUL_SUM) {
+               return py::make_tuple(r.op_, py::none());
+diff --git a/torch/csrc/jit/python/init.cpp b/torch/csrc/jit/python/init.cpp
+index 011e29ec81a6..65053c0841ae 100644
+--- a/torch/csrc/jit/python/init.cpp
++++ b/torch/csrc/jit/python/init.cpp
+@@ -1797,7 +1797,7 @@
+ 
+   m.def(
+       "_jit_get_operation",
+-      [](const std::string& op_name) {
++      [](const std::string& op_name) -> py::tuple {
+         try {
+           auto symbol = Symbol::fromQualString(op_name);
+           const auto sortedOps = getAllSortedOperatorsFor(symbol);
+@@ -1844,7 +1844,7 @@
+       "_maybe_call_torch_function_for_op_packet",
+       [](py::handle op_overload_packet,
+          const py::args& args,
+-         const py::kwargs& kwargs) {
++         const py::kwargs& kwargs) -> py::tuple {
+         py::list ns_method =
+             op_overload_packet.attr("_qualified_op_name").attr("split")("::");
+         auto res = _maybe_handle_torch_function(
+diff --git a/torch/csrc/utils/python_arg_parser.cpp b/torch/csrc/utils/python_arg_parser.cpp
+index 5fa0986cc814..719c3d637515 100644
+--- a/torch/csrc/utils/python_arg_parser.cpp
++++ b/torch/csrc/utils/python_arg_parser.cpp
+@@ -759,9 +759,12 @@
+   }
+   py::object func =
+       PyObject_FastGetAttrString(THPVariableClass, (char*)func_name);
+-  py::object args = (val == nullptr)
+-      ? py::make_tuple(py::handle(self), py::handle(index))
+-      : py::make_tuple(py::handle(self), py::handle(index), py::handle(val));
++  py::tuple args;
++  if (val == nullptr) {
++    args = py::make_tuple(py::handle(self), py::handle(index));
++  } else {
++    args = py::make_tuple(py::handle(self), py::handle(index), py::handle(val));
++  }
+   return handle_torch_function_no_python_arg_parser(
+       overridable_args,
+       args.ptr(),
