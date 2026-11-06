@@ -20,6 +20,10 @@ patches = [
     'OpenBLAS-0.3.32_fix-non-sve-ddot-kernel-aarch64.patch',
     'OpenBLAS-0.3.32_fix-non-sve-sdot-ddot-aarch64.patch',
     'OpenBLAS-0.3.32_fix-droundup-lwork-dsygvd-dspgvd.patch',
+    'OpenBLAS-0.3.32_fix-rot-generic-tail-fma.patch',
+    'OpenBLAS-0.3.32_fix-dgemm-skylakex-edge-k-order.patch',
+    'OpenBLAS-0.3.32_fix-cgemm-zgemm-haswell-uniform-accumulation.patch',
+    'OpenBLAS-0.3.32_fix-cgemm-zgemm-skylakex-uniform-edge-accumulation.patch',
 ]
 checksums = [
     {'v0.3.32.tar.gz': 'f8a1138e01fddca9e4c29f9684fd570ba39dedc9ca76055e1425d5d4b1a4a766'},
@@ -35,6 +39,14 @@ checksums = [
      '2b8cc1197aaaf7eab19f533909ac104517acc9baf77c3e36df319a6592e81df7'},
     {'OpenBLAS-0.3.32_fix-droundup-lwork-dsygvd-dspgvd.patch':
      '0346a61bd166c3f448bdbb0b2016f1d511d743c76ab3134f3c0089dd68ba3e27'},
+    {'OpenBLAS-0.3.32_fix-rot-generic-tail-fma.patch':
+     'df6fcb19be9defc2b68d2579f04440bcddea5ee878383da29ad635e292ef20b7'},
+    {'OpenBLAS-0.3.32_fix-dgemm-skylakex-edge-k-order.patch':
+     '6ea423da48e081d428d33e534cc3bcf70eed04337014eedbfa9ed7637337ca82'},
+    {'OpenBLAS-0.3.32_fix-cgemm-zgemm-haswell-uniform-accumulation.patch':
+     '4517df2ab9411a303e25f09e382dead546949059efb630d692c663fce6e8542d'},
+    {'OpenBLAS-0.3.32_fix-cgemm-zgemm-skylakex-uniform-edge-accumulation.patch':
+     '6fdc2f4d305cc17caa1863efa2c254431c5d91a395232c860a333a656d672fca'},
 ]
 
 builddependencies = [

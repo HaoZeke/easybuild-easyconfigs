@@ -1,0 +1,39 @@
+SROT/DROT generic SIMD kernel (used on x86_64 by COOPERLAKE and SAPPHIRERAPIDS): compute the scalar
+tail with the same fused operations as the vector body, so an element's result does not depend on
+the vector length or offset (exact-equality eigenvalue checks of the LAPACK xGGEV/xGGEV3 tests).
+diff -ru a/kernel/x86_64/drot.c b/kernel/x86_64/drot.c
+--- a/kernel/x86_64/drot.c	2026-11-05 23:03:18.072289486 +0000
++++ b/kernel/x86_64/drot.c	2026-11-05 23:03:18.084289520 +0000
+@@ -121,8 +121,14 @@
+     }
+ #endif
+     while (i < n) {
++#if V_SIMD_F64 && V_SIMD > 256
++        /* same rounding as v_muladd/v_mulsub in the SIMD loop above */
++        FLOAT temp = __builtin_fma(c, x[i], s*y[i]);
++        y[i] = __builtin_fma(c, y[i], -(s*x[i]));
++#else
+         FLOAT temp = c*x[i] + s*y[i];
+         y[i] = c*y[i] - s*x[i];
++#endif
+         x[i] = temp;
+ 
+         i++;
+diff -ru a/kernel/x86_64/srot.c b/kernel/x86_64/srot.c
+--- a/kernel/x86_64/srot.c	2026-11-05 23:03:18.072289486 +0000
++++ b/kernel/x86_64/srot.c	2026-11-05 23:03:18.084289520 +0000
+@@ -123,8 +123,14 @@
+ #endif
+ 
+     while (i < n) {
++#if V_SIMD && !defined(C_PGI) && (defined(HAVE_FMA3) || V_SIMD > 256)
++        /* same rounding as v_muladd/v_mulsub in the SIMD loop above */
++        FLOAT temp = __builtin_fmaf(c, x[i], s*y[i]);
++        y[i] = __builtin_fmaf(c, y[i], -(s*x[i]));
++#else
+         FLOAT temp = c*x[i] + s*y[i];
+         y[i] = c*y[i] - s*x[i];
++#endif
+         x[i] = temp;
+ 
+         i++;

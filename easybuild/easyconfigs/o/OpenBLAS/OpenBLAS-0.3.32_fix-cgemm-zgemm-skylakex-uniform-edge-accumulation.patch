@@ -1,0 +1,563 @@
+SkylakeX/Cooperlake/Sapphire Rapids CGEMM/ZGEMM: compute the m-edge blocks with the same
+per-lane instruction sequence (separate real/imaginary accumulators combined at store) as the
+widest m block, instead of a fused fmaddsub chain that rounds differently.  Fixes position-
+dependent results that broke the LAPACK CGEEV/ZGEEV/CGGEV/ZGGEV(3) exact-equality checks.
+diff -ru a/kernel/x86_64/cgemm_kernel_8x2_skylakex.c b/kernel/x86_64/cgemm_kernel_8x2_skylakex.c
+--- a/kernel/x86_64/cgemm_kernel_8x2_skylakex.c	2026-11-05 21:42:50.718484882 +0000
++++ b/kernel/x86_64/cgemm_kernel_8x2_skylakex.c	2026-11-05 21:43:02.530515422 +0000
+@@ -99,61 +99,59 @@
+     #ndim"88881:\n\t"\
+     SAVE_m8n##ndim
+ 
+-/* m=4, ymm0-ymm3 for temporary use, ymm4-ymm15 for accumulators */
+-#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 3 //conjg_a == conjg_b; ap = permilps($177,a0)
+-  #define unit_kernel_k1m4n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastss "#b_off_i"("#__VA_ARGS__"),%%ymm2; vfmaddsub231ps "#ap",%%ymm2,"#c1";"\
+-    "vbroadcastss "#b_off_r"("#__VA_ARGS__"),%%ymm2; vfmaddsub231ps "#a0",%%ymm2,"#c1";"
+-#else //conjg_a != conjg_b
+-  #define unit_kernel_k1m4n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastss "#b_off_i"("#__VA_ARGS__"),%%ymm2; vfmsubadd231ps "#ap",%%ymm2,"#c1";"\
+-    "vbroadcastss "#b_off_r"("#__VA_ARGS__"),%%ymm2; vfmsubadd231ps "#a0",%%ymm2,"#c1";"
++/* m=4, ymm0-ymm2 hold the constants set by CONSTZMM_INIT, ymm3-ymm6 for temporary use, ymm8-ymm31 for accumulators; same per-lane arithmetic as the widest m block */
++#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 2
++  #define unit_kernel_k1m4n1(b_off,c_le,c_ri,...) \
++    "vbroadcastsd "#b_off"("#__VA_ARGS__"),%%ymm3; vfmadd231ps %%ymm4,%%ymm3,"#c_le"; vfmadd231ps %%ymm5,%%ymm3,"#c_ri";"
++#else
++  #define unit_kernel_k1m4n1(b_off,c_le,c_ri,...) \
++    "vbroadcastsd "#b_off"("#__VA_ARGS__"),%%ymm3; vfmadd231ps %%ymm4,%%ymm3,"#c_le"; vfnmadd231ps %%ymm5,%%ymm3,"#c_ri";"
+ #endif
+ #define KERNEL_h_k1m4n1 \
+-    "vmovups (%0),%%ymm0; vpermilps $177,%%ymm0,%%ymm1; addq $32,%0;"\
+-    unit_kernel_k1m4n1(%%ymm0,%%ymm1,0,4,%%ymm4,%1)
++    "vmovsldup (%0),%%ymm4; vmovshdup (%0),%%ymm5; addq $32,%0;"\
++    unit_kernel_k1m4n1(0,%%ymm8,%%ymm9,%1)
+ #define KERNEL_t_k1m4n1 KERNEL_h_k1m4n1 "addq $8,%1;"
+-#define KERNEL_h_k1m4n2 KERNEL_h_k1m4n1 unit_kernel_k1m4n1(%%ymm0,%%ymm1,8,12,%%ymm5,%1)
++#define KERNEL_h_k1m4n2 KERNEL_h_k1m4n1 unit_kernel_k1m4n1(8,%%ymm10,%%ymm11,%1)
+ #define KERNEL_t_k1m4n2 KERNEL_h_k1m4n2 "addq $16,%1;"
+-#define unit_kernel_k1m4n2(c1,c2,...) \
+-    unit_kernel_k1m4n1(%%ymm0,%%ymm1,0,4,c1,__VA_ARGS__)\
+-    unit_kernel_k1m4n1(%%ymm0,%%ymm1,8,12,c2,__VA_ARGS__)
+-#define KERNEL_h_k1m4n4 KERNEL_h_k1m4n2 unit_kernel_k1m4n2(%%ymm6,%%ymm7,%1,%%r12,1)
++#define unit_kernel_k1m4n2(c1le,c1ri,c2le,c2ri,...) \
++    unit_kernel_k1m4n1(0,c1le,c1ri,__VA_ARGS__)\
++    unit_kernel_k1m4n1(8,c2le,c2ri,__VA_ARGS__)
++#define KERNEL_h_k1m4n4 KERNEL_h_k1m4n2 unit_kernel_k1m4n2(%%ymm12,%%ymm13,%%ymm14,%%ymm15,%1,%%r12,1)
+ #define KERNEL_t_k1m4n4 KERNEL_h_k1m4n4 "addq $16,%1;"
+-#define KERNEL_t_k1m4n6 KERNEL_h_k1m4n4 unit_kernel_k1m4n2(%%ymm8,%%ymm9,%1,%%r12,2) "addq $16,%1;"
+-#define KERNEL_h_k1m4n8 KERNEL_t_k1m4n6 unit_kernel_k1m4n2(%%ymm10,%%ymm11,%%r15)
++#define KERNEL_t_k1m4n6 KERNEL_h_k1m4n4 unit_kernel_k1m4n2(%%ymm16,%%ymm17,%%ymm18,%%ymm19,%1,%%r12,2) "addq $16,%1;"
++#define KERNEL_h_k1m4n8 KERNEL_t_k1m4n6 unit_kernel_k1m4n2(%%ymm20,%%ymm21,%%ymm22,%%ymm23,%%r15)
+ #define KERNEL_t_k1m4n8 KERNEL_h_k1m4n8 "addq $16,%%r15;"
+-#define KERNEL_h_k1m4n10 KERNEL_h_k1m4n8 unit_kernel_k1m4n2(%%ymm12,%%ymm13,%%r15,%%r12,1)
++#define KERNEL_h_k1m4n10 KERNEL_h_k1m4n8 unit_kernel_k1m4n2(%%ymm24,%%ymm25,%%ymm26,%%ymm27,%%r15,%%r12,1)
+ #define KERNEL_t_k1m4n10 KERNEL_h_k1m4n10 "addq $16,%%r15;"
+-#define KERNEL_h_k1m4n12 KERNEL_h_k1m4n10 unit_kernel_k1m4n2(%%ymm14,%%ymm15,%%r15,%%r12,2)
++#define KERNEL_h_k1m4n12 KERNEL_h_k1m4n10 unit_kernel_k1m4n2(%%ymm28,%%ymm29,%%ymm30,%%ymm31,%%r15,%%r12,2)
+ #define KERNEL_t_k1m4n12 KERNEL_h_k1m4n12 "addq $16,%%r15;"
+-#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 2 //not to do conjugation on a_block
+-  #define unit_save_m4n1(alp_r,alp_i,c1,...) \
+-    "vpermilps $177,"#c1",%%ymm3; vfmaddsub213ps ("#__VA_ARGS__"),"#alp_i",%%ymm3;"\
+-    "vfmaddsub213ps %%ymm3,"#alp_r","#c1";vmovups "#c1",("#__VA_ARGS__");"
+-#else //do conjugation on a_block
+-  #define unit_save_m4n1(alp_r,alp_i,c1,...) \
+-    "vpermilps $177,"#c1",%%ymm3; vfmsubadd213ps ("#__VA_ARGS__"),"#alp_r","#c1";"\
+-    "vfmsubadd231ps %%ymm3,"#alp_i","#c1";vmovups "#c1",("#__VA_ARGS__");"
+-#endif
+-#define SAVE_SETUP_m4 "movq %2,%3; addq $32,%2; vbroadcastss (%5),%%ymm0; vbroadcastss 4(%5),%%ymm1;"
+-#define SAVE_m4n1 SAVE_SETUP_m4 unit_save_m4n1(%%ymm0,%%ymm1,%%ymm4,%3)
+-#define SAVE_m4n2 SAVE_m4n1 unit_save_m4n1(%%ymm0,%%ymm1,%%ymm5,%3,%4,1)
+-#define unit_save_m4n2(c1,c2) \
+-    "leaq (%3,%4,2),%3;" unit_save_m4n1(%%ymm0,%%ymm1,c1,%3) unit_save_m4n1(%%ymm0,%%ymm1,c2,%3,%4,1)
+-#define SAVE_m4n4 SAVE_m4n2 unit_save_m4n2(%%ymm6,%%ymm7)
+-#define SAVE_m4n6 SAVE_m4n4 unit_save_m4n2(%%ymm8,%%ymm9)
+-#define SAVE_m4n8 SAVE_m4n6 unit_save_m4n2(%%ymm10,%%ymm11)
+-#define SAVE_m4n10 SAVE_m4n8 unit_save_m4n2(%%ymm12,%%ymm13)
+-#define SAVE_m4n12 SAVE_m4n10 unit_save_m4n2(%%ymm14,%%ymm15)
+-#define INIT_m4n1 "vpxor %%ymm4,%%ymm4,%%ymm4;"
+-#define unit_init_m4n2(c1,c2) "vpxor "#c1","#c1","#c1"; vpxor "#c2","#c2","#c2";"
+-#define INIT_m4n2 unit_init_m4n2(%%ymm4,%%ymm5)
+-#define INIT_m4n4 INIT_m4n2 unit_init_m4n2(%%ymm6,%%ymm7)
+-#define INIT_m4n6 INIT_m4n4 unit_init_m4n2(%%ymm8,%%ymm9)
+-#define INIT_m4n8 INIT_m4n6 unit_init_m4n2(%%ymm10,%%ymm11)
+-#define INIT_m4n10 INIT_m4n8 unit_init_m4n2(%%ymm12,%%ymm13)
+-#define INIT_m4n12 INIT_m4n10 unit_init_m4n2(%%ymm14,%%ymm15)
++#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 1
++  #define unit_save_m4n1(c_le,c_ri,...) \
++    "vpermilps $177,"#c_ri","#c_ri"; vfmadd231ps "#c_ri",%%ymm2,"#c_le"; vpermilps $177,"#c_le",%%ymm4;"\
++    "vfmaddsub213ps ("#__VA_ARGS__"),%%ymm1,%%ymm4; vfmaddsub213ps %%ymm4,%%ymm0,"#c_le"; vmovups "#c_le",("#__VA_ARGS__");"
++#else
++  #define unit_save_m4n1(c_le,c_ri,...) \
++    "vpermilps $177,"#c_ri","#c_ri"; vfnmadd231ps "#c_ri",%%ymm2,"#c_le"; vpermilps $177,"#c_le",%%ymm4;"\
++    "vfmsubadd213ps ("#__VA_ARGS__"),%%ymm0,"#c_le"; vfmsubadd231ps %%ymm4,%%ymm1,"#c_le"; vmovups "#c_le",("#__VA_ARGS__");"
++#endif
++#define SAVE_SETUP_m4 "movq %2,%3; addq $32,%2;"
++#define SAVE_m4n1 SAVE_SETUP_m4 unit_save_m4n1(%%ymm8,%%ymm9,%3)
++#define SAVE_m4n2 SAVE_m4n1 unit_save_m4n1(%%ymm10,%%ymm11,%3,%4,1)
++#define unit_save_m4n2(c1le,c1ri,c2le,c2ri) \
++    "leaq (%3,%4,2),%3;" unit_save_m4n1(c1le,c1ri,%3) unit_save_m4n1(c2le,c2ri,%3,%4,1)
++#define SAVE_m4n4 SAVE_m4n2 unit_save_m4n2(%%ymm12,%%ymm13,%%ymm14,%%ymm15)
++#define SAVE_m4n6 SAVE_m4n4 unit_save_m4n2(%%ymm16,%%ymm17,%%ymm18,%%ymm19)
++#define SAVE_m4n8 SAVE_m4n6 unit_save_m4n2(%%ymm20,%%ymm21,%%ymm22,%%ymm23)
++#define SAVE_m4n10 SAVE_m4n8 unit_save_m4n2(%%ymm24,%%ymm25,%%ymm26,%%ymm27)
++#define SAVE_m4n12 SAVE_m4n10 unit_save_m4n2(%%ymm28,%%ymm29,%%ymm30,%%ymm31)
++#define unit_init_m4n1(c_le,c_ri) "vpxorq "#c_le","#c_le","#c_le"; vpxorq "#c_ri","#c_ri","#c_ri";"
++#define INIT_m4n1 unit_init_m4n1(%%ymm8,%%ymm9)
++#define INIT_m4n2 INIT_m4n1 unit_init_m4n1(%%ymm10,%%ymm11)
++#define INIT_m4n4 INIT_m4n2 unit_init_m4n1(%%ymm12,%%ymm13) unit_init_m4n1(%%ymm14,%%ymm15)
++#define INIT_m4n6 INIT_m4n4 unit_init_m4n1(%%ymm16,%%ymm17) unit_init_m4n1(%%ymm18,%%ymm19)
++#define INIT_m4n8 INIT_m4n6 unit_init_m4n1(%%ymm20,%%ymm21) unit_init_m4n1(%%ymm22,%%ymm23)
++#define INIT_m4n10 INIT_m4n8 unit_init_m4n1(%%ymm24,%%ymm25) unit_init_m4n1(%%ymm26,%%ymm27)
++#define INIT_m4n12 INIT_m4n10 unit_init_m4n1(%%ymm28,%%ymm29) unit_init_m4n1(%%ymm30,%%ymm31)
+ #define COMPUTE_m4(ndim) \
+     INIT_m4n##ndim\
+     COMPUTE_INIT\
+@@ -164,61 +162,59 @@
+     #ndim"88441:\n\t"\
+     SAVE_m4n##ndim
+ 
+-/* m=2, xmm0-xmm3 for temporary use, xmm4-xmm15 for accumulators */
+-#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 3 //conjg_a == conjg_b;
+-  #define unit_kernel_k1m2n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastss "#b_off_i"("#__VA_ARGS__"),%%xmm2; vfmaddsub231ps "#ap",%%xmm2,"#c1";"\
+-    "vbroadcastss "#b_off_r"("#__VA_ARGS__"),%%xmm2; vfmaddsub231ps "#a0",%%xmm2,"#c1";"
+-#else //conjg_a != conjg_b
+-  #define unit_kernel_k1m2n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastss "#b_off_i"("#__VA_ARGS__"),%%xmm2; vfmsubadd231ps "#ap",%%xmm2,"#c1";"\
+-    "vbroadcastss "#b_off_r"("#__VA_ARGS__"),%%xmm2; vfmsubadd231ps "#a0",%%xmm2,"#c1";"
++/* m=2, xmm0-xmm2 hold the constants set by CONSTZMM_INIT, xmm3-xmm6 for temporary use, xmm8-xmm31 for accumulators; same per-lane arithmetic as the widest m block */
++#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 2
++  #define unit_kernel_k1m2n1(b_off,c_le,c_ri,...) \
++    "vmovddup "#b_off"("#__VA_ARGS__"),%%xmm3; vfmadd231ps %%xmm4,%%xmm3,"#c_le"; vfmadd231ps %%xmm5,%%xmm3,"#c_ri";"
++#else
++  #define unit_kernel_k1m2n1(b_off,c_le,c_ri,...) \
++    "vmovddup "#b_off"("#__VA_ARGS__"),%%xmm3; vfmadd231ps %%xmm4,%%xmm3,"#c_le"; vfnmadd231ps %%xmm5,%%xmm3,"#c_ri";"
+ #endif
+ #define KERNEL_h_k1m2n1 \
+-    "vmovups (%0),%%xmm0; vpermilps $177,%%xmm0,%%xmm1; addq $16,%0;"\
+-    unit_kernel_k1m2n1(%%xmm0,%%xmm1,0,4,%%xmm4,%1)
++    "vmovsldup (%0),%%xmm4; vmovshdup (%0),%%xmm5; addq $16,%0;"\
++    unit_kernel_k1m2n1(0,%%xmm8,%%xmm9,%1)
+ #define KERNEL_t_k1m2n1 KERNEL_h_k1m2n1 "addq $8,%1;"
+-#define KERNEL_h_k1m2n2 KERNEL_h_k1m2n1 unit_kernel_k1m2n1(%%xmm0,%%xmm1,8,12,%%xmm5,%1)
++#define KERNEL_h_k1m2n2 KERNEL_h_k1m2n1 unit_kernel_k1m2n1(8,%%xmm10,%%xmm11,%1)
+ #define KERNEL_t_k1m2n2 KERNEL_h_k1m2n2 "addq $16,%1;"
+-#define unit_kernel_k1m2n2(c1,c2,...) \
+-    unit_kernel_k1m2n1(%%xmm0,%%xmm1,0,4,c1,__VA_ARGS__)\
+-    unit_kernel_k1m2n1(%%xmm0,%%xmm1,8,12,c2,__VA_ARGS__)
+-#define KERNEL_h_k1m2n4 KERNEL_h_k1m2n2 unit_kernel_k1m2n2(%%xmm6,%%xmm7,%1,%%r12,1)
++#define unit_kernel_k1m2n2(c1le,c1ri,c2le,c2ri,...) \
++    unit_kernel_k1m2n1(0,c1le,c1ri,__VA_ARGS__)\
++    unit_kernel_k1m2n1(8,c2le,c2ri,__VA_ARGS__)
++#define KERNEL_h_k1m2n4 KERNEL_h_k1m2n2 unit_kernel_k1m2n2(%%xmm12,%%xmm13,%%xmm14,%%xmm15,%1,%%r12,1)
+ #define KERNEL_t_k1m2n4 KERNEL_h_k1m2n4 "addq $16,%1;"
+-#define KERNEL_t_k1m2n6 KERNEL_h_k1m2n4 unit_kernel_k1m2n2(%%xmm8,%%xmm9,%1,%%r12,2) "addq $16,%1;"
+-#define KERNEL_h_k1m2n8 KERNEL_t_k1m2n6 unit_kernel_k1m2n2(%%xmm10,%%xmm11,%%r15)
++#define KERNEL_t_k1m2n6 KERNEL_h_k1m2n4 unit_kernel_k1m2n2(%%xmm16,%%xmm17,%%xmm18,%%xmm19,%1,%%r12,2) "addq $16,%1;"
++#define KERNEL_h_k1m2n8 KERNEL_t_k1m2n6 unit_kernel_k1m2n2(%%xmm20,%%xmm21,%%xmm22,%%xmm23,%%r15)
+ #define KERNEL_t_k1m2n8 KERNEL_h_k1m2n8 "addq $16,%%r15;"
+-#define KERNEL_h_k1m2n10 KERNEL_h_k1m2n8 unit_kernel_k1m2n2(%%xmm12,%%xmm13,%%r15,%%r12,1)
++#define KERNEL_h_k1m2n10 KERNEL_h_k1m2n8 unit_kernel_k1m2n2(%%xmm24,%%xmm25,%%xmm26,%%xmm27,%%r15,%%r12,1)
+ #define KERNEL_t_k1m2n10 KERNEL_h_k1m2n10 "addq $16,%%r15;"
+-#define KERNEL_h_k1m2n12 KERNEL_h_k1m2n10 unit_kernel_k1m2n2(%%xmm14,%%xmm15,%%r15,%%r12,2)
++#define KERNEL_h_k1m2n12 KERNEL_h_k1m2n10 unit_kernel_k1m2n2(%%xmm28,%%xmm29,%%xmm30,%%xmm31,%%r15,%%r12,2)
+ #define KERNEL_t_k1m2n12 KERNEL_h_k1m2n12 "addq $16,%%r15;"
+-#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 2 //not to do conjugation on a_block
+-  #define unit_save_m2n1(alp_r,alp_i,c1,...) \
+-    "vpermilps $177,"#c1",%%xmm3; vfmaddsub213ps ("#__VA_ARGS__"),"#alp_i",%%xmm3;"\
+-    "vfmaddsub213ps %%xmm3,"#alp_r","#c1";vmovups "#c1",("#__VA_ARGS__");"
+-#else //do conjugation on a_block
+-  #define unit_save_m2n1(alp_r,alp_i,c1,...) \
+-    "vpermilps $177,"#c1",%%xmm3; vfmsubadd213ps ("#__VA_ARGS__"),"#alp_r","#c1";"\
+-    "vfmsubadd231ps %%xmm3,"#alp_i","#c1";vmovups "#c1",("#__VA_ARGS__");"
+-#endif
+-#define SAVE_SETUP_m2 "movq %2,%3; addq $16,%2; vbroadcastss (%5),%%xmm0; vbroadcastss 4(%5),%%xmm1;"
+-#define SAVE_m2n1 SAVE_SETUP_m2 unit_save_m2n1(%%xmm0,%%xmm1,%%xmm4,%3)
+-#define SAVE_m2n2 SAVE_m2n1 unit_save_m2n1(%%xmm0,%%xmm1,%%xmm5,%3,%4,1)
+-#define unit_save_m2n2(c1,c2) \
+-    "leaq (%3,%4,2),%3;" unit_save_m2n1(%%xmm0,%%xmm1,c1,%3) unit_save_m2n1(%%xmm0,%%xmm1,c2,%3,%4,1)
+-#define SAVE_m2n4 SAVE_m2n2 unit_save_m2n2(%%xmm6,%%xmm7)
+-#define SAVE_m2n6 SAVE_m2n4 unit_save_m2n2(%%xmm8,%%xmm9)
+-#define SAVE_m2n8 SAVE_m2n6 unit_save_m2n2(%%xmm10,%%xmm11)
+-#define SAVE_m2n10 SAVE_m2n8 unit_save_m2n2(%%xmm12,%%xmm13)
+-#define SAVE_m2n12 SAVE_m2n10 unit_save_m2n2(%%xmm14,%%xmm15)
+-#define INIT_m2n1 "vpxor %%xmm4,%%xmm4,%%xmm4;"
+-#define unit_init_m2n2(c1,c2) "vpxor "#c1","#c1","#c1"; vpxor "#c2","#c2","#c2";"
+-#define INIT_m2n2 unit_init_m2n2(%%xmm4,%%xmm5)
+-#define INIT_m2n4 INIT_m2n2 unit_init_m2n2(%%xmm6,%%xmm7)
+-#define INIT_m2n6 INIT_m2n4 unit_init_m2n2(%%xmm8,%%xmm9)
+-#define INIT_m2n8 INIT_m2n6 unit_init_m2n2(%%xmm10,%%xmm11)
+-#define INIT_m2n10 INIT_m2n8 unit_init_m2n2(%%xmm12,%%xmm13)
+-#define INIT_m2n12 INIT_m2n10 unit_init_m2n2(%%xmm14,%%xmm15)
++#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 1
++  #define unit_save_m2n1(c_le,c_ri,...) \
++    "vpermilps $177,"#c_ri","#c_ri"; vfmadd231ps "#c_ri",%%xmm2,"#c_le"; vpermilps $177,"#c_le",%%xmm4;"\
++    "vfmaddsub213ps ("#__VA_ARGS__"),%%xmm1,%%xmm4; vfmaddsub213ps %%xmm4,%%xmm0,"#c_le"; vmovups "#c_le",("#__VA_ARGS__");"
++#else
++  #define unit_save_m2n1(c_le,c_ri,...) \
++    "vpermilps $177,"#c_ri","#c_ri"; vfnmadd231ps "#c_ri",%%xmm2,"#c_le"; vpermilps $177,"#c_le",%%xmm4;"\
++    "vfmsubadd213ps ("#__VA_ARGS__"),%%xmm0,"#c_le"; vfmsubadd231ps %%xmm4,%%xmm1,"#c_le"; vmovups "#c_le",("#__VA_ARGS__");"
++#endif
++#define SAVE_SETUP_m2 "movq %2,%3; addq $16,%2;"
++#define SAVE_m2n1 SAVE_SETUP_m2 unit_save_m2n1(%%xmm8,%%xmm9,%3)
++#define SAVE_m2n2 SAVE_m2n1 unit_save_m2n1(%%xmm10,%%xmm11,%3,%4,1)
++#define unit_save_m2n2(c1le,c1ri,c2le,c2ri) \
++    "leaq (%3,%4,2),%3;" unit_save_m2n1(c1le,c1ri,%3) unit_save_m2n1(c2le,c2ri,%3,%4,1)
++#define SAVE_m2n4 SAVE_m2n2 unit_save_m2n2(%%xmm12,%%xmm13,%%xmm14,%%xmm15)
++#define SAVE_m2n6 SAVE_m2n4 unit_save_m2n2(%%xmm16,%%xmm17,%%xmm18,%%xmm19)
++#define SAVE_m2n8 SAVE_m2n6 unit_save_m2n2(%%xmm20,%%xmm21,%%xmm22,%%xmm23)
++#define SAVE_m2n10 SAVE_m2n8 unit_save_m2n2(%%xmm24,%%xmm25,%%xmm26,%%xmm27)
++#define SAVE_m2n12 SAVE_m2n10 unit_save_m2n2(%%xmm28,%%xmm29,%%xmm30,%%xmm31)
++#define unit_init_m2n1(c_le,c_ri) "vpxorq "#c_le","#c_le","#c_le"; vpxorq "#c_ri","#c_ri","#c_ri";"
++#define INIT_m2n1 unit_init_m2n1(%%xmm8,%%xmm9)
++#define INIT_m2n2 INIT_m2n1 unit_init_m2n1(%%xmm10,%%xmm11)
++#define INIT_m2n4 INIT_m2n2 unit_init_m2n1(%%xmm12,%%xmm13) unit_init_m2n1(%%xmm14,%%xmm15)
++#define INIT_m2n6 INIT_m2n4 unit_init_m2n1(%%xmm16,%%xmm17) unit_init_m2n1(%%xmm18,%%xmm19)
++#define INIT_m2n8 INIT_m2n6 unit_init_m2n1(%%xmm20,%%xmm21) unit_init_m2n1(%%xmm22,%%xmm23)
++#define INIT_m2n10 INIT_m2n8 unit_init_m2n1(%%xmm24,%%xmm25) unit_init_m2n1(%%xmm26,%%xmm27)
++#define INIT_m2n12 INIT_m2n10 unit_init_m2n1(%%xmm28,%%xmm29) unit_init_m2n1(%%xmm30,%%xmm31)
+ #define COMPUTE_m2(ndim) \
+     INIT_m2n##ndim\
+     COMPUTE_INIT\
+@@ -229,71 +225,59 @@
+     #ndim"88221:\n\t"\
+     SAVE_m2n##ndim
+ 
+-/* m=1, xmm0-xmm3 and xmm10-xmm15 for temporary use, xmm4-xmm9 for accumulators */
+-#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 3 //conjg_a == conjg_b; ap = permilps($177,a0)
+-  #define unit_kernel_k1m1n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastss "#b_off_i"("#__VA_ARGS__"),%%xmm2; vfmaddsub231ps "#ap",%%xmm2,"#c1";"\
+-    "vbroadcastss "#b_off_r"("#__VA_ARGS__"),%%xmm2; vfmaddsub231ps "#a0",%%xmm2,"#c1";"
+-  #define unit_kernel_k1m1n2(a0,ap,c1,...) \
+-    "vmovshdup ("#__VA_ARGS__"),%%xmm2; vfmaddsub231ps "#ap",%%xmm2,"#c1";"\
+-    "vmovsldup ("#__VA_ARGS__"),%%xmm2; vfmaddsub231ps "#a0",%%xmm2,"#c1";"
+-#else //conjg_a != conjg_b
+-  #define unit_kernel_k1m1n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastss "#b_off_i"("#__VA_ARGS__"),%%xmm2; vfmsubadd231ps "#ap",%%xmm2,"#c1";"\
+-    "vbroadcastss "#b_off_r"("#__VA_ARGS__"),%%xmm2; vfmsubadd231ps "#a0",%%xmm2,"#c1";"
+-  #define unit_kernel_k1m1n2(a0,ap,c1,...) \
+-    "vmovshdup ("#__VA_ARGS__"),%%xmm2; vfmsubadd231ps "#ap",%%xmm2,"#c1";"\
+-    "vmovsldup ("#__VA_ARGS__"),%%xmm2; vfmsubadd231ps "#a0",%%xmm2,"#c1";"
++/* m=1, xmm0-xmm2 hold the constants set by CONSTZMM_INIT, xmm3-xmm6 for temporary use, xmm8-xmm31 for accumulators; same per-lane arithmetic as the widest m block */
++#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 2
++  #define unit_kernel_k1m1n1(b_off,c_le,c_ri,...) \
++    "vmovddup "#b_off"("#__VA_ARGS__"),%%xmm3; vfmadd231ps %%xmm4,%%xmm3,"#c_le"; vfmadd231ps %%xmm5,%%xmm3,"#c_ri";"
++#else
++  #define unit_kernel_k1m1n1(b_off,c_le,c_ri,...) \
++    "vmovddup "#b_off"("#__VA_ARGS__"),%%xmm3; vfmadd231ps %%xmm4,%%xmm3,"#c_le"; vfnmadd231ps %%xmm5,%%xmm3,"#c_ri";"
+ #endif
+ #define KERNEL_h_k1m1n1 \
+-    "vmovsd (%0),%%xmm0; vpermilps $177,%%xmm0,%%xmm1; addq $8,%0;"\
+-    unit_kernel_k1m1n1(%%xmm0,%%xmm1,0,4,%%xmm4,%1)
++    "vmovsd (%0),%%xmm5; vmovsldup %%xmm5,%%xmm4; vmovshdup %%xmm5,%%xmm5; addq $8,%0;"\
++    unit_kernel_k1m1n1(0,%%xmm8,%%xmm9,%1)
+ #define KERNEL_t_k1m1n1 KERNEL_h_k1m1n1 "addq $8,%1;"
+-#define KERNEL_h_k1m1n2 \
+-    "vmovddup (%0),%%xmm0; vpermilps $177,%%xmm0,%%xmm1; addq $8,%0;"\
+-    unit_kernel_k1m1n2(%%xmm0,%%xmm1,%%xmm4,%1)
++#define KERNEL_h_k1m1n2 KERNEL_h_k1m1n1 unit_kernel_k1m1n1(8,%%xmm10,%%xmm11,%1)
+ #define KERNEL_t_k1m1n2 KERNEL_h_k1m1n2 "addq $16,%1;"
+-#define KERNEL_h_k1m1n4 KERNEL_h_k1m1n2 unit_kernel_k1m1n2(%%xmm0,%%xmm1,%%xmm5,%1,%%r12,1)
++#define unit_kernel_k1m1n2(c1le,c1ri,c2le,c2ri,...) \
++    unit_kernel_k1m1n1(0,c1le,c1ri,__VA_ARGS__)\
++    unit_kernel_k1m1n1(8,c2le,c2ri,__VA_ARGS__)
++#define KERNEL_h_k1m1n4 KERNEL_h_k1m1n2 unit_kernel_k1m1n2(%%xmm12,%%xmm13,%%xmm14,%%xmm15,%1,%%r12,1)
+ #define KERNEL_t_k1m1n4 KERNEL_h_k1m1n4 "addq $16,%1;"
+-#define KERNEL_t_k1m1n6 KERNEL_h_k1m1n4 unit_kernel_k1m1n2(%%xmm0,%%xmm1,%%xmm6,%1,%%r12,2) "addq $16,%1;"
+-#define KERNEL_h_k1m1n8 KERNEL_t_k1m1n6 unit_kernel_k1m1n2(%%xmm0,%%xmm1,%%xmm7,%%r15)
++#define KERNEL_t_k1m1n6 KERNEL_h_k1m1n4 unit_kernel_k1m1n2(%%xmm16,%%xmm17,%%xmm18,%%xmm19,%1,%%r12,2) "addq $16,%1;"
++#define KERNEL_h_k1m1n8 KERNEL_t_k1m1n6 unit_kernel_k1m1n2(%%xmm20,%%xmm21,%%xmm22,%%xmm23,%%r15)
+ #define KERNEL_t_k1m1n8 KERNEL_h_k1m1n8 "addq $16,%%r15;"
+-#define KERNEL_h_k1m1n10 KERNEL_h_k1m1n8 unit_kernel_k1m1n2(%%xmm0,%%xmm1,%%xmm8,%%r15,%%r12,1)
++#define KERNEL_h_k1m1n10 KERNEL_h_k1m1n8 unit_kernel_k1m1n2(%%xmm24,%%xmm25,%%xmm26,%%xmm27,%%r15,%%r12,1)
+ #define KERNEL_t_k1m1n10 KERNEL_h_k1m1n10 "addq $16,%%r15;"
+-#define KERNEL_h_k1m1n12 KERNEL_h_k1m1n10 unit_kernel_k1m1n2(%%xmm0,%%xmm1,%%xmm9,%%r15,%%r12,2)
++#define KERNEL_h_k1m1n12 KERNEL_h_k1m1n10 unit_kernel_k1m1n2(%%xmm28,%%xmm29,%%xmm30,%%xmm31,%%r15,%%r12,2)
+ #define KERNEL_t_k1m1n12 KERNEL_h_k1m1n12 "addq $16,%%r15;"
+-#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 2 //not to do conjugation on a_block
+-  #define unit_save_m1n1(alp_r,alp_i,c1,...) \
+-    "vpermilps $177,"#c1",%%xmm3; vmovsd ("#__VA_ARGS__"),%%xmm2; vfmaddsub213ps %%xmm2,"#alp_i",%%xmm3;"\
+-    "vfmaddsub213ps %%xmm3,"#alp_r","#c1";vmovsd "#c1",("#__VA_ARGS__");"
+-  #define unit_save_m1n2(alp_r,alp_i,c1) \
+-    "vpermilps $177,"#c1",%%xmm3; vmovsd (%3),%%xmm2; vmovhpd (%3,%4,1),%%xmm2,%%xmm2;"\
+-    "vfmaddsub213ps %%xmm2,"#alp_i",%%xmm3; vfmaddsub231ps "#c1","#alp_r",%%xmm3;"\
+-    "vmovsd %%xmm3,(%3); vmovhpd %%xmm3,(%3,%4,1); leaq (%3,%4,2),%3;"
+-#else //do conjugation on a_block
+-  #define unit_save_m1n1(alp_r,alp_i,c1,...) \
+-    "vpermilps $177,"#c1",%%xmm3; vmovsd ("#__VA_ARGS__"),%%xmm2; vfmsubadd213ps %%xmm2,"#alp_r","#c1";"\
+-    "vfmsubadd231ps %%xmm3,"#alp_i","#c1";vmovsd "#c1",("#__VA_ARGS__");"
+-  #define unit_save_m1n2(alp_r,alp_i,c1) \
+-    "vpermilps $177,"#c1",%%xmm3; vmovsd (%3),%%xmm2; vmovhpd (%3,%4,1),%%xmm2,%%xmm2;"\
+-    "vfmsubadd213ps %%xmm2,"#alp_r","#c1"; vfmsubadd213ps "#c1","#alp_i",%%xmm3;"\
+-    "vmovsd %%xmm3,(%3); vmovhpd %%xmm3,(%3,%4,1); leaq (%3,%4,2),%3;"
+-#endif
+-#define SAVE_SETUP_m1 "movq %2,%3; addq $8,%2; vbroadcastss (%5),%%xmm0; vbroadcastss 4(%5),%%xmm1;"
+-#define SAVE_m1n1 SAVE_SETUP_m1 unit_save_m1n1(%%xmm0,%%xmm1,%%xmm4,%3)
+-#define SAVE_m1n2 SAVE_SETUP_m1 unit_save_m1n2(%%xmm0,%%xmm1,%%xmm4)
+-#define SAVE_m1n4 SAVE_m1n2 unit_save_m1n2(%%xmm0,%%xmm1,%%xmm5)
+-#define SAVE_m1n6 SAVE_m1n4 unit_save_m1n2(%%xmm0,%%xmm1,%%xmm6)
+-#define SAVE_m1n8 SAVE_m1n6 unit_save_m1n2(%%xmm0,%%xmm1,%%xmm7)
+-#define SAVE_m1n10 SAVE_m1n8 unit_save_m1n2(%%xmm0,%%xmm1,%%xmm8)
+-#define SAVE_m1n12 SAVE_m1n10 unit_save_m1n2(%%xmm0,%%xmm1,%%xmm9)
+-#define INIT_m1n1 "vpxor %%xmm4,%%xmm4,%%xmm4;"
+-#define INIT_m1n2 INIT_m2n1
+-#define INIT_m1n4 INIT_m1n2 "vpxor %%xmm5,%%xmm5,%%xmm5;"
+-#define INIT_m1n6 INIT_m1n4 "vpxor %%xmm6,%%xmm6,%%xmm6;"
+-#define INIT_m1n8 INIT_m1n6 "vpxor %%xmm7,%%xmm7,%%xmm7;"
+-#define INIT_m1n10 INIT_m1n8 "vpxor %%xmm8,%%xmm8,%%xmm8;"
+-#define INIT_m1n12 INIT_m1n10 "vpxor %%xmm9,%%xmm9,%%xmm9;"
++#if CGEMM_SKX_MODE == 0 || CGEMM_SKX_MODE == 1
++  #define unit_save_m1n1(c_le,c_ri,...) "vmovsd ("#__VA_ARGS__"),%%xmm6;"\
++    "vpermilps $177,"#c_ri","#c_ri"; vfmadd231ps "#c_ri",%%xmm2,"#c_le"; vpermilps $177,"#c_le",%%xmm4;"\
++    "vfmaddsub213ps %%xmm6,%%xmm1,%%xmm4; vfmaddsub213ps %%xmm4,%%xmm0,"#c_le"; vmovsd "#c_le",("#__VA_ARGS__");"
++#else
++  #define unit_save_m1n1(c_le,c_ri,...) "vmovsd ("#__VA_ARGS__"),%%xmm6;"\
++    "vpermilps $177,"#c_ri","#c_ri"; vfnmadd231ps "#c_ri",%%xmm2,"#c_le"; vpermilps $177,"#c_le",%%xmm4;"\
++    "vfmsubadd213ps %%xmm6,%%xmm0,"#c_le"; vfmsubadd231ps %%xmm4,%%xmm1,"#c_le"; vmovsd "#c_le",("#__VA_ARGS__");"
++#endif
++#define SAVE_SETUP_m1 "movq %2,%3; addq $8,%2;"
++#define SAVE_m1n1 SAVE_SETUP_m1 unit_save_m1n1(%%xmm8,%%xmm9,%3)
++#define SAVE_m1n2 SAVE_m1n1 unit_save_m1n1(%%xmm10,%%xmm11,%3,%4,1)
++#define unit_save_m1n2(c1le,c1ri,c2le,c2ri) \
++    "leaq (%3,%4,2),%3;" unit_save_m1n1(c1le,c1ri,%3) unit_save_m1n1(c2le,c2ri,%3,%4,1)
++#define SAVE_m1n4 SAVE_m1n2 unit_save_m1n2(%%xmm12,%%xmm13,%%xmm14,%%xmm15)
++#define SAVE_m1n6 SAVE_m1n4 unit_save_m1n2(%%xmm16,%%xmm17,%%xmm18,%%xmm19)
++#define SAVE_m1n8 SAVE_m1n6 unit_save_m1n2(%%xmm20,%%xmm21,%%xmm22,%%xmm23)
++#define SAVE_m1n10 SAVE_m1n8 unit_save_m1n2(%%xmm24,%%xmm25,%%xmm26,%%xmm27)
++#define SAVE_m1n12 SAVE_m1n10 unit_save_m1n2(%%xmm28,%%xmm29,%%xmm30,%%xmm31)
++#define unit_init_m1n1(c_le,c_ri) "vpxorq "#c_le","#c_le","#c_le"; vpxorq "#c_ri","#c_ri","#c_ri";"
++#define INIT_m1n1 unit_init_m1n1(%%xmm8,%%xmm9)
++#define INIT_m1n2 INIT_m1n1 unit_init_m1n1(%%xmm10,%%xmm11)
++#define INIT_m1n4 INIT_m1n2 unit_init_m1n1(%%xmm12,%%xmm13) unit_init_m1n1(%%xmm14,%%xmm15)
++#define INIT_m1n6 INIT_m1n4 unit_init_m1n1(%%xmm16,%%xmm17) unit_init_m1n1(%%xmm18,%%xmm19)
++#define INIT_m1n8 INIT_m1n6 unit_init_m1n1(%%xmm20,%%xmm21) unit_init_m1n1(%%xmm22,%%xmm23)
++#define INIT_m1n10 INIT_m1n8 unit_init_m1n1(%%xmm24,%%xmm25) unit_init_m1n1(%%xmm26,%%xmm27)
++#define INIT_m1n12 INIT_m1n10 unit_init_m1n1(%%xmm28,%%xmm29) unit_init_m1n1(%%xmm30,%%xmm31)
+ #define COMPUTE_m1(ndim) \
+     INIT_m1n##ndim\
+     COMPUTE_INIT\
+diff -ru a/kernel/x86_64/zgemm_kernel_4x2_skylakex.c b/kernel/x86_64/zgemm_kernel_4x2_skylakex.c
+--- a/kernel/x86_64/zgemm_kernel_4x2_skylakex.c	2026-11-05 21:42:50.718484882 +0000
++++ b/kernel/x86_64/zgemm_kernel_4x2_skylakex.c	2026-11-05 21:43:02.530515422 +0000
+@@ -99,61 +99,59 @@
+     #ndim"88441:\n\t"\
+     SAVE_m4n##ndim
+ 
+-/* m=2, ymm0-ymm3 for temporary use, ymm4-ymm15 for accumulators */
+-#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 3 //conjg_a == conjg_b; ap = permilpd($5,a0)
+-  #define unit_kernel_k1m2n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastsd "#b_off_i"("#__VA_ARGS__"),%%ymm2; vfmaddsub231pd "#ap",%%ymm2,"#c1";"\
+-    "vbroadcastsd "#b_off_r"("#__VA_ARGS__"),%%ymm2; vfmaddsub231pd "#a0",%%ymm2,"#c1";"
+-#else //conjg_a != conjg_b
+-  #define unit_kernel_k1m2n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vbroadcastsd "#b_off_i"("#__VA_ARGS__"),%%ymm2; vfmsubadd231pd "#ap",%%ymm2,"#c1";"\
+-    "vbroadcastsd "#b_off_r"("#__VA_ARGS__"),%%ymm2; vfmsubadd231pd "#a0",%%ymm2,"#c1";"
++/* m=2, ymm0-ymm2 hold the constants set by CONSTZMM_INIT, ymm3-ymm6 for temporary use, ymm8-ymm31 for accumulators; same per-lane arithmetic as the widest m block */
++#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 2
++  #define unit_kernel_k1m2n1(b_off,c_le,c_ri,...) \
++    "vbroadcastf128 "#b_off"("#__VA_ARGS__"),%%ymm3; vfmadd231pd %%ymm4,%%ymm3,"#c_le"; vfmadd231pd %%ymm5,%%ymm3,"#c_ri";"
++#else
++  #define unit_kernel_k1m2n1(b_off,c_le,c_ri,...) \
++    "vbroadcastf128 "#b_off"("#__VA_ARGS__"),%%ymm3; vfmadd231pd %%ymm4,%%ymm3,"#c_le"; vfnmadd231pd %%ymm5,%%ymm3,"#c_ri";"
+ #endif
+ #define KERNEL_h_k1m2n1 \
+-    "vmovupd (%0),%%ymm0; vpermilpd $5,%%ymm0,%%ymm1; addq $32,%0;"\
+-    unit_kernel_k1m2n1(%%ymm0,%%ymm1,0,8,%%ymm4,%1)
++    "vmovupd (%0),%%ymm5; vmovddup %%ymm5,%%ymm4; vpermilpd $15,%%ymm5,%%ymm5; addq $32,%0;"\
++    unit_kernel_k1m2n1(0,%%ymm8,%%ymm9,%1)
+ #define KERNEL_t_k1m2n1 KERNEL_h_k1m2n1 "addq $16,%1;"
+-#define KERNEL_h_k1m2n2 KERNEL_h_k1m2n1 unit_kernel_k1m2n1(%%ymm0,%%ymm1,16,24,%%ymm5,%1)
++#define KERNEL_h_k1m2n2 KERNEL_h_k1m2n1 unit_kernel_k1m2n1(16,%%ymm10,%%ymm11,%1)
+ #define KERNEL_t_k1m2n2 KERNEL_h_k1m2n2 "addq $32,%1;"
+-#define unit_kernel_k1m2n2(c1,c2,...) \
+-    unit_kernel_k1m2n1(%%ymm0,%%ymm1,0,8,c1,__VA_ARGS__)\
+-    unit_kernel_k1m2n1(%%ymm0,%%ymm1,16,24,c2,__VA_ARGS__)
+-#define KERNEL_h_k1m2n4 KERNEL_h_k1m2n2 unit_kernel_k1m2n2(%%ymm6,%%ymm7,%1,%%r12,1)
++#define unit_kernel_k1m2n2(c1le,c1ri,c2le,c2ri,...) \
++    unit_kernel_k1m2n1(0,c1le,c1ri,__VA_ARGS__)\
++    unit_kernel_k1m2n1(16,c2le,c2ri,__VA_ARGS__)
++#define KERNEL_h_k1m2n4 KERNEL_h_k1m2n2 unit_kernel_k1m2n2(%%ymm12,%%ymm13,%%ymm14,%%ymm15,%1,%%r12,1)
+ #define KERNEL_t_k1m2n4 KERNEL_h_k1m2n4 "addq $32,%1;"
+-#define KERNEL_t_k1m2n6 KERNEL_h_k1m2n4 unit_kernel_k1m2n2(%%ymm8,%%ymm9,%1,%%r12,2) "addq $32,%1;"
+-#define KERNEL_h_k1m2n8 KERNEL_t_k1m2n6 unit_kernel_k1m2n2(%%ymm10,%%ymm11,%%r15)
++#define KERNEL_t_k1m2n6 KERNEL_h_k1m2n4 unit_kernel_k1m2n2(%%ymm16,%%ymm17,%%ymm18,%%ymm19,%1,%%r12,2) "addq $32,%1;"
++#define KERNEL_h_k1m2n8 KERNEL_t_k1m2n6 unit_kernel_k1m2n2(%%ymm20,%%ymm21,%%ymm22,%%ymm23,%%r15)
+ #define KERNEL_t_k1m2n8 KERNEL_h_k1m2n8 "addq $32,%%r15;"
+-#define KERNEL_h_k1m2n10 KERNEL_h_k1m2n8 unit_kernel_k1m2n2(%%ymm12,%%ymm13,%%r15,%%r12,1)
++#define KERNEL_h_k1m2n10 KERNEL_h_k1m2n8 unit_kernel_k1m2n2(%%ymm24,%%ymm25,%%ymm26,%%ymm27,%%r15,%%r12,1)
+ #define KERNEL_t_k1m2n10 KERNEL_h_k1m2n10 "addq $32,%%r15;"
+-#define KERNEL_h_k1m2n12 KERNEL_h_k1m2n10 unit_kernel_k1m2n2(%%ymm14,%%ymm15,%%r15,%%r12,2)
++#define KERNEL_h_k1m2n12 KERNEL_h_k1m2n10 unit_kernel_k1m2n2(%%ymm28,%%ymm29,%%ymm30,%%ymm31,%%r15,%%r12,2)
+ #define KERNEL_t_k1m2n12 KERNEL_h_k1m2n12 "addq $32,%%r15;"
+-#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 2 //not to do conjugation on a_block
+-  #define unit_save_m2n1(alp_r,alp_i,c1,...) \
+-    "vpermilpd $5,"#c1",%%ymm3; vfmaddsub213pd ("#__VA_ARGS__"),"#alp_i",%%ymm3;"\
+-    "vfmaddsub213pd %%ymm3,"#alp_r","#c1";vmovupd "#c1",("#__VA_ARGS__");"
+-#else //do conjugation on a_block
+-  #define unit_save_m2n1(alp_r,alp_i,c1,...) \
+-    "vpermilpd $5,"#c1",%%ymm3; vfmsubadd213pd ("#__VA_ARGS__"),"#alp_r","#c1";"\
+-    "vfmsubadd231pd %%ymm3,"#alp_i","#c1";vmovupd "#c1",("#__VA_ARGS__");"
++#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 1
++  #define unit_save_m2n1(c_le,c_ri,...) \
++    "vpermilpd $85,"#c_ri","#c_ri"; vfmadd231pd "#c_ri",%%ymm2,"#c_le"; vpermilpd $85,"#c_le",%%ymm4;"\
++    "vfmaddsub213pd ("#__VA_ARGS__"),%%ymm1,%%ymm4; vfmaddsub213pd %%ymm4,%%ymm0,"#c_le"; vmovupd "#c_le",("#__VA_ARGS__");"
++#else
++  #define unit_save_m2n1(c_le,c_ri,...) \
++    "vpermilpd $85,"#c_ri","#c_ri"; vfnmadd231pd "#c_ri",%%ymm2,"#c_le"; vpermilpd $85,"#c_le",%%ymm4;"\
++    "vfmsubadd213pd ("#__VA_ARGS__"),%%ymm0,"#c_le"; vfmsubadd231pd %%ymm4,%%ymm1,"#c_le"; vmovupd "#c_le",("#__VA_ARGS__");"
+ #endif
+-#define SAVE_SETUP_m2 "movq %2,%3; addq $32,%2; vbroadcastsd (%5),%%ymm0; vbroadcastsd 8(%5),%%ymm1;"
+-#define SAVE_m2n1 SAVE_SETUP_m2 unit_save_m2n1(%%ymm0,%%ymm1,%%ymm4,%3)
+-#define SAVE_m2n2 SAVE_m2n1 unit_save_m2n1(%%ymm0,%%ymm1,%%ymm5,%3,%4,1)
+-#define unit_save_m2n2(c1,c2) \
+-    "leaq (%3,%4,2),%3;" unit_save_m2n1(%%ymm0,%%ymm1,c1,%3) unit_save_m2n1(%%ymm0,%%ymm1,c2,%3,%4,1)
+-#define SAVE_m2n4 SAVE_m2n2 unit_save_m2n2(%%ymm6,%%ymm7)
+-#define SAVE_m2n6 SAVE_m2n4 unit_save_m2n2(%%ymm8,%%ymm9)
+-#define SAVE_m2n8 SAVE_m2n6 unit_save_m2n2(%%ymm10,%%ymm11)
+-#define SAVE_m2n10 SAVE_m2n8 unit_save_m2n2(%%ymm12,%%ymm13)
+-#define SAVE_m2n12 SAVE_m2n10 unit_save_m2n2(%%ymm14,%%ymm15)
+-#define INIT_m2n1 "vpxor %%ymm4,%%ymm4,%%ymm4;"
+-#define unit_init_m2n2(c1,c2) "vpxor "#c1","#c1","#c1"; vpxor "#c2","#c2","#c2";"
+-#define INIT_m2n2 unit_init_m2n2(%%ymm4,%%ymm5)
+-#define INIT_m2n4 INIT_m2n2 unit_init_m2n2(%%ymm6,%%ymm7)
+-#define INIT_m2n6 INIT_m2n4 unit_init_m2n2(%%ymm8,%%ymm9)
+-#define INIT_m2n8 INIT_m2n6 unit_init_m2n2(%%ymm10,%%ymm11)
+-#define INIT_m2n10 INIT_m2n8 unit_init_m2n2(%%ymm12,%%ymm13)
+-#define INIT_m2n12 INIT_m2n10 unit_init_m2n2(%%ymm14,%%ymm15)
++#define SAVE_SETUP_m2 "movq %2,%3; addq $32,%2;"
++#define SAVE_m2n1 SAVE_SETUP_m2 unit_save_m2n1(%%ymm8,%%ymm9,%3)
++#define SAVE_m2n2 SAVE_m2n1 unit_save_m2n1(%%ymm10,%%ymm11,%3,%4,1)
++#define unit_save_m2n2(c1le,c1ri,c2le,c2ri) \
++    "leaq (%3,%4,2),%3;" unit_save_m2n1(c1le,c1ri,%3) unit_save_m2n1(c2le,c2ri,%3,%4,1)
++#define SAVE_m2n4 SAVE_m2n2 unit_save_m2n2(%%ymm12,%%ymm13,%%ymm14,%%ymm15)
++#define SAVE_m2n6 SAVE_m2n4 unit_save_m2n2(%%ymm16,%%ymm17,%%ymm18,%%ymm19)
++#define SAVE_m2n8 SAVE_m2n6 unit_save_m2n2(%%ymm20,%%ymm21,%%ymm22,%%ymm23)
++#define SAVE_m2n10 SAVE_m2n8 unit_save_m2n2(%%ymm24,%%ymm25,%%ymm26,%%ymm27)
++#define SAVE_m2n12 SAVE_m2n10 unit_save_m2n2(%%ymm28,%%ymm29,%%ymm30,%%ymm31)
++#define unit_init_m2n1(c_le,c_ri) "vpxorq "#c_le","#c_le","#c_le"; vpxorq "#c_ri","#c_ri","#c_ri";"
++#define INIT_m2n1 unit_init_m2n1(%%ymm8,%%ymm9)
++#define INIT_m2n2 INIT_m2n1 unit_init_m2n1(%%ymm10,%%ymm11)
++#define INIT_m2n4 INIT_m2n2 unit_init_m2n1(%%ymm12,%%ymm13) unit_init_m2n1(%%ymm14,%%ymm15)
++#define INIT_m2n6 INIT_m2n4 unit_init_m2n1(%%ymm16,%%ymm17) unit_init_m2n1(%%ymm18,%%ymm19)
++#define INIT_m2n8 INIT_m2n6 unit_init_m2n1(%%ymm20,%%ymm21) unit_init_m2n1(%%ymm22,%%ymm23)
++#define INIT_m2n10 INIT_m2n8 unit_init_m2n1(%%ymm24,%%ymm25) unit_init_m2n1(%%ymm26,%%ymm27)
++#define INIT_m2n12 INIT_m2n10 unit_init_m2n1(%%ymm28,%%ymm29) unit_init_m2n1(%%ymm30,%%ymm31)
+ #define COMPUTE_m2(ndim) \
+     INIT_m2n##ndim\
+     COMPUTE_INIT\
+@@ -164,71 +162,59 @@
+     #ndim"88221:\n\t"\
+     SAVE_m2n##ndim
+ 
+-/* m=1, ymm0-ymm3 and ymm10-ymm15 for temporary use, ymm4-ymm9 for accumulators */
+-#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 3 //conjg_a == conjg_b; ap = permilpd($5,a0)
+-  #define unit_kernel_k1m1n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vmovddup "#b_off_i"("#__VA_ARGS__"),%%xmm2; vfmaddsub231pd "#ap",%%xmm2,"#c1";"\
+-    "vmovddup "#b_off_r"("#__VA_ARGS__"),%%xmm2; vfmaddsub231pd "#a0",%%xmm2,"#c1";"
+-  #define unit_kernel_k1m1n2(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vmovddup "#b_off_i"("#__VA_ARGS__"),%%ymm2; vfmaddsub231pd "#ap",%%ymm2,"#c1";"\
+-    "vmovddup "#b_off_r"("#__VA_ARGS__"),%%ymm2; vfmaddsub231pd "#a0",%%ymm2,"#c1";"
+-#else //conjg_a != conjg_b
+-  #define unit_kernel_k1m1n1(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vmovddup "#b_off_i"("#__VA_ARGS__"),%%xmm2; vfmsubadd231pd "#ap",%%xmm2,"#c1";"\
+-    "vmovddup "#b_off_r"("#__VA_ARGS__"),%%xmm2; vfmsubadd231pd "#a0",%%xmm2,"#c1";"
+-  #define unit_kernel_k1m1n2(a0,ap,b_off_r,b_off_i,c1,...) \
+-    "vmovddup "#b_off_i"("#__VA_ARGS__"),%%ymm2; vfmsubadd231pd "#ap",%%ymm2,"#c1";"\
+-    "vmovddup "#b_off_r"("#__VA_ARGS__"),%%ymm2; vfmsubadd231pd "#a0",%%ymm2,"#c1";"
++/* m=1, xmm0-xmm2 hold the constants set by CONSTZMM_INIT, xmm3-xmm6 for temporary use, xmm8-xmm31 for accumulators; same per-lane arithmetic as the widest m block */
++#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 2
++  #define unit_kernel_k1m1n1(b_off,c_le,c_ri,...) \
++    "vmovupd "#b_off"("#__VA_ARGS__"),%%xmm3; vfmadd231pd %%xmm4,%%xmm3,"#c_le"; vfmadd231pd %%xmm5,%%xmm3,"#c_ri";"
++#else
++  #define unit_kernel_k1m1n1(b_off,c_le,c_ri,...) \
++    "vmovupd "#b_off"("#__VA_ARGS__"),%%xmm3; vfmadd231pd %%xmm4,%%xmm3,"#c_le"; vfnmadd231pd %%xmm5,%%xmm3,"#c_ri";"
+ #endif
+ #define KERNEL_h_k1m1n1 \
+-    "vmovupd (%0),%%xmm0; vpermilpd $5,%%xmm0,%%xmm1; addq $16,%0;"\
+-    unit_kernel_k1m1n1(%%xmm0,%%xmm1,0,8,%%xmm4,%1)
++    "vmovddup (%0),%%xmm4; vmovddup 8(%0),%%xmm5; addq $16,%0;"\
++    unit_kernel_k1m1n1(0,%%xmm8,%%xmm9,%1)
+ #define KERNEL_t_k1m1n1 KERNEL_h_k1m1n1 "addq $16,%1;"
+-#define KERNEL_h_k1m1n2 \
+-    "vbroadcastf128 (%0),%%ymm0; vpermilpd $5,%%ymm0,%%ymm1; addq $16,%0;"\
+-    unit_kernel_k1m1n2(%%ymm0,%%ymm1,0,8,%%ymm4,%1)
++#define KERNEL_h_k1m1n2 KERNEL_h_k1m1n1 unit_kernel_k1m1n1(16,%%xmm10,%%xmm11,%1)
+ #define KERNEL_t_k1m1n2 KERNEL_h_k1m1n2 "addq $32,%1;"
+-#define KERNEL_h_k1m1n4 KERNEL_h_k1m1n2 unit_kernel_k1m1n2(%%ymm0,%%ymm1,0,8,%%ymm5,%1,%%r12,1)
++#define unit_kernel_k1m1n2(c1le,c1ri,c2le,c2ri,...) \
++    unit_kernel_k1m1n1(0,c1le,c1ri,__VA_ARGS__)\
++    unit_kernel_k1m1n1(16,c2le,c2ri,__VA_ARGS__)
++#define KERNEL_h_k1m1n4 KERNEL_h_k1m1n2 unit_kernel_k1m1n2(%%xmm12,%%xmm13,%%xmm14,%%xmm15,%1,%%r12,1)
+ #define KERNEL_t_k1m1n4 KERNEL_h_k1m1n4 "addq $32,%1;"
+-#define KERNEL_t_k1m1n6 KERNEL_h_k1m1n4 unit_kernel_k1m1n2(%%ymm0,%%ymm1,0,8,%%ymm6,%1,%%r12,2) "addq $32,%1;"
+-#define KERNEL_h_k1m1n8 KERNEL_t_k1m1n6 unit_kernel_k1m1n2(%%ymm0,%%ymm1,0,8,%%ymm7,%%r15)
++#define KERNEL_t_k1m1n6 KERNEL_h_k1m1n4 unit_kernel_k1m1n2(%%xmm16,%%xmm17,%%xmm18,%%xmm19,%1,%%r12,2) "addq $32,%1;"
++#define KERNEL_h_k1m1n8 KERNEL_t_k1m1n6 unit_kernel_k1m1n2(%%xmm20,%%xmm21,%%xmm22,%%xmm23,%%r15)
+ #define KERNEL_t_k1m1n8 KERNEL_h_k1m1n8 "addq $32,%%r15;"
+-#define KERNEL_h_k1m1n10 KERNEL_h_k1m1n8 unit_kernel_k1m1n2(%%ymm0,%%ymm1,0,8,%%ymm8,%%r15,%%r12,1)
++#define KERNEL_h_k1m1n10 KERNEL_h_k1m1n8 unit_kernel_k1m1n2(%%xmm24,%%xmm25,%%xmm26,%%xmm27,%%r15,%%r12,1)
+ #define KERNEL_t_k1m1n10 KERNEL_h_k1m1n10 "addq $32,%%r15;"
+-#define KERNEL_h_k1m1n12 KERNEL_h_k1m1n10 unit_kernel_k1m1n2(%%ymm0,%%ymm1,0,8,%%ymm9,%%r15,%%r12,2)
++#define KERNEL_h_k1m1n12 KERNEL_h_k1m1n10 unit_kernel_k1m1n2(%%xmm28,%%xmm29,%%xmm30,%%xmm31,%%r15,%%r12,2)
+ #define KERNEL_t_k1m1n12 KERNEL_h_k1m1n12 "addq $32,%%r15;"
+-#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 2 //not to do conjugation on a_block
+-  #define unit_save_m1n1(alp_r,alp_i,c1,...) \
+-    "vpermilpd $5,"#c1",%%xmm3; vfmaddsub213pd ("#__VA_ARGS__"),"#alp_i",%%xmm3;"\
+-    "vfmaddsub213pd %%xmm3,"#alp_r","#c1";vmovupd "#c1",("#__VA_ARGS__");"
+-  #define unit_save_m1n2(alp_r,alp_i,c1) \
+-    "vpermilpd $5,"#c1",%%ymm3; vmovupd (%3),%%xmm2; vinsertf128 $1,(%3,%4,1),%%ymm2,%%ymm2;"\
+-    "vfmaddsub213pd %%ymm2,"#alp_i",%%ymm3; vfmaddsub231pd "#c1","#alp_r",%%ymm3;"\
+-    "vmovupd %%xmm3,(%3); vextractf128 $1,%%ymm3,(%3,%4,1); leaq (%3,%4,2),%3;"
+-#else //do conjugation on a_block
+-  #define unit_save_m1n1(alp_r,alp_i,c1,...) \
+-    "vpermilpd $5,"#c1",%%xmm3; vfmsubadd213pd ("#__VA_ARGS__"),"#alp_r","#c1";"\
+-    "vfmsubadd231pd %%xmm3,"#alp_i","#c1";vmovupd "#c1",("#__VA_ARGS__");"
+-  #define unit_save_m1n2(alp_r,alp_i,c1) \
+-    "vpermilpd $5,"#c1",%%ymm3; vmovupd (%3),%%xmm2; vinsertf128 $1,(%3,%4,1),%%ymm2,%%ymm2;"\
+-    "vfmsubadd213pd %%ymm2,"#alp_r","#c1"; vfmsubadd213pd "#c1","#alp_i",%%ymm3;"\
+-    "vmovupd %%xmm3,(%3); vextractf128 $1,%%ymm3,(%3,%4,1); leaq (%3,%4,2),%3;"
++#if ZGEMM_SKX_MODE == 0 || ZGEMM_SKX_MODE == 1
++  #define unit_save_m1n1(c_le,c_ri,...) \
++    "vpermilpd $85,"#c_ri","#c_ri"; vfmadd231pd "#c_ri",%%xmm2,"#c_le"; vpermilpd $85,"#c_le",%%xmm4;"\
++    "vfmaddsub213pd ("#__VA_ARGS__"),%%xmm1,%%xmm4; vfmaddsub213pd %%xmm4,%%xmm0,"#c_le"; vmovupd "#c_le",("#__VA_ARGS__");"
++#else
++  #define unit_save_m1n1(c_le,c_ri,...) \
++    "vpermilpd $85,"#c_ri","#c_ri"; vfnmadd231pd "#c_ri",%%xmm2,"#c_le"; vpermilpd $85,"#c_le",%%xmm4;"\
++    "vfmsubadd213pd ("#__VA_ARGS__"),%%xmm0,"#c_le"; vfmsubadd231pd %%xmm4,%%xmm1,"#c_le"; vmovupd "#c_le",("#__VA_ARGS__");"
+ #endif
+-#define SAVE_SETUP_m1 "movq %2,%3; addq $16,%2; vbroadcastsd (%5),%%ymm0; vbroadcastsd 8(%5),%%ymm1;"
+-#define SAVE_m1n1 SAVE_SETUP_m1 unit_save_m1n1(%%xmm0,%%xmm1,%%xmm4,%3)
+-#define SAVE_m1n2 SAVE_SETUP_m1 unit_save_m1n2(%%ymm0,%%ymm1,%%ymm4)
+-#define SAVE_m1n4 SAVE_m1n2 unit_save_m1n2(%%ymm0,%%ymm1,%%ymm5)
+-#define SAVE_m1n6 SAVE_m1n4 unit_save_m1n2(%%ymm0,%%ymm1,%%ymm6)
+-#define SAVE_m1n8 SAVE_m1n6 unit_save_m1n2(%%ymm0,%%ymm1,%%ymm7)
+-#define SAVE_m1n10 SAVE_m1n8 unit_save_m1n2(%%ymm0,%%ymm1,%%ymm8)
+-#define SAVE_m1n12 SAVE_m1n10 unit_save_m1n2(%%ymm0,%%ymm1,%%ymm9)
+-#define INIT_m1n1 "vpxor %%xmm4,%%xmm4,%%xmm4;"
+-#define INIT_m1n2 INIT_m2n1
+-#define INIT_m1n4 INIT_m1n2 "vpxor %%ymm5,%%ymm5,%%ymm5;"
+-#define INIT_m1n6 INIT_m1n4 "vpxor %%ymm6,%%ymm6,%%ymm6;"
+-#define INIT_m1n8 INIT_m1n6 "vpxor %%ymm7,%%ymm7,%%ymm7;"
+-#define INIT_m1n10 INIT_m1n8 "vpxor %%ymm8,%%ymm8,%%ymm8;"
+-#define INIT_m1n12 INIT_m1n10 "vpxor %%ymm9,%%ymm9,%%ymm9;"
++#define SAVE_SETUP_m1 "movq %2,%3; addq $16,%2;"
++#define SAVE_m1n1 SAVE_SETUP_m1 unit_save_m1n1(%%xmm8,%%xmm9,%3)
++#define SAVE_m1n2 SAVE_m1n1 unit_save_m1n1(%%xmm10,%%xmm11,%3,%4,1)
++#define unit_save_m1n2(c1le,c1ri,c2le,c2ri) \
++    "leaq (%3,%4,2),%3;" unit_save_m1n1(c1le,c1ri,%3) unit_save_m1n1(c2le,c2ri,%3,%4,1)
++#define SAVE_m1n4 SAVE_m1n2 unit_save_m1n2(%%xmm12,%%xmm13,%%xmm14,%%xmm15)
++#define SAVE_m1n6 SAVE_m1n4 unit_save_m1n2(%%xmm16,%%xmm17,%%xmm18,%%xmm19)
++#define SAVE_m1n8 SAVE_m1n6 unit_save_m1n2(%%xmm20,%%xmm21,%%xmm22,%%xmm23)
++#define SAVE_m1n10 SAVE_m1n8 unit_save_m1n2(%%xmm24,%%xmm25,%%xmm26,%%xmm27)
++#define SAVE_m1n12 SAVE_m1n10 unit_save_m1n2(%%xmm28,%%xmm29,%%xmm30,%%xmm31)
++#define unit_init_m1n1(c_le,c_ri) "vpxorq "#c_le","#c_le","#c_le"; vpxorq "#c_ri","#c_ri","#c_ri";"
++#define INIT_m1n1 unit_init_m1n1(%%xmm8,%%xmm9)
++#define INIT_m1n2 INIT_m1n1 unit_init_m1n1(%%xmm10,%%xmm11)
++#define INIT_m1n4 INIT_m1n2 unit_init_m1n1(%%xmm12,%%xmm13) unit_init_m1n1(%%xmm14,%%xmm15)
++#define INIT_m1n6 INIT_m1n4 unit_init_m1n1(%%xmm16,%%xmm17) unit_init_m1n1(%%xmm18,%%xmm19)
++#define INIT_m1n8 INIT_m1n6 unit_init_m1n1(%%xmm20,%%xmm21) unit_init_m1n1(%%xmm22,%%xmm23)
++#define INIT_m1n10 INIT_m1n8 unit_init_m1n1(%%xmm24,%%xmm25) unit_init_m1n1(%%xmm26,%%xmm27)
++#define INIT_m1n12 INIT_m1n10 unit_init_m1n1(%%xmm28,%%xmm29) unit_init_m1n1(%%xmm30,%%xmm31)
+ #define COMPUTE_m1(ndim) \
+     INIT_m1n##ndim\
+     COMPUTE_INIT\
