@@ -81,7 +81,11 @@ components = [
             'dc0b713ce69fd921aa53ac68610717d126fc273a3c554b0465cf44d7e379f467',
         }],
         'skipsteps': ['build'],
-        'files_to_copy': [(['cuda_nvcc-linux*-%(version)s-archive/bin/ptxas'], 'tools')],
+        'files_to_copy': [
+            (['cuda_nvcc-linux*-%(version)s-archive/bin/ptxas'], 'tools'),
+            # libdevice of the same CUDA release as ptxas, CUDA itself is only a build dependency in EESSI
+            (['cuda_nvcc-linux*-%(version)s-archive/nvvm/libdevice/libdevice.10.bc'], 'tools/libdevice'),
+        ],
     }),
     # Separate ptxas used for sm_100 and later ("ptxas-blackwell" in nvidia-toolchain-version.json)
     ('CUDA-NVCC', '12.9.86', {
@@ -97,15 +101,58 @@ components = [
         'skipsteps': ['build'],
         'files_to_copy': [(['cuda_nvcc-linux*-%(version)s-archive/bin/ptxas'], 'tools/blackwell')],
     }),
+    # Runtime tools and headers pinned in nvidia-toolchain-version.json, from redistrib_12.8.0.json:
+    # cuobjdump/nvdisasm are used for SASS output, cuda.h by the launcher stubs Triton compiles at run time
+    ('CUDA-cuobjdump', '12.8.55', {
+        'easyblock': 'MakeCp',
+        'source_urls': [f'https://developer.download.nvidia.com/compute/cuda/redist/cuda_cuobjdump/linux-{local_arch}'],
+        'sources': [f'cuda_cuobjdump-linux-{local_arch}-%(version)s-archive.tar.xz'],
+        'checksums': [{
+            'cuda_cuobjdump-linux-x86_64-12.8.55-archive.tar.xz':
+            'ddf6fe703e5ff5d55eb921841e2ad75f05f794e7cdb650740ffc5518fb9028f5',
+            'cuda_cuobjdump-linux-sbsa-12.8.55-archive.tar.xz':
+            '726d233c4f2bdcb9a1f3e4f662c725eea2443909a3d37e4337921cecce473b4e',
+        }],
+        'skipsteps': ['build'],
+        'files_to_copy': [(['cuda_cuobjdump-linux*-%(version)s-archive/bin/cuobjdump'], 'tools')],
+    }),
+    ('CUDA-nvdisasm', '12.8.55', {
+        'easyblock': 'MakeCp',
+        'source_urls': [f'https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvdisasm/linux-{local_arch}'],
+        'sources': [f'cuda_nvdisasm-linux-{local_arch}-%(version)s-archive.tar.xz'],
+        'checksums': [{
+            'cuda_nvdisasm-linux-x86_64-12.8.55-archive.tar.xz':
+            '102b74439c32f5be7be8aa983aa0251045cf52cb75a05f4ffe32e13c7480090a',
+            'cuda_nvdisasm-linux-sbsa-12.8.55-archive.tar.xz':
+            '0e84e6e36a83384db60bfc42bd02de9ba836834a2d3cce345a6385632a6967ce',
+        }],
+        'skipsteps': ['build'],
+        'files_to_copy': [(['cuda_nvdisasm-linux*-%(version)s-archive/bin/nvdisasm'], 'tools')],
+    }),
+    ('CUDA-cudart', '12.8.57', {
+        'easyblock': 'MakeCp',
+        'source_urls': [f'https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-{local_arch}'],
+        'sources': [f'cuda_cudart-linux-{local_arch}-%(version)s-archive.tar.xz'],
+        'checksums': [{
+            'cuda_cudart-linux-x86_64-12.8.57-archive.tar.xz':
+            '5bd3ac35ea8e8ab880e595d5054ee373abf6d9e53dcb8cef0a5c75358dbc0ae2',
+            'cuda_cudart-linux-sbsa-12.8.57-archive.tar.xz':
+            'b94814dacc8e4e69c8909ac08ae9f8d6831c1a141358a6e9f60583481a49ae2b',
+        }],
+        'skipsteps': ['build'],
+        'files_to_copy': [(['cuda_cudart-linux*-%(version)s-archive/include'], 'tools/cuda')],
+    }),
 ]
+
+local_nvidia_backend = '%(installdir)s/lib/python%(pyshortver)s/site-packages/triton/backends/nvidia'
 
 local_preinstallopts = ' '.join([
     "TRITON_HOME='%(builddir)s/triton_home'",
     'TRITON_OFFLINE_BUILD=1',
     'TRITON_PTXAS_PATH="%(installdir)s/tools/ptxas"',
     'TRITON_PTXAS_BLACKWELL_PATH="%(installdir)s/tools/blackwell/ptxas"',
-    'TRITON_CUOBJDUMP_PATH="$CUDA_HOME/bin/cuobjdump"',
-    'TRITON_NVDISASM_PATH="$CUDA_HOME/bin/nvdisasm"',
+    'TRITON_CUOBJDUMP_PATH="%(installdir)s/tools/cuobjdump"',
+    'TRITON_NVDISASM_PATH="%(installdir)s/tools/nvdisasm"',
     'LLVM_SYSPATH="%(builddir)s/llvm_build_dir"',
     'JSON_SYSPATH="$EBROOTNLOHMANN_JSON"',
     'PYBIND11_SYSPATH="$EBROOTPYBIND11"',
@@ -119,9 +166,12 @@ exts_list = [
     (name, version, {
         # make pip print output of cmake
         'installopts': "-v ",
-        # ensure that libdevice.10.bc from $EBROOTCUDA/nvvm/libdevice is used:
+        # use libdevice.10.bc from the CUDA-NVCC component (TRITON_LIBDEVICE_PATH) instead of the bundled copy,
+        # and provide cuda.h at the fixed include location used by the launcher stubs (no environment override)
         'postinstallcmds': [
-            'rm -rf %(installdir)s/lib/python%(pyshortver)s/site-packages/triton/backends/nvidia/lib/libdevice.10.bc'
+            f'rm -rf {local_nvidia_backend}/lib/libdevice.10.bc',
+            f'test ! -e {local_nvidia_backend}/include',
+            f'ln -sr %(installdir)s/tools/cuda/include {local_nvidia_backend}/include',
         ],
         'preinstallopts': local_preinstallopts,
         'source_urls': ['https://github.com/triton-lang/triton/archive/'],
@@ -153,16 +203,27 @@ checksums = [
 ]
 
 sanity_check_commands = ['TRITON_HOME=$TMPDIR/eb-triton_home '
-                         'python %(installdir)s/test/triton_test.py %(cuda_compute_capabilities)s']
+                         'python %(installdir)s/test/triton_test.py %(cuda_compute_capabilities)s',
+                         'python -c "import os; from triton import knobs; n = knobs.nvidia; '
+                         'print([t.version for t in (n.ptxas, n.ptxas_blackwell, n.cuobjdump, n.nvdisasm)]); '
+                         'assert os.path.isfile(n.libdevice_path), n.libdevice_path"']
 
+sanity_check_paths = {
+    'files': ['tools/ptxas', 'tools/blackwell/ptxas', 'tools/cuobjdump', 'tools/nvdisasm',
+              'tools/libdevice/libdevice.10.bc', 'tools/cuda/include/cuda.h',
+              'lib/python%(pyshortver)s/site-packages/triton/backends/nvidia/include/cuda.h'],
+    'dirs': ['lib/python%(pyshortver)s/site-packages/triton'],
+}
+
+# All runtime paths are inside the installation: CUDA can be a build-only dependency
+# (as made by EESSI), so neither $EBROOTCUDA nor $CUDA_HOME may be referenced here.
+# See "env_nvidia_tool" and "libdevice_path" in python/triton/knobs.py
 modextrapaths = {
     'TRITON_PTXAS_PATH': 'tools/ptxas',
     'TRITON_PTXAS_BLACKWELL_PATH': 'tools/blackwell/ptxas',
-}
-modextravars = {
-    # Search for "_path_to_binary" in Triton sources
-    'TRITON_CUOBJDUMP_PATH': '$EBROOTCUDA/bin/cuobjdump',
-    'TRITON_LIBDEVICE_PATH': '$EBROOTCUDA/nvvm/libdevice/libdevice.10.bc',
+    'TRITON_CUOBJDUMP_PATH': 'tools/cuobjdump',
+    'TRITON_NVDISASM_PATH': 'tools/nvdisasm',
+    'TRITON_LIBDEVICE_PATH': 'tools/libdevice/libdevice.10.bc',
 }
 
 moduleclass = 'devel'
