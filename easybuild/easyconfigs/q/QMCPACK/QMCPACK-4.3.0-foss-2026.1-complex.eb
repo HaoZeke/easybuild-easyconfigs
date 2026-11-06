@@ -16,10 +16,15 @@ sources = [
         'filename': SOURCELOWER_TAR_GZ,
     },
 ]
-patches = ['QMCPACK-4.3.0_ffp-contract-off.patch']
+patches = [
+    'QMCPACK-4.3.0_ffp-contract-off.patch',
+    'QMCPACK-4.3.0_LCAO-GCC15-novector.patch',
+]
 checksums = [
     '511d5f368db002f2f77504619e1ada8d4a3034200d25feef6773d12a6ed6d18e',
     '970e8f62223ad0e6fd89c6b38555f203568aa419f986fe5ac1274b5d8260248e',
+    {'QMCPACK-4.3.0_LCAO-GCC15-novector.patch':
+     '931051480982ef470f1abba498aff5a72c09c3608851baa80acc8d0cc47aff4f'},
 ]
 
 builddependencies = [
