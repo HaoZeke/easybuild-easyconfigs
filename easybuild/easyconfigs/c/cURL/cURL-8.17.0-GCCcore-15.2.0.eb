@@ -1,3 +1,5 @@
+import os
+
 easyblock = 'ConfigureMake'
 
 name = 'cURL'
@@ -33,6 +35,10 @@ dependencies = [
 ]
 
 configopts = '--enable-versioned-symbols --with-zlib '
+if os.getenv('EESSI_EPREFIX'):
+    # Library consumers require a compiled trust path inside the EESSI compat layer.
+    preconfigopts = 'test -r "$EESSI_EPREFIX/etc/ssl/certs/ca-certificates.crt" && '
+    configopts += '--with-ca-bundle="$EESSI_EPREFIX/etc/ssl/certs/ca-certificates.crt" '
 configopts += '--with-ssl=$EBROOTOPENSSL '
 configopts += '--without-libgsasl'  # Avoid picking up system libraries
 
