@@ -1,0 +1,25 @@
+Strip the quotes CMake writes into object response files before nvcc_wrapper word-splits them.
+CMake 3.29 and later put the object list of a large link into CMakeFiles/<target>.dir/objects*.rsp
+with quoted paths. nvcc_wrapper reads the file into its own argument list, and because every path
+then starts with a quote none of them match the wrapper's object patterns; they are glued into one
+-Xcompiler argument, which exceeds the single-argument limit of the kernel (128 KiB) when liblammps
+links its three 128 KiB object lists, and nvcc fails with "Argument list too long" (exit 126).
+Kokkos 5.2.1 as bundled with LAMMPS 30Sep2026 has the problem; kokkos/kokkos#9573 (merged
+2026-10-01) is the upstream fix.
+--- lammps-stable_30Sep2026.orig/lib/kokkos/bin/nvcc_wrapper
++++ lammps-stable_30Sep2026/lib/kokkos/bin/nvcc_wrapper
+@@ -494,7 +494,13 @@ do
+   @*.rsp)
+     rsp_file="${1#@}"
+     # Need $1 at the start so it gets shifted out instead of the first thing in the rsp file
+-    set -- $1 $(cat "$rsp_file") "${@:2}"
++    # Strip quotes from tokens: CMake >=3.29 writes quoted paths into objects1.rsp, so unquoted word-splitting mis-handles them as -Xcompiler args
++    # Known issues:
++    #   1) Escaped quotes will corrupt the response file.
++    #   Pre-Existing:
++    #      2) Objects that end in .a/.so/.dylib (e.g: --option=value.a) are mis-classified (with stipped quotes: link arg, without: -Xcompiler arg)
++    #      3) Quoted whitespace is lost: paths containing spaces are still split
++    set -- $1 $(sed 's/"//g' "$rsp_file") "${@:2}"
+     ;;
+   #Handle object files which always need to use "-Xlinker": -x cu applies to all input files, so give them to linker, except if only linking
+   @*|*.dylib)

@@ -33,6 +33,10 @@ patches = [
     'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch',
     'LAMMPS-2Aug2023_python_venv.patch',
     'LAMMPS-30Sep2026_fix_time_step.patch',
+    # the bundled Kokkos 5.2.1 nvcc_wrapper glues CMake's quoted object response files into one
+    # -Xcompiler argument, which exceeds the kernel's single-argument limit when liblammps links
+    # (kokkos/kokkos#9573)
+    'LAMMPS-30Sep2026_kokkos-nvcc_wrapper-response-file.patch',
 ]
 checksums = [
     {'stable_30Sep2026.tar.gz': '56e6670161cc0e4c5a4816a95edc80c00c9507a98445d0756b9ad8b5eb29748e'},
@@ -42,6 +46,8 @@ checksums = [
      '0cab0fa4dc8b2c68b45cd9df4398b9c2c37d69dcd1dc054aacb44f78698a2c84'},
     {'LAMMPS-2Aug2023_python_venv.patch': '87fd13b0c66f0886877885412ff13dfd092782e2237ba1fae157f803437828d6'},
     {'LAMMPS-30Sep2026_fix_time_step.patch': 'e1797660780f895f2bded109c55f3051f7968d52ba975cef2517c3dcf567f3d8'},
+    {'LAMMPS-30Sep2026_kokkos-nvcc_wrapper-response-file.patch':
+     '428a40371f65a0a19c18243ee0b468fe13794c82d2cee68448f65246d97179ad'},
 ]
 
 builddependencies = [
