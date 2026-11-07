@@ -18,14 +18,18 @@ toolchain = {'name': 'foss', 'version': '2026.1'}
 github_account = 'SeisSol'
 source_urls = ['https://github.com/%(github_account)s/%(name)s/archive/refs/tags/']
 sources = ['v%(version)s.tar.gz']
-checksums = ['d3280c19d3dc3e2b8a57bf950ceb85bc7cbf75e8e8ec1ea2e9f1f532be7dd257']
+# The generator accounts for the usable shared memory of one Hopper block.
+patches = [
+    ('chainforge-0.0.3_hopper-sm90-per-block-227.patch', 1),
+]
+checksums = [
+    {'v0.0.3.tar.gz': 'd3280c19d3dc3e2b8a57bf950ceb85bc7cbf75e8e8ec1ea2e9f1f532be7dd257'},
+    {'chainforge-0.0.3_hopper-sm90-per-block-227.patch':
+     '73623193b20da7d8c8dc39167e6d285e446607644da3d2d683784aa4a3f3b9a2'},
+]
 
 dependencies = [
     ('Python', '3.14.2'),
 ]
-
-# yateto at the SeisSol v1.3.2 pin (35001bd2) requires this version exactly:
-# yateto/codegen/fused_gemms/factory.py raises unless chainforge == 0.0.3.
-# setup.py at tag v0.0.3 has no install_requires.
 
 moduleclass = 'lib'

@@ -17,7 +17,15 @@ toolchain = {'name': 'gfbf', 'version': '2026.1'}
 
 source_urls = ['https://github.com/SeisSol/gemmforge/archive/refs/tags/']
 sources = ['v%(version)s.tar.gz']
-checksums = ['15486c56d811d89fa3b6f60ef444b9abece4035ae7d4ee1ec967b95fd0deb95b']
+# The generator accounts for the usable shared memory of one Hopper block.
+patches = [
+    ('gemmforge-0.0.207_hopper-sm90-per-block-227.patch', 1),
+]
+checksums = [
+    {'v0.0.207.tar.gz': '15486c56d811d89fa3b6f60ef444b9abece4035ae7d4ee1ec967b95fd0deb95b'},
+    {'gemmforge-0.0.207_hopper-sm90-per-block-227.patch':
+     '9dfe12847f223b79dcd4e349c72d190f7499c98cc196da5bdb16bee389830af3'},
+]
 
 dependencies = [
     ('Python', '3.14.2'),

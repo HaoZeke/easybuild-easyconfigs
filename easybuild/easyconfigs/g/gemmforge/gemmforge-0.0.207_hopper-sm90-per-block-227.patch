@@ -1,0 +1,21 @@
+Use Hopper's 227 KiB per-block shared-memory limit.
+
+The H100 SM has 228 KiB; the runtime reserves 1 KiB per block.
+Reference: https://docs.nvidia.com/cuda/hopper-tuning-guide/index.html
+
+Backport from SeisSol/gemmforge, authored upstream by David Schneller:
+87fcc31b2b7fb0f3cb7d273c3edbc359bc040663 and 204001bd87a1fa241cfe09349482d024f8ed472c
+
+diff --git a/gemmforge/vm/hw_descr.py b/gemmforge/vm/hw_descr.py
+index a5cd74f..439fae5 100644
+--- a/gemmforge/vm/hw_descr.py
++++ b/gemmforge/vm/hw_descr.py
+@@ -82,6 +82,8 @@ def get_known_arch():
+   arch['sm_86']['max_block_per_sm'] = 16
+   arch['sm_86']['max_threads_per_sm'] = 1536
+ 
++  arch['sm_90'] = deepcopy(arch['sm_60'])
++  arch['sm_90']['max_local_mem_size_per_block'] = 227 * KB
+ 
+   # AMD
+   # MI50
