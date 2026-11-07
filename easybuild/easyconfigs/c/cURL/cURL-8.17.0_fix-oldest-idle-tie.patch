@@ -1,0 +1,33 @@
+Break equal idle-age ties by lower connection id when picking the "oldest"
+idle connection to evict. With millisecond resolution several connections can
+share the same age, and the 3-slot destination hash then decides, which can
+evict the connection just used (makes upstream test 1510 fail for ~54% of
+random server ports when the four transfers finish within one millisecond).
+--- a/lib/conncache.c
++++ b/lib/conncache.c
+@@ -301,7 +301,11 @@
+       /* Set higher score for the age passed since the connection was used */
+       score = curlx_timediff(now, conn->lastused);
+ 
+-      if(score > highscore) {
++      /* Prefer the lower connection id when idle times are equal at
++         millisecond resolution, since list order is not age order */
++      if(score > highscore ||
++         (score == highscore && oldest_idle &&
++          conn->connection_id < oldest_idle->connection_id)) {
+         highscore = score;
+         oldest_idle = conn;
+       }
+@@ -337,7 +341,11 @@
+         continue;
+       /* Set higher score for the age passed since the connection was used */
+       score = curlx_timediff(now, conn->lastused);
+-      if(score > highscore) {
++      /* Prefer the lower connection id when idle times are equal at
++         millisecond resolution, since hash order is not age order */
++      if(score > highscore ||
++         (score == highscore && oldest_idle &&
++          conn->connection_id < oldest_idle->connection_id)) {
+         highscore = score;
+         oldest_idle = conn;
+       }

@@ -21,7 +21,11 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = ['https://curl.haxx.se/download/']
 sources = [SOURCELOWER_TAR_GZ]
-checksums = ['e8e74cdeefe5fb78b3ae6e90cd542babf788fa9480029cfcee6fd9ced42b7910']
+patches = ['cURL-8.17.0_fix-oldest-idle-tie.patch']
+checksums = [
+    {'curl-8.17.0.tar.gz': 'e8e74cdeefe5fb78b3ae6e90cd542babf788fa9480029cfcee6fd9ced42b7910'},
+    {'cURL-8.17.0_fix-oldest-idle-tie.patch': '3af3a75a8a3d8a0c3eb8e9137a89dacc56270c3532de89694f8b10a5a769e77e'},
+]
 
 builddependencies = [
     ('binutils', '2.45'),
