@@ -12,7 +12,17 @@ toolchainopts = {'pic': True, 'openmp': True}
 
 source_urls = ['https://github.com/%(namelower)s/%(namelower)s/releases/download/v%(version)s']
 sources = [SOURCELOWER_TAR_BZ2]
-checksums = ['c8392a4e123304644ec8d241443796277c6ed7ae977452317e779f3c387c2e19']
+patches = [
+    # GCC 15 with AVX2 or AVX-512 miscompiles the integer packing behind in-core HFX integrals and compressed
+    # tensors: wrong HFX, MP2 and GW energies, and segmentation faults in the HFX load-balance cost model;
+    # the patch turns off loop vectorization for that one file
+    'CP2K-2025.2_fix-hfx-compression-GCC-15.patch',
+]
+checksums = [
+    {'cp2k-2025.2.tar.bz2': 'c8392a4e123304644ec8d241443796277c6ed7ae977452317e779f3c387c2e19'},
+    {'CP2K-2025.2_fix-hfx-compression-GCC-15.patch':
+     'c227c5fdd0f2b76e1c71de85774e1fe8d0dfff60454fa7f6d7d74328373ef795'},
+]
 
 builddependencies = [
     ('flex', '2.6.4'),

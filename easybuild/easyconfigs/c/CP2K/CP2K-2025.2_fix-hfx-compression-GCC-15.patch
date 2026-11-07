@@ -1,0 +1,28 @@
+Compile hfxbase/hfx_compression_core_methods.F without loop vectorization when using GCC 15.
+With GCC 15.2.0 and -march=x86-64-v3 or higher (any AVX2 or AVX-512 target), the loop vectorizer
+turns the ints2bits_* routines into code that stores wrong packed words for several bit widths
+(10, 12, 15, 26-28, 37-39, 41, 44), while bits2ints_* stay correct. The HFX in-core integral
+storage and the tensor compression in qs_tensors.F then return wrong values, which shows up as
+wrong energies in the HFX, TDDFPT-force, MP2-gradient and GW regression tests, as failed
+Cholesky decompositions in the low-scaling RPA/GW tests (see https://github.com/cp2k/cp2k/issues/4774),
+and in 2025.2 as segmentation faults in the HFX load-balance cost model (estimate_basic) that
+reads the corrupted packed integral blocks.
+-fno-tree-loop-vectorize for this file alone restores bit-identical packing.
+Author: Rohit Goswami
+--- cp2k-2025.2.orig/src/CMakeLists.txt
++++ cp2k-2025.2/src/CMakeLists.txt
+@@ -1632,3 +1632,14 @@
++# GCC 15 loop-vectorizes the ints2bits_* packing routines into code that stores
++# wrong bits when AVX2 or AVX-512 is enabled, which corrupts in-core HFX
++# integrals and compressed tensors.
++if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU"
++   AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 15
++   AND CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 16)
++  set_source_files_properties(
++    ${CMAKE_CURRENT_BINARY_DIR}/hfxbase/hfx_compression_core_methods.F
++    PROPERTIES COMPILE_OPTIONS "-fno-tree-loop-vectorize")
++endif()
++
+ # set the __SHORT_FILE__ per file for CP2K sources
+ foreach(cp2k_src ${CP2K_SRCS} ${CP2K_PROGS_F_FYPP})
+   # add_fypp_sources returns a path in the current binary dir
