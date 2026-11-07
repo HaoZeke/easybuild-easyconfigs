@@ -20,7 +20,15 @@ toolchainopts = {'openmp': True, 'usempi': True}
 
 # 'https://github.com/lammps/lammps/archive/'
 source_urls = [GITHUB_LOWER_SOURCE]
-sources = ['stable_%(version)s.tar.gz']
+sources = [
+    'stable_%(version)s.tar.gz',
+    # ML-PACE requires a local source tree on compute nodes without network access.
+    {
+        'filename': 'lammps-user-pace-v.2025.12.4.p1.tar.gz',
+        'download_filename': 'v.2025.12.4.p1.tar.gz',
+        'source_urls': ['https://github.com/ICAMS/lammps-user-pace/archive/refs/tags/'],
+    },
+]
 patches = [
     'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch',
     'LAMMPS-2Aug2023_python_venv.patch',
@@ -28,6 +36,8 @@ patches = [
 ]
 checksums = [
     {'stable_30Sep2026.tar.gz': '56e6670161cc0e4c5a4816a95edc80c00c9507a98445d0756b9ad8b5eb29748e'},
+    {'lammps-user-pace-v.2025.12.4.p1.tar.gz':
+     '21e9d7ad2094eef0f19958d154866fc725fc6ccfa82ec3681ef2b006545ced96'},
     {'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch':
      '0cab0fa4dc8b2c68b45cd9df4398b9c2c37d69dcd1dc054aacb44f78698a2c84'},
     {'LAMMPS-2Aug2023_python_venv.patch': '87fd13b0c66f0886877885412ff13dfd092782e2237ba1fae157f803437828d6'},
@@ -90,6 +100,7 @@ dependencies = [
 configopts = ' '.join([
     '-DCMAKE_CXX_STANDARD=17',
     '-DCMAKE_CXX_STANDARD_REQUIRED=on',
+    '-DLOCAL_ML-PACE=%(builddir)s/lammps-user-pace-v.2025.12.4.p1',
 ])
 
 # include the following extra packages into the build
@@ -143,8 +154,6 @@ general_packages = [
     'MGPT',
     'MISC',
     'ML-IAP',
-    # ML-PACE is dowloading during the configure step
-    # See https://github.com/easybuilders/easybuild-easyconfigs/issues/27103
     'ML-PACE',
     'ML-POD',
     'ML-RUNNER',
