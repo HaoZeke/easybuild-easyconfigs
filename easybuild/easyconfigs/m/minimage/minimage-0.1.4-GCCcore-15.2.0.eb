@@ -1,0 +1,96 @@
+easyblock = 'CargoMesonNinja'
+
+name = 'minimage'
+version = '0.1.4'
+
+homepage = 'https://github.com/lode-org/minimage'
+description = """minimage computes minimum-image displacements in periodic cells in Rust,
+ with a C/C++ interface (libminimage, minimage.h, minimage.hpp, minimage.pc)."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+github_account = 'lode-org'
+source_urls = [GITHUB_SOURCE]
+sources = [{
+    'download_filename': 'v%(version)s.tar.gz',
+    'filename': SOURCE_TAR_GZ,
+}]
+crates = [
+    ('autocfg', '1.5.1'),
+    ('cfg-if', '1.0.4'),
+    ('heck', '0.5.0'),
+    ('indoc', '2.0.7'),
+    ('libc', '0.2.189'),
+    ('memoffset', '0.9.1'),
+    ('once_cell', '1.21.4'),
+    ('portable-atomic', '1.15.0'),
+    ('proc-macro2', '1.0.107'),
+    ('pyo3', '0.23.5'),
+    ('pyo3-build-config', '0.23.5'),
+    ('pyo3-ffi', '0.23.5'),
+    ('pyo3-macros', '0.23.5'),
+    ('pyo3-macros-backend', '0.23.5'),
+    ('quote', '1.0.47'),
+    ('rustversion', '1.0.23'),
+    ('syn', '2.0.119'),
+    ('target-lexicon', '0.12.16'),
+    ('unicode-ident', '1.0.24'),
+    ('unindent', '0.2.4'),
+]
+checksums = [
+    {'minimage-0.1.4.tar.gz': '8cee6dc9c6a1fc0c37abed305623b82c32a9404a544446f18b00ff8b5efa8b9d'},
+    {'autocfg-1.5.1.tar.gz': 'f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53'},
+    {'cfg-if-1.0.4.tar.gz': '9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801'},
+    {'heck-0.5.0.tar.gz': '2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea'},
+    {'indoc-2.0.7.tar.gz': '79cf5c93f93228cf8efb3ba362535fb11199ac548a09ce117c9b1adc3030d706'},
+    {'libc-0.2.189.tar.gz': '3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2'},
+    {'memoffset-0.9.1.tar.gz': '488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a'},
+    {'once_cell-1.21.4.tar.gz': '9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50'},
+    {'portable-atomic-1.15.0.tar.gz': '05c8b63e8d9609db387f0324918f81d68fe27748f084ef092fb35954d0539a85'},
+    {'proc-macro2-1.0.107.tar.gz': '985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9'},
+    {'pyo3-0.23.5.tar.gz': '7778bffd85cf38175ac1f545509665d0b9b92a198ca7941f131f85f7a4f9a872'},
+    {'pyo3-build-config-0.23.5.tar.gz': '94f6cbe86ef3bf18998d9df6e0f3fc1050a8c5efa409bf712e661a4366e010fb'},
+    {'pyo3-ffi-0.23.5.tar.gz': 'e9f1b4c431c0bb1c8fb0a338709859eed0d030ff6daa34368d3b152a63dfdd8d'},
+    {'pyo3-macros-0.23.5.tar.gz': 'fbc2201328f63c4710f68abdf653c89d8dbc2858b88c5d88b0ff38a75288a9da'},
+    {'pyo3-macros-backend-0.23.5.tar.gz': 'fca6726ad0f3da9c9de093d6f116a93c1a38e417ed73bf138472cf4064f72028'},
+    {'quote-1.0.47.tar.gz': '1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001'},
+    {'rustversion-1.0.23.tar.gz': 'cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f'},
+    {'syn-2.0.119.tar.gz': '872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297'},
+    {'target-lexicon-0.12.16.tar.gz': '61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1'},
+    {'unicode-ident-1.0.24.tar.gz': 'e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75'},
+    {'unindent-0.2.4.tar.gz': '7264e107f553ccae879d21fbea1d6724ac785e8c3bfc762137959b5802826ef3'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('Rust', '1.94.1'),
+    ('Meson', '1.10.2'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+    ('Python', '3.14.2'),
+]
+
+# The Meson build drives cargo with the crate's default features (capi) on the
+# vendored crates above and installs the shared and static library, both headers
+# and minimage.pc.
+configopts = '-Dwith_tests=true -Dwith_examples=true'
+
+runtest = 'meson'
+testopts = 'test -C %(builddir)s/easybuild_obj --print-errorlogs'
+
+sanity_check_paths = {
+    'files': [
+        'include/minimage.h',
+        'include/minimage.hpp',
+        'lib/libminimage.a',
+        'lib/libminimage.%s' % SHLIB_EXT,
+        'lib/pkgconfig/minimage.pc',
+    ],
+    'dirs': [],
+}
+
+sanity_check_commands = [
+    'pkg-config --exact-version=%(version)s minimage',
+]
+
+moduleclass = 'lib'
