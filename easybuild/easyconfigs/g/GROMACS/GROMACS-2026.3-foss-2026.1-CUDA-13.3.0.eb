@@ -32,6 +32,8 @@ It also contains the gmxapi extension for the single precision MPI build.
 toolchain = {'name': 'foss', 'version': '2026.1'}
 toolchainopts = {'openmp': True, 'usempi': True}
 
+double_precision = False
+
 source_urls = [
     'https://ftp.gromacs.org/pub/gromacs/',
     'ftp://ftp.gromacs.org/pub/gromacs/',
