@@ -1,0 +1,25 @@
+Fix the copy constructor of the GPU batch-recorder table entry so it names the members the class has.
+GenericTableEntry keeps hostVector and deviceDataPtr, but its copy constructor reads other.devicePtrs
+and other.pointers, which do not exist. GCC 15 checks template bodies before instantiation
+(-Wtemplate-body) and refuses the header: "const class GenericTableEntry<Type> has no member named
+devicePtrs", so every CUDA build of 1.3.2 fails in SeisSol-common-lib. The copy constructor now
+allocates and copies hostVector.size() elements from other.deviceDataPtr. Upstream replaced the class
+by a MemkindArray-backed one (SeisSol commit 7c1abd2c9, 2026-08-22); this is the smallest change
+that makes the released 1.3.2 header valid.
+--- a/src/Initializer/BatchRecorders/DataTypes/Table.h
++++ b/src/Initializer/BatchRecorders/DataTypes/Table.h
+@@ -31,12 +31,12 @@
+   GenericTableEntry(const GenericTableEntry& other)
+       : hostVector(other.hostVector), deviceDataPtr(nullptr) {
+     if (!hostVector.empty()) {
+-      if (other.devicePtrs != nullptr) {
++      if (other.deviceDataPtr != nullptr) {
+         deviceDataPtr = static_cast<PointerType>(
+-            device.api->allocGlobMem(other.pointers.size() * sizeof(Type)));
++            device.api->allocGlobMem(other.hostVector.size() * sizeof(Type)));
+         device.api->copyBetween(
+-            deviceDataPtr, other.devicePtrs, other.pointers.size() * sizeof(Type));
++            deviceDataPtr, other.deviceDataPtr, other.hostVector.size() * sizeof(Type));
+       }
+     }
+   }

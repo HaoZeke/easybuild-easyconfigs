@@ -35,6 +35,9 @@ patches = [
     ('SeisSol-1.3.2_FindSCOTCH.patch', 1),
     ('SeisSol-1.3.2_Device-nvtx3-CUDA-13.patch', 1),
     ('SeisSol-1.3.2_Device-cuda13-memlocation.patch', 1),
+    # GCC 15 checks template bodies: the batch-recorder table entry's copy constructor
+    # names members the class does not have, which only the GPU build compiles
+    ('SeisSol-1.3.2_Table-copy-constructor-gcc15.patch', 1),
 ]
 checksums = [
     # Same recursive git_config archive as SeisSol-1.3.2-foss-2026.1.eb.
@@ -44,6 +47,8 @@ checksums = [
      '9e6e82b2974697ec4b9b55c511f2e8917ee1292774b931c246f8b141f854785f'},
     {'SeisSol-1.3.2_Device-cuda13-memlocation.patch':
      '7f90570bb6371813c36bd9a3d3033efd99ecb7f96a7219d223e61a7563f8b429'},
+    {'SeisSol-1.3.2_Table-copy-constructor-gcc15.patch':
+     '8b4eaea13a24f3c515ffcf51779a1f6b995bbacd69bf7454d5ba1553b948ef51'},
 ]
 
 builddependencies = [
