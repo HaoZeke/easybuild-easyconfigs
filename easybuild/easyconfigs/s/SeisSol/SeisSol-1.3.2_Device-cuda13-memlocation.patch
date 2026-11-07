@@ -1,0 +1,72 @@
+CUDA 13 runtime API compatibility for Device at SeisSol v1.3.2 pin 9fad2799.
+Backport of SeisSol/Device PR #51 "Make compile for CUDA 13"
+(head c6861478c6dd9457f19165c4028c6a237f7e2da4, merge 377769e28eda73601f17e46c89bf660c76e1d9f8;
+original series commit cd8cee7b599303fd70ac6be69431598c5626efdc by David Schneller),
+adapted to the v1.3.2 Device API surface (allocUnifiedMem(size) without Destination hint).
+Preserves pre-CUDA-13 call shapes behind CUDART_VERSION < 13000.
+Also drops cudaDeviceProp::clockRate and ::computeMode diagnostics removed in CUDA 13
+(same as upstream Control.cu change in that PR).
+Refs:
+  https://github.com/SeisSol/Device/pull/51
+  https://developer.nvidia.com/docs/drive/drive-os/7.2.5/public/drive-os-migration-guide/cudart_changes.html
+  https://docs.nvidia.com/cuda/archive/13.0.3/cuda-runtime-api/group__CUDART__MEMORY.html
+--- a/submodules/Device/interfaces/cuda/Control.cu
++++ b/submodules/Device/interfaces/cuda/Control.cu
+@@ -223,11 +223,9 @@
+   info << "memPitch: " << property.memPitch << '\n';
+   info << "maxThreadsPerBlock: " << property.maxThreadsPerBlock << '\n';
+   info << "totalConstMem: " << property.totalConstMem << '\n';
+-  info << "clockRate: " << property.clockRate << '\n';
+   info << "multiProcessorCount: " << property.multiProcessorCount << '\n';
+   info << "integrated: " << property.integrated << '\n';
+   info << "canMapHostMemory: " << property.canMapHostMemory << '\n';
+-  info << "computeMode: " << property.computeMode << '\n';
+   info << "concurrentKernels: " << property.concurrentKernels << '\n';
+   info << "pciBusID: " << property.pciBusID << '\n';
+   info << "pciDeviceID: " << property.pciDeviceID << '\n';
+--- a/submodules/Device/interfaces/cuda/Copy.cu
++++ b/submodules/Device/interfaces/cuda/Copy.cu
+@@ -67,9 +67,23 @@
+                                        void *streamPtr) {
+   isFlagSet<InterfaceInitialized>(status);
+   cudaStream_t stream = (streamPtr == nullptr) ? 0 : (static_cast<cudaStream_t>(streamPtr));
++  // CUDA 13: unversioned cudaMemPrefetchAsync takes (location, flags, stream).
++  // The destination kind and identifier describe the requested managed-memory location.
++#if CUDART_VERSION >= 13000
++  cudaMemLocation location{};
++  if (type == Destination::CurrentDevice) {
++    location.type = cudaMemLocationTypeDevice;
++    location.id = currentDeviceId;
++  } else {
++    location.type = cudaMemLocationTypeHost;
++    location.id = cudaCpuDeviceId;
++  }
++  cudaMemPrefetchAsync(devPtr, count, location, 0 /* flags */, stream);
++#else
+   cudaMemPrefetchAsync(devPtr,
+                        count,
+                        type == Destination::CurrentDevice ? currentDeviceId : cudaCpuDeviceId,
+                        stream);
++#endif
+   CHECK_ERR;
+ }
+--- a/submodules/Device/interfaces/cuda/Memory.cu
++++ b/submodules/Device/interfaces/cuda/Memory.cu
+@@ -23,7 +23,17 @@
+   cudaMallocManaged(&devPtr, size, cudaMemAttachGlobal);
+   CHECK_ERR;
+   if (allowedConcurrentManagedAccess) {
++    // CUDA 13 uses an explicit location for the preferred managed-memory device.
++    // The preferred location identifies the active device and preserves the
++    // allocation policy for concurrent managed-memory access.
++#if CUDART_VERSION >= 13000
++    cudaMemLocation location{};
++    location.type = cudaMemLocationTypeDevice;
++    location.id = currentDeviceId;
++    cudaMemAdvise(devPtr, size, cudaMemAdviseSetPreferredLocation, location);
++#else
+     cudaMemAdvise(devPtr, size, cudaMemAdviseSetPreferredLocation, currentDeviceId);
++#endif
+     CHECK_ERR;
+   }
+   statistics.allocatedMemBytes += size;
