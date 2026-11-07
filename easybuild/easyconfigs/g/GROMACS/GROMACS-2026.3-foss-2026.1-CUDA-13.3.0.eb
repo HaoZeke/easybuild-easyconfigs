@@ -88,7 +88,7 @@ exts_list = [
         ],
         'preinstallopts': 'export CMAKE_ARGS="-Dgmxapi_ROOT=%(installdir)s ' +
                           '-C %(installdir)s/share/cmake/gromacs_mpi/gromacs-hints_mpi.cmake" && ',
-        'source_tmpl': 'gromacs-%s.tar.gz' % _gmxapi_source_version,
+        'source_tmpl': f'gromacs-{_gmxapi_source_version}.tar.gz',
         'start_dir': 'python_packaging/gmxapi',
         'checksums': [
             {'gromacs-2026.3.tar.gz': '1094b7bbc6a3960223827114626657110b40096cdf9598a727935fc84ebf8aa0'},
