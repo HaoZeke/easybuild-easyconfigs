@@ -28,6 +28,18 @@ sources = [
         'download_filename': 'v.2025.12.4.p1.tar.gz',
         'source_urls': ['https://github.com/ICAMS/lammps-user-pace/archive/refs/tags/'],
     },
+    # the unit tests download googletest during configure; keep the tarball for GTEST_URL
+    {
+        'filename': 'googletest-1.18.0.tar.gz',
+        'source_urls': ['https://github.com/google/googletest/releases/download/v1.18.0/'],
+        'extract_cmd': 'cp %s .',
+    },
+    # the unit tests download libyaml when no YAML library is found; keep the tarball for YAML_URL
+    {
+        'filename': 'yaml-0.2.5.tar.gz',
+        'source_urls': ['https://pyyaml.org/download/libyaml/'],
+        'extract_cmd': 'cp %s .',
+    },
 ]
 patches = [
     'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch',
@@ -42,6 +54,8 @@ checksums = [
     {'stable_30Sep2026.tar.gz': '56e6670161cc0e4c5a4816a95edc80c00c9507a98445d0756b9ad8b5eb29748e'},
     {'lammps-user-pace-v.2025.12.4.p1.tar.gz':
      '21e9d7ad2094eef0f19958d154866fc725fc6ccfa82ec3681ef2b006545ced96'},
+    {'googletest-1.18.0.tar.gz': '6e3191c1455468b3fc35a417fb565c1c5071aee1b7e7f85e30cf48a98d37d8b5'},
+    {'yaml-0.2.5.tar.gz': 'c642ae9b75fee120b2d96c712538bd2cf283228d2337df2cf2988e3c02678ef4'},
     {'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch':
      '0cab0fa4dc8b2c68b45cd9df4398b9c2c37d69dcd1dc054aacb44f78698a2c84'},
     {'LAMMPS-2Aug2023_python_venv.patch': '87fd13b0c66f0886877885412ff13dfd092782e2237ba1fae157f803437828d6'},
@@ -107,6 +121,8 @@ configopts = ' '.join([
     '-DCMAKE_CXX_STANDARD=17',
     '-DCMAKE_CXX_STANDARD_REQUIRED=on',
     '-DLOCAL_ML-PACE=%(builddir)s/lammps-user-pace-v.2025.12.4.p1',
+    '-DGTEST_URL=file://%(builddir)s/googletest-1.18.0.tar.gz',
+    '-DYAML_URL=file://%(builddir)s/yaml-0.2.5.tar.gz',
 ])
 
 # include the following extra packages into the build
