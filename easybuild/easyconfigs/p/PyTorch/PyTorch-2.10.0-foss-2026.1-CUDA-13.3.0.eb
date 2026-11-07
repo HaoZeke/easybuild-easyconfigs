@@ -251,7 +251,8 @@ dependencies = [
 
 prebuildopts = (f"""sed -i '1i set(PYTHON_SIX_SOURCE_DIR "%(builddir)s/six-{local_six_version}")' """
                 "cmake/Dependencies.cmake && ")
-buildcmd = '%(python)s setup.py build'  # Run the (long) build in the build step
+# Refresh cached dependency paths in the build step; packaging reuses that configuration.
+buildcmd = '%(python)s setup.py --cmake build'
 
 excluded_tests = {
     '': [
