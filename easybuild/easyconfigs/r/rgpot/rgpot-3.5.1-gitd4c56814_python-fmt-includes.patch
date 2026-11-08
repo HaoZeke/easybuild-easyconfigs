@@ -1,0 +1,18 @@
+--- a/python/meson.build
++++ b/python/meson.build
+@@ -95,6 +95,15 @@
+         compile_args: true,
+     )
+ endif
++# External fmt is required by public headers (base_types.hpp). Propagate
++# includes/compile_args only — never full _deps — so Torch link flags
++# stay off the nanobind extension when with_metatomic=true.
++if has_fmt
++    _py_hdr_deps += fmt_dep.partial_dependency(
++        includes: true,
++        compile_args: true,
++    )
++endif
+ # Do not link cuh2 into the pip extension: the umbrella already carries the
+ # slab helpers, and LJ + metatomic dlopen are the product.
+ 

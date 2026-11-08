@@ -24,6 +24,8 @@ patches = [
     'rgpot-3.5.1-gitd4c56814_windows-link-whole.patch',
     'rgpot-3.5.1-gitd4c56814_windows-flang-rt.patch',
     'rgpot-3.5.1-gitd4c56814_eam-al-r2549-literals.patch',
+    'rgpot-3.5.1-gitd4c56814_python-fmt-includes.patch',
+    'rgpot-3.5.1-gitd4c56814_layout-fmt-includes.patch',
 ]
 checksums = [
     {'rgpot-3.5.1-gitd4c56814.tar.gz':
@@ -38,6 +40,10 @@ checksums = [
      '05ec044b430a44d2404a91626e0a0f97c6c2786fedec8adab01ac6899562970b'},
     {'rgpot-3.5.1-gitd4c56814_eam-al-r2549-literals.patch':
      'df8cf1e18e6fcda7f162e7f1bd7a8680799647933fdd8506be29d2b04a58d5d4'},
+    {'rgpot-3.5.1-gitd4c56814_python-fmt-includes.patch':
+     '0deb309b72de6dbd19e972c833bc4eb45aaef8401736d7f2bdfab1a30d3ff59e'},
+    {'rgpot-3.5.1-gitd4c56814_layout-fmt-includes.patch':
+     'b091a19aefdcfe081bf7d12e0b1cc8be191ee769fa4574fd3a7f3a68a019a73d'},
 ]
 
 builddependencies = [

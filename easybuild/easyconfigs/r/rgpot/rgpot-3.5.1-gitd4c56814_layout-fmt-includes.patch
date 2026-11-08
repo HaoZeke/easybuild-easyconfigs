@@ -1,0 +1,24 @@
+--- a/CppCore/meson.build
++++ b/CppCore/meson.build
+@@ -1636,10 +1636,21 @@
+                 python3_prog,
+                 args: [files('tests/check_virtual_counts.py')],
+             )
++            # Stamp executable includes public headers that pull fmt/core.h.
++            # Use header/compile partial_dependency only (same design as the
++            # nanobind extension): do not attach full _deps / Torch flags.
++            cxx_layout_stamp_deps = []
++            if has_fmt
++                cxx_layout_stamp_deps += fmt_dep.partial_dependency(
++                    includes: true,
++                    compile_args: true,
++                )
++            endif
+             cxx_layout_stamp = executable(
+                 'print_cxx_layout_stamp',
+                 sources: ['tests/print_cxx_layout_stamp.cc'],
+                 include_directories: _incdirs + ['.'],
++                dependencies: cxx_layout_stamp_deps,
+                 cpp_args: _args,
+                 link_language: 'cpp',
+             )
