@@ -1,0 +1,104 @@
+easyblock = 'MesonNinja'
+
+name = 'rgpot'
+version = '3.5.1'
+local_commit = 'd4c568144782e0fd4df0ac0bdf6160d9902b0fe8'
+versionsuffix = '-git%s' % local_commit[:8]
+
+homepage = 'https://github.com/OmniPotentRPC/rgpot'
+description = """Potential frontends with Cap'n Proto RPC (NWChem/CPMD clients;
+engines are loaded at runtime via dlopen). Built fat: RPC server (potserv),
+Eigen array backend, and nanobind Python bindings."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+toolchainopts = {'pic': True, 'cstd': 'c++20'}
+
+source_urls = ['https://github.com/OmniPotentRPC/rgpot/archive/']
+sources = [{
+    'download_filename': '%s.tar.gz' % local_commit,
+    'filename': '%(name)s-%(version)s%(versionsuffix)s.tar.gz',
+}]
+patches = [
+    'rgpot-3.5.1-gitd4c56814_capnp-includes.patch',
+    'rgpot-3.5.1-gitd4c56814_lj-fp-contract.patch',
+    'rgpot-3.5.1-gitd4c56814_windows-link-whole.patch',
+    'rgpot-3.5.1-gitd4c56814_windows-flang-rt.patch',
+    'rgpot-3.5.1-gitd4c56814_eam-al-r2549-literals.patch',
+]
+checksums = [
+    {'rgpot-3.5.1-gitd4c56814.tar.gz':
+     '43e6bfee2f9fbb047ea32e654d6a90789af989c782afac851e24d90bf662a7b8'},
+    {'rgpot-3.5.1-gitd4c56814_capnp-includes.patch':
+     '1a20b1aa44cabf1af618810573531ae24c8adcef432073b0798e96fca866a447'},
+    {'rgpot-3.5.1-gitd4c56814_lj-fp-contract.patch':
+     'e73d220f8d8e6e06a9633ca8c352dd1b156733d983bbf6d6da6e59a5df4b7583'},
+    {'rgpot-3.5.1-gitd4c56814_windows-link-whole.patch':
+     '4d163468a1fcc1412dbb133346b9bcc4533e582e41c72153a11f964f7eed7324'},
+    {'rgpot-3.5.1-gitd4c56814_windows-flang-rt.patch':
+     '05ec044b430a44d2404a91626e0a0f97c6c2786fedec8adab01ac6899562970b'},
+    {'rgpot-3.5.1-gitd4c56814_eam-al-r2549-literals.patch':
+     'df8cf1e18e6fcda7f162e7f1bd7a8680799647933fdd8506be29d2b04a58d5d4'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('Meson', '1.10.2'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+    ('CMake', '4.2.1'),
+    ('Catch2', '3.14.0'),
+    ('nanobind', '2.13.0'),
+    # header-only; rgpot.pc lists eigen3 under Requires, so a package building against
+    # rgpot also needs Eigen as a build dependency
+    ('Eigen', '5.0.0'),
+]
+
+dependencies = [
+    ('CapnProto', '1.4.0'),
+    ('fmt', '12.2.0'),
+    ('Python', '3.14.2'),
+]
+
+configopts = '-Dpure_lib=false -Dwith_rpc=true -Dwith_eigen=true '
+configopts += '-Dwith_fortran_pots=enabled '
+configopts += '-Dwith_python=true '
+configopts += '-Dwith_mpi=disabled '
+configopts += '-Dwith_tests=true -Dwith_examples=true '
+configopts += '-Dwrap_mode=nodownload '
+
+postinstallcmds = [
+    "sed -i -e '/^Libs:/ { /-lgfortran/! s/$/ -lgfortran/ }' "
+    "-e '/^Libs.private:/ s/ -lgfortran//' %(installdir)s/lib/pkgconfig/rgpot.pc",
+]
+
+runtest = 'meson'
+testopts = 'test -C %(builddir)s/easybuild_obj'
+
+sanity_check_paths = {
+    'files': [
+        'bin/potserv',
+        # kCxxSoversion is 4 at d4c56814 (CppCore/rgpot/abi/CxxLayout.hpp)
+        'lib/librgpot.%s.4' % SHLIB_EXT,
+        'lib/libnwchempot.a',
+        'lib/libcpmdpot.a',
+        # generic engine table for LJ, Morse, ZBL and the Fortran pots (new in 3.5.0)
+        'lib/libclassical_engine.%s' % SHLIB_EXT,
+        'lib/pkgconfig/rgpot.pc',
+    ],
+    'dirs': [
+        'include/rgpot',
+        'lib',
+        'lib/python%(pyshortver)s/site-packages/rgpot',
+    ],
+}
+
+sanity_check_commands = [
+    "pkg-config --exists rgpot",
+    "pkg-config --libs rgpot | grep -q -- -lgfortran",
+    "! pkg-config --exists rgpot-mpi",
+    "test ! -e %(installdir)s/lib/cmake/pot",
+    "test ! -e %(installdir)s/lib/librgpot_mpi." + SHLIB_EXT,
+    "python -s -c 'import rgpot'",
+]
+
+moduleclass = 'lib'

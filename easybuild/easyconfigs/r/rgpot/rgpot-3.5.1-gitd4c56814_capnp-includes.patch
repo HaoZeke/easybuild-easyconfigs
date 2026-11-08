@@ -1,0 +1,14 @@
+eOn develop applies this to the rgpot wrap (subprojects/rgpot.wrap diff_files).
+Taken unchanged from https://github.com/TheochemUI/eOn/blob/0bb29da9e44a2e1a2d15f1c0661046b1f50edaaf/subprojects/packagefiles/rgpot-capnp-includes.patch
+
+--- a/CppCore/meson.build
++++ b/CppCore/meson.build
+@@ -851,7 +851,7 @@
+             'cpmdc_fake_engine',
+             sources: ['tests/cpmdc_fake_engine.cc'],
+             cpp_args: _build_identity_args,
+-            dependencies: [ptlrpc_dep],
++            dependencies: [ptlrpc_dep, capnp_rpc_dep],
+             include_directories: _incdirs + ['.'] + include_directories(
+                 'rgpot/CPMDPot',
+             ),
