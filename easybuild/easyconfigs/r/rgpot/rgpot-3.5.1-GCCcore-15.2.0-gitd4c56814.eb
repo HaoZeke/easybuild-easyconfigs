@@ -3,7 +3,7 @@ easyblock = 'MesonNinja'
 name = 'rgpot'
 version = '3.5.1'
 local_commit = 'd4c568144782e0fd4df0ac0bdf6160d9902b0fe8'
-versionsuffix = '-git%s' % local_commit[:8]
+versionsuffix = f'-git{local_commit[:8]}'
 
 homepage = 'https://github.com/OmniPotentRPC/rgpot'
 description = """Potential frontends with Cap'n Proto RPC (NWChem/CPMD clients;
@@ -15,7 +15,7 @@ toolchainopts = {'pic': True, 'cstd': 'c++20'}
 
 source_urls = ['https://github.com/OmniPotentRPC/rgpot/archive/']
 sources = [{
-    'download_filename': '%s.tar.gz' % local_commit,
+    'download_filename': f'{local_commit}.tar.gz',
     'filename': '%(name)s-%(version)s%(versionsuffix)s.tar.gz',
 }]
 patches = [
@@ -84,11 +84,11 @@ sanity_check_paths = {
     'files': [
         'bin/potserv',
         # kCxxSoversion is 4 at d4c56814 (CppCore/rgpot/abi/CxxLayout.hpp)
-        'lib/librgpot.%s.4' % SHLIB_EXT,
+        f'lib/librgpot.{SHLIB_EXT}.4',
         'lib/libnwchempot.a',
         'lib/libcpmdpot.a',
         # generic engine table for LJ, Morse, ZBL and the Fortran pots (new in 3.5.0)
-        'lib/libclassical_engine.%s' % SHLIB_EXT,
+        f'lib/libclassical_engine.{SHLIB_EXT}',
         'lib/pkgconfig/rgpot.pc',
     ],
     'dirs': [
@@ -103,7 +103,7 @@ sanity_check_commands = [
     "pkg-config --libs rgpot | grep -q -- -lgfortran",
     "! pkg-config --exists rgpot-mpi",
     "test ! -e %(installdir)s/lib/cmake/pot",
-    "test ! -e %(installdir)s/lib/librgpot_mpi." + SHLIB_EXT,
+    f'test ! -e %(installdir)s/lib/librgpot_mpi.{SHLIB_EXT}',
     "python -s -c 'import rgpot'",
 ]
 
