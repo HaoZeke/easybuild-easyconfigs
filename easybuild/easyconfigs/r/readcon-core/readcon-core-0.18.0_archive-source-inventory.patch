@@ -1,0 +1,100 @@
+--- a/scripts/check_version_sot.sh
++++ b/scripts/check_version_sot.sh
+@@ -217,12 +217,92 @@
+ # full-tree walk would still open it. The gate lists tracked files and
+ # also skips this prefix.
+ skip_prefixes = ("bench/h2h/work/",)
++# Basename exclusions from skip_dirs (path-component match). Multi-segment
++# entries such as docs/build are handled as path prefixes instead.
++skip_dir_names = {d for d in skip_dirs if "/" not in d}
++skip_dir_path_prefixes = tuple(
++    sorted({*(f"{d}/" for d in skip_dirs if "/" in d), *skip_prefixes})
++)
++
++
++def _is_generated_build_dir(dirpath: pathlib.Path) -> bool:
++    """True for Meson/CMake output trees git would never list.
++
++    Detect by build markers, not by a blanket directory basename: a source
++    tree may legitimately contain paths named build/, subprojects/, or
++    debug/ that must still be scanned.
++    """
++    return (
++        (dirpath / "meson-private").is_dir()
++        or (dirpath / "build.ninja").is_file()
++        or (dirpath / "CMakeCache.txt").is_file()
++        or (dirpath / "CMakeFiles").is_dir()
++    )
++
++
++def _should_prune_dir(rel_dir: str, name: str, dirpath: pathlib.Path) -> bool:
++    if name in skip_dir_names:
++        return True
++    child_rel = f"{rel_dir}/{name}" if rel_dir else name
++    for prefix in skip_dir_path_prefixes:
++        if child_rel == prefix.rstrip("/") or child_rel.startswith(prefix):
++            return True
++    # Also honor multi-segment skip_dirs entries as exact relative paths.
++    for d in skip_dirs:
++        if "/" in d and (child_rel == d or child_rel.startswith(d + "/")):
++            return True
++    return _is_generated_build_dir(dirpath)
++
++
++def list_source_inventory():
++    """Tracked files via git when this tree is the repo root; else a
++    pruned deterministic walk of an extracted source archive.
++
++    Archive mode does not invent a .git checkout and does not adopt a
++    parent repository's index when this tree merely sits inside one.
++    Directory pruning uses the existing skip_dirs / skip_prefixes plus
++    real Meson/CMake build markers so generated output is not opened.
++    """
++    try:
++        top = subprocess.check_output(
++            ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
++            stderr=subprocess.DEVNULL,
++            text=True,
++        ).strip()
++        if pathlib.Path(top).resolve() == root.resolve():
++            listed = subprocess.check_output(
++                ["git", "-C", str(root), "ls-files", "-z"],
++            )
++            return [raw.decode() for raw in listed.split(b"\0") if raw]
++    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
++        pass
++    import os
++
++    rels = []
++    # topdown + in-place dirnames mutation prunes before descent, so
++    # generated trees (target/, meson build/, …) are never opened.
++    for dirpath_str, dirnames, filenames in os.walk(
++        root, topdown=True, followlinks=False
++    ):
++        dirpath = pathlib.Path(dirpath_str)
++        rel_dir = dirpath.relative_to(root).as_posix()
++        if rel_dir == ".":
++            rel_dir = ""
++        dirnames[:] = sorted(
++            name
++            for name in dirnames
++            if not _should_prune_dir(rel_dir, name, dirpath / name)
++        )
++        for name in sorted(filenames):
++            rel = f"{rel_dir}/{name}" if rel_dir else name
++            if any(rel.startswith(p) for p in skip_prefixes):
++                continue
++            rels.append(rel)
++    return rels
++
++
+ bad = []
+-listed = subprocess.check_output(["git", "ls-files", "-z"])
+-for raw in listed.split(b"\0"):
+-    if not raw:
+-        continue
+-    rel = raw.decode()
++for rel in list_source_inventory():
+     path = root / rel
+     if not path.is_file():
+         continue
