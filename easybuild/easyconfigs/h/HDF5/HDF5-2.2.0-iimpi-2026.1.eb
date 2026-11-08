@@ -29,7 +29,9 @@ preconfigopts = 'export LDFLAGS="$LDFLAGS -pthread" && '
 #   Segmentation fault
 #   make[2]: *** [fortran/src/CMakeFiles/H5match_types.dir/build.make:106: bin/H5match_types] Error 139
 # Use the compat dynamic linker, the same one GCC-built binaries get.
-preconfigopts += 'if [ -n "$EESSI_EPREFIX" ]; then export LDFLAGS="$LDFLAGS -Wl,--dynamic-linker=$EESSI_EPREFIX/lib64/ld-linux-x86-64.so.2"; fi && '
+preconfigopts += 'if [ -n "$EESSI_EPREFIX" ]; then '
+preconfigopts += 'export LDFLAGS="$LDFLAGS -Wl,--dynamic-linker=$EESSI_EPREFIX/lib64/ld-linux-x86-64.so.2"; '
+preconfigopts += 'fi && '
 preconfigopts += 'export RUNPARALLEL="mpirun -np $${NPROCS:=3}" && '
 configopts = ' '.join([
     '-DHDF5_BUILD_CPP_LIB=ON',
