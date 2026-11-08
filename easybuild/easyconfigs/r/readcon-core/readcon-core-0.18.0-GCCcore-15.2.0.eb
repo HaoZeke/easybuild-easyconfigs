@@ -546,7 +546,7 @@ sanity_check_paths = {
         'include/readcon-core.hpp',
         'include/readcon-core-version.h',
         'lib/libreadcon_core.a',
-        'lib/libreadcon_core.%s' % SHLIB_EXT,
+        f'lib/libreadcon_core.{SHLIB_EXT}',
         'lib/pkgconfig/readcon-core.pc',
     ],
     'dirs': [],
