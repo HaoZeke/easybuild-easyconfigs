@@ -1,0 +1,64 @@
+easyblock = 'CMakeMake'
+
+name = 'chemfiles'
+version = '0.10.4'
+local_tests_data = '26e54a77e8ee73cf015413c1c247908495ad06dc'
+
+homepage = 'https://chemfiles.org'
+description = """Chemfiles is a C++ library (with a C interface) to read and write
+ trajectory and structure files (XYZ, extended XYZ, PDB, CIF, GRO, LAMMPS data, ...).
+ eOn reads non-.con structure input through it (-Dwith_chemfiles)."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+toolchainopts = {'pic': True}
+
+github_account = 'chemfiles'
+sources = [
+    {
+        'source_urls': [GITHUB_SOURCE],
+        'download_filename': '%(version)s.tar.gz',
+        'filename': SOURCE_TAR_GZ,
+    },
+    {
+        # tests/CMakeLists.txt downloads this commit of chemfiles/tests-data at
+        # configure time; it is supplied here and placed where that step looks.
+        'source_urls': ['https://github.com/chemfiles/tests-data/archive/'],
+        'download_filename': f'{local_tests_data}.tar.gz',
+        'filename': f'chemfiles-tests-data-{local_tests_data}.tar.gz',
+    },
+]
+checksums = [
+    {'chemfiles-0.10.4.tar.gz': 'b8232ddaae2953538274982838aa6c2df87d300f7e2f80e92c171581e06325ba'},
+    {'chemfiles-tests-data-26e54a77e8ee73cf015413c1c247908495ad06dc.tar.gz':
+     'adb51dd71f5b36b725e6f7a44bb12f7c0afd952ddcb40fdf5ad9bca7cf519843'},
+]
+
+builddependencies = [
+    ('binutils', '2.45'),
+    ('CMake', '4.2.1'),
+]
+
+start_dir = '%(name)s-%(version)s'
+
+# CMake 4 rejects cmake_minimum_required(2.8.12) in chemfiles 0.10.4 and its
+# vendored zlib, lzma, bzip2, fmt and molfiles; the policy floor lets them configure
+# (the flag eOn develop's chemfiles wrap sets). Shared library so eOn links it into
+# its own shared objects; the vendored compression libraries keep their defaults.
+configopts = '-DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCHFL_BUILD_TESTS=ON'
+preconfigopts = (
+    'mkdir -p %(builddir)s/easybuild_obj/tests && '
+    f'mv %(builddir)s/tests-data-{local_tests_data} %(builddir)s/easybuild_obj/tests/data && '
+    f'touch %(builddir)s/easybuild_obj/tests/data/{local_tests_data} && '
+)
+
+runtest = 'test'
+
+sanity_check_paths = {
+    'files': ['include/chemfiles.h', 'include/chemfiles.hpp',
+              f'lib/libchemfiles.{SHLIB_EXT}',
+              'lib/cmake/chemfiles/chemfiles-config.cmake',
+              'lib/cmake/chemfiles/chemfiles-config-version.cmake'],
+    'dirs': ['include/chemfiles'],
+}
+
+moduleclass = 'chem'
