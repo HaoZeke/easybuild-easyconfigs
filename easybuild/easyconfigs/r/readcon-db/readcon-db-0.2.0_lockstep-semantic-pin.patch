@@ -1,0 +1,201 @@
+Make scripts/check_version_lockstep.sh check the readcon-core dependency of
+Cargo.toml by parsing it (python3 tomllib, which the Meson build's python3
+already provides at 3.11+) instead of grepping one literal line, so the exact
+pin =0.17.1 is accepted in any legal TOML form - including the inline table
+with default-features = false from
+readcon-db-0.2.0_readcon-core-export-isolation.patch - and anything else
+fails: another version or range, no version, a commented-out line, or a git,
+path or other-registry source. The other package-version checks and
+tests/ci_gates.rs are unchanged. Adds tests/ci_gates_lockstep_controls.rs with
+positive and negative controls for the checker.
+
+Written against readcon-db v0.2.0 (tag commit a7d4460f9fe2610afd110e7307f274e9e196a88e);
+main after the release (9cf3abf) no longer has this gate.
+
+diff --git a/scripts/check_version_lockstep.sh b/scripts/check_version_lockstep.sh
+index 8963468..eaaf7cc 100755
+--- a/scripts/check_version_lockstep.sh
++++ b/scripts/check_version_lockstep.sh
+@@ -30,10 +30,44 @@ check_contains "fortran/ReadConDb/fpm.toml" "^version = \"${cargo_ver}\""
+ check_contains "CITATION.cff" "^version: ${cargo_ver}$"
+ check_contains "docs/source/conf.py" "release = \"${cargo_ver}\""
+ 
+-if grep -qxF 'readcon-core = "=0.17.1"' "$ROOT/Cargo.toml"; then
++# readcon-core must be the published 0.17.1, required exactly, in any legal TOML
++# form: a string, an inline table or a [dependencies.readcon-core] table. The
++# Meson build already requires python3; its tomllib (3.11+) reads Cargo.toml.
++pin_status=0
++pin_msg="$(python3 - "$ROOT/Cargo.toml" <<'PY'
++import sys
++
++try:
++    import tomllib
++except ModuleNotFoundError:
++    print("python3 3.11 or newer (tomllib) is required to read Cargo.toml")
++    sys.exit(2)
++
++with open(sys.argv[1], "rb") as fh:
++    manifest = tomllib.load(fh)
++dep = manifest.get("dependencies", {}).get("readcon-core")
++if isinstance(dep, str):
++    dep = {"version": dep}
++if not isinstance(dep, dict):
++    print("[dependencies] declares no readcon-core")
++    sys.exit(1)
++sources = sorted(k for k in ("git", "path", "registry", "registry-index") if k in dep)
++if sources:
++    print("readcon-core comes from " + ", ".join(sources) + ", not the published crate")
++    sys.exit(1)
++if dep.get("package", "readcon-core") != "readcon-core":
++    print("the readcon-core key names package " + repr(dep["package"]))
++    sys.exit(1)
++version = dep.get("version")
++if not isinstance(version, str) or "".join(version.split()) != "=0.17.1":
++    print("readcon-core requires " + repr(version) + ", not exactly =0.17.1")
++    sys.exit(1)
++PY
++)" || pin_status=$?
++if [[ "$pin_status" -eq 0 ]]; then
+   ok "Cargo.toml pins the published readcon-core 0.17.1"
+ else
+-  die "Cargo.toml must pin the published round-trip readcon-core release"
++  die "Cargo.toml must pin the published round-trip readcon-core release${pin_msg:+: $pin_msg}"
+ fi
+ 
+ if [[ "$fail" -ne 0 ]]; then
+diff --git a/tests/ci_gates_lockstep_controls.rs b/tests/ci_gates_lockstep_controls.rs
+new file mode 100644
+index 0000000..4f1efb2
+--- /dev/null
++++ b/tests/ci_gates_lockstep_controls.rs
+@@ -0,0 +1,130 @@
++//! Controls for scripts/check_version_lockstep.sh: the readcon-core pin passes
++//! in every legal TOML form of exactly `=0.17.1` and fails otherwise, and the
++//! other package-version checks still apply.
++
++use std::fs;
++use std::path::{Path, PathBuf};
++use std::process::Command;
++
++/// Every file the checker reads, and the checker itself.
++const CHECKED: &[&str] = &[
++    "Cargo.toml",
++    "python/pyproject.toml",
++    "meson.build",
++    "pixi.toml",
++    "fortran/ReadConDb/fpm.toml",
++    "CITATION.cff",
++    "docs/source/conf.py",
++    "scripts/check_version_lockstep.sh",
++];
++
++fn repo_root() -> PathBuf {
++    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
++}
++
++/// Runs the checker on a copy of the files it reads, with `rel` rewritten by `edit`.
++fn checker_passes(rel: &str, edit: impl Fn(&str) -> String) -> bool {
++    let dir = tempfile::tempdir().expect("temporary directory");
++    for file in CHECKED {
++        let target = dir.path().join(file);
++        fs::create_dir_all(target.parent().unwrap()).unwrap();
++        fs::copy(repo_root().join(file), &target)
++            .unwrap_or_else(|e| panic!("copy {file}: {e}"));
++    }
++    let path = dir.path().join(rel);
++    let text = fs::read_to_string(&path).unwrap();
++    fs::write(&path, edit(&text)).unwrap();
++    run_checker(dir.path())
++}
++
++fn run_checker(root: &Path) -> bool {
++    Command::new("bash")
++        .arg(root.join("scripts/check_version_lockstep.sh"))
++        .current_dir(root)
++        .status()
++        .expect("spawn bash")
++        .success()
++}
++
++/// Cargo.toml with its single `readcon-core = ...` line replaced by `decl`, and
++/// `table` appended (for the `[dependencies.readcon-core]` form).
++fn readcon_core_as(decl: &'static str, table: &'static str) -> impl Fn(&str) -> String {
++    move |text: &str| {
++        let lines: Vec<&str> = text.lines().collect();
++        let hits = lines
++            .iter()
++            .filter(|l| l.starts_with("readcon-core ="))
++            .count();
++        assert_eq!(hits, 1, "Cargo.toml must declare readcon-core on one line");
++        let mut out: Vec<&str> = lines
++            .into_iter()
++            .map(|l| if l.starts_with("readcon-core =") { decl } else { l })
++            .collect();
++        out.push(table);
++        out.join("\n") + "\n"
++    }
++}
++
++#[test]
++fn checker_accepts_the_repository_manifest() {
++    assert!(run_checker(&repo_root()));
++}
++
++#[test]
++fn checker_accepts_every_exact_published_pin() {
++    let forms = [
++        (r#"readcon-core = "=0.17.1""#, ""),
++        (
++            r#"readcon-core = { version = "=0.17.1", default-features = false }"#,
++            "",
++        ),
++        (r#"readcon-core = { version = "= 0.17.1" }"#, ""),
++        (
++            "",
++            "[dependencies.readcon-core]\nversion = \"=0.17.1\"\ndefault-features = false",
++        ),
++    ];
++    for (decl, table) in forms {
++        assert!(
++            checker_passes("Cargo.toml", readcon_core_as(decl, table)),
++            "rejected {decl}{table}"
++        );
++    }
++}
++
++#[test]
++fn checker_rejects_anything_but_the_exact_published_pin() {
++    let forms = [
++        (r#"readcon-core = "=0.17.0""#, ""),
++        (r#"readcon-core = "0.17.1""#, ""),
++        (r#"readcon-core = "^0.17.1""#, ""),
++        (r#"readcon-core = "~0.17.1""#, ""),
++        (r#"readcon-core = ">=0.17.1, <0.18""#, ""),
++        (r#"readcon-core = "*""#, ""),
++        (r#"readcon-core = { default-features = false }"#, ""),
++        (r#"readcon-core = { version = "=0.17.2", default-features = false }"#, ""),
++        (r#"# readcon-core = "=0.17.1""#, ""),
++        ("", ""),
++        (
++            r#"readcon-core = { version = "=0.17.1", git = "https://github.com/lode-org/readcon-core" }"#,
++            "",
++        ),
++        (r#"readcon-core = { version = "=0.17.1", path = "../readcon-core" }"#, ""),
++        (r#"readcon-core = { version = "=0.17.1", registry = "mirror" }"#, ""),
++        (r#"readcon-core = { version = "=0.17.1", package = "readcon" }"#, ""),
++    ];
++    for (decl, table) in forms {
++        assert!(
++            !checker_passes("Cargo.toml", readcon_core_as(decl, table)),
++            "accepted {decl:?}"
++        );
++    }
++}
++
++#[test]
++fn checker_still_checks_the_other_package_versions() {
++    assert!(!checker_passes("meson.build", |t| {
++        assert!(t.contains("version: '0.2.0'"));
++        t.replacen("version: '0.2.0'", "version: '0.2.1'", 1)
++    }));
++}

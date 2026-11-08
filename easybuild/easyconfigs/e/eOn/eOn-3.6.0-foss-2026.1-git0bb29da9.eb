@@ -1,0 +1,142 @@
+name = 'eOn'
+version = '3.6.0'
+# The pinned develop tree exposes the rgmin Meson backend and declares version 3.6.0.
+# Its pkg-config dependency is rgmin; the release uses xtsci-optimize.
+local_commit = '0bb29da9e44a2e1a2d15f1c0661046b1f50edaaf'
+versionsuffix = f'-git{local_commit[:8]}'
+
+homepage = 'https://eondocs.org/'
+description = """eOn models the evolution of atomic-scale systems over long time scales
+ with adaptive kinetic Monte Carlo, saddle searches (dimer, Lanczos, NEB) and
+ basin hopping. It installs the eonclient C++ program, the pyeonclient Python
+ bindings and the eon Python server. This is the develop branch at commit 0bb29da9,
+ not the 3.6.0 release, with the rgmin minimizers, the rgsaddle band, min-mode,
+ PRFO and IRC backends, and chemfiles structure input."""
+
+toolchain = {'name': 'foss', 'version': '2026.1'}
+# eOn has no OpenMP code; openmp would only thread Eigen's products.
+toolchainopts = {'pic': True}
+
+source_urls = ['https://github.com/TheochemUI/eOn/archive/']
+sources = [{
+    'download_filename': f'{local_commit}.tar.gz',
+    'filename': '%(name)s-%(version)s%(versionsuffix)s.tar.gz',
+}]
+# Not upstream: the loaded libreadcon_db's rkrdb_abi_compatible decides whether it serves
+# the configured readcon-db.h ABI, with test_readcon_db_abi and its test-only fixture
+# libraries. The mirror test requires compatibility with the configured header ABI.
+patches = [
+    'eOn-3.6.0-git0bb29da9_readcon-db-abi-compatible.patch',
+    'eOn-3.6.0-git0bb29da9_readcon-db-mirror-abi-contract.patch',
+]
+checksums = [
+    {'eOn-3.6.0-git0bb29da9.tar.gz': '517f2882d96a883fc4e9cc513a57a2a08ebfd50b98016d7e676f14af3c3c6500'},
+    {'eOn-3.6.0-git0bb29da9_readcon-db-abi-compatible.patch':
+     'fd2c7bd5f46e8f5934c3aba47ab327d64d2f0fa7458dc14bc19f360d876a7527'},
+    {'eOn-3.6.0-git0bb29da9_readcon-db-mirror-abi-contract.patch':
+     '61f5b5af68c7940a3d8ca1a792027db8694ecee7e7d1fdb491d20a9aa65439b0'},
+]
+
+builddependencies = [
+    ('CMake', '4.2.1'),
+    ('Meson', '1.10.2'),
+    ('Ninja', '1.13.2'),
+    ('pkgconf', '2.5.1'),
+    ('hatchling', '1.29.0'),
+    # with_pyeonclient
+    ('nanobind', '2.13.0'),
+    ('Eigen', '5.0.0'),
+]
+
+dependencies = [
+    ('Python', '3.14.2'),
+    ('CapnProto', '1.4.0'),
+    ('SciPy-bundle', '2026.05'),
+    ('PyYAML', '6.0.3'),
+    ('pydantic', '2.13.4'),
+    ('Highway', '1.4.0'),
+    ('inih', '62'),
+    ('nlohmann_json', '3.12.0'),
+    ('quill', '11.1.0'),
+    # develop requires readcon-core >= 0.16.0. 0.17.0 made binary64 round-trip the
+    # default float text, but develop writes every .con through
+    # ConFrameWriter(path, compression, kConPrecision = 17), which still selects the
+    # fixed-decimal writer. The libreadcon-db 0.2.0 easyconfig builds readcon-db without
+    # the C API of the readcon-core 0.17.1 it bundles, so libreadcon_db exports only its
+    # rkrdb_* ABI and eonclient's rkr_* calls bind to this libreadcon_core whichever
+    # library the dynamic linker loads first.
+    ('readcon-core', '0.18.0'),
+    # develop links liblinkcell, libminimage and libreadcon_core from pkg-config only when
+    # all three are installed (linkcell >= 0.3.11, minimage >= 0.1.4).
+    ('linkcell', '0.3.11'),
+    ('minimage', '0.1.4'),
+    # rgpot main (rgpot >= 3.5.1)
+    ('rgpot', '3.5.1', '-gitd4c56814'),
+    # -Dwith_rgmin: pkg-config rgmin >= 0.4.0, and RGMIN_ABI_VERSION_MINOR >= 10
+    # (XtsciOptimizer.cpp #error); minors 27 and 29 gate further options. rgmin main
+    # 18959f8a (0.5.2 plus the portable-libm Exp weight and sine probe, #52) is ABI 1.36.
+    ('rgmin', '0.5.2', '-git18959f8a'),
+    # -Dwith_rgsaddle: pkg-config rgsaddle >= 0.2.0; >= 0.3.0 adds band preconditioning,
+    # and RGSADDLE_ABI_MINOR gates IRC (14), PRFO (15) and band features (17, 21, 22).
+    # rgsaddle main fc740f07 (0.3.2) is ABI 1.33.
+    ('rgsaddle', '0.3.2', '-gitfc740f07'),
+    # -Dwith_chemfiles (>= 0.10)
+    ('chemfiles', '0.10.4'),
+    # Python dependencies of the eon server
+    ('python-xxhash', '4.0.1'),
+    ('vesin', '0.6.2'),
+    ('readcon', '0.18.0'),
+    ('readcon-db', '0.2.0'),
+    # libreadcon_db and readcon-db.pc (pkg-config readcon-db >= 0.1.6), which eonclient loads;
+    # test_readcon_db_mirror requires that it accepts the configured readcon-db.h ABI.
+    ('libreadcon-db', '0.2.0'),
+]
+
+exts_defaultclass = 'PythonPackage'
+exts_default_options = {'source_urls': [PYPI_SOURCE]}
+exts_list = [
+    ('eon_schema', '0.2.4', {
+        'checksums': ['70aedbf3fc514315a845c795d925f64f4767ac75602885a5394e40f167e48fee'],
+    }),
+]
+
+# A GitHub archive has no .git, so get_version.py reports 'unknown' and
+# libeon_relax_engine gets no commit identity (test_relax_engine wants the
+# 40-hex hash). Pin the commit the archive was made from.
+preconfigopts = (
+    f"sed -i -e \"s/^git_hash = version_bits\\[2\\]$/git_hash = '{local_commit[:7]}'/\" "
+    f"-e \"s/^    git_hash_full = git_hash$/    git_hash_full = '{local_commit}'/\" "
+    "%(start_dir)s/client/meson.build && "
+)
+
+# The eOn easyblock maps no option to rgmin, rgsaddle or chemfiles, so enable them
+# here; enabled (not auto) makes a missing dependency fail at configure time.
+configopts = '-Dwith_rgmin=enabled -Dwith_rgsaddle=true -Dwith_chemfiles=enabled '
+
+# The eOn easyblock enables each Meson option whose dependencies are listed
+# above (with_serve from rgpot plus CapnProto, with_pyeonclient from nanobind),
+# and runs meson test --suite eon.
+runtest = True
+
+# pyproject.toml declares the eon-server console script; the Meson install
+# does not write it, so add the same two-line entry point here.
+postinstallcmds = [
+    "printf '#!/usr/bin/env python3\\nfrom eon.server import main\\nmain()\\n' > %(installdir)s/bin/eon-server",
+    "chmod +x %(installdir)s/bin/eon-server",
+]
+
+sanity_check_commands = [
+    'eonclient --help',
+    # the strings eOn's own rg-backends CI checks
+    'eonclient --features | grep -q "rgmin minimizers"',
+    'eonclient --features | grep -q "rgsaddle band and min-mode"',
+    'eonclient --features | grep -q "rgsaddle band exp metric and ODE12r"',
+    'ldd %(installdir)s/bin/eonclient | grep -q libchemfiles',
+    'python -s -c "import pyeonclient"',
+    # eon-server takes no options (it reads config.ini), so check the
+    # entry point without running a job.
+    'test -x %(installdir)s/bin/eon-server',
+    'python -s -c "from eon.server import main"',
+]
+
+moduleclass = 'chem'

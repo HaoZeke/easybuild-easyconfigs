@@ -1,0 +1,28 @@
+Owner-approved test specification change: the first case of
+client/unit_tests/ReadconDbMirrorTest.cpp checks that the loaded libreadcon_db
+accepts the configured readcon-db.h ABI (readcon_db_loaded_abi_status() ==
+ReadconDbAbiStatus::Compatible) instead of the hardcoded package version
+"0.1.6". readcon_db_mirror_ok() and the missing-library case are unchanged.
+Needs eOn-3.6.0-git0bb29da9_readcon-db-abi-compatible.patch.
+Not upstream; post-image blob 31bde37 of the approved diff.
+
+diff --git a/client/unit_tests/ReadconDbMirrorTest.cpp b/client/unit_tests/ReadconDbMirrorTest.cpp
+index 9f6271c..31bde37 100644
+--- a/client/unit_tests/ReadconDbMirrorTest.cpp
++++ b/client/unit_tests/ReadconDbMirrorTest.cpp
+@@ -40,12 +40,13 @@ void set_library_override(const char *path) {
+ 
+ static eonc::helpers::test::QuillTestLogger _quill_setup;
+ 
+-TEST_CASE("loaded rkrdb_open matches the python package version",
++TEST_CASE("loaded readcon-db accepts the configured readcon-db.h ABI",
+           "[readcon-db]") {
+   set_library_override(nullptr);
+   eonc::io::readcon_db_mirror_reset();
+   REQUIRE(eonc::io::readcon_db_mirror_ok());
+-  REQUIRE(std::string(eonc::io::readcon_db_loaded_version()) == "0.1.6");
++  REQUIRE(eonc::io::readcon_db_loaded_abi_status() ==
++          eonc::io::ReadconDbAbiStatus::Compatible);
+ }
+ 
+ TEST_CASE("missing readcon-db leaves IoStatus unchanged", "[readcon-db]") {

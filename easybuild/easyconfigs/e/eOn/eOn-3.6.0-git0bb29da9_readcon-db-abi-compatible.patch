@@ -1,0 +1,469 @@
+Ask the loaded libreadcon_db, through its rkrdb_abi_compatible, whether it serves
+the RKRDB_ABI_* of the configured readcon-db.h (readcon_db_configured_abi,
+readcon_db_loaded_abi_status), and add test_readcon_db_abi with test-only fixture
+libraries for match, newer minor, other major, other layout and missing queries.
+Existing tests are unchanged; test_readcon_db_mirror still expects "0.1.6".
+Not upstream: source candidate at
+<artifacts>/eon-abi-compatible-contract/patches/eon-abi-compatible-contract.patch
+(sha256 a74697178824d8ce6c766c526df6ff28199ad288373cd693cc4300988dc87c32).
+
+diff --git a/client/ReadconDbMirror.h b/client/ReadconDbMirror.h
+index 5bc249e..a10d8d4 100644
+--- a/client/ReadconDbMirror.h
++++ b/client/ReadconDbMirror.h
+@@ -11,6 +11,8 @@
+ */
+ #pragma once
+ 
++#include <cstdint>
++#include <optional>
+ #include <string>
+ 
+ namespace eonc::io {
+@@ -26,7 +28,36 @@ bool readcon_db_mirror_ok();
+ /// Drop a cached load so a later call reads EON_READCON_DB_LIBRARY again.
+ void readcon_db_mirror_reset();
+ 
+-/// Version of the loaded library. Empty when the load failed.
++/// readcon-db version this client was configured against (pkg-config at
++/// configure time), not a value read from the loaded library: readcon-db
++/// exports no package-version query. Empty when the load failed.
+ const char *readcon_db_loaded_version();
+ 
++/// RKRDB_ABI_VERSION_MAJOR, RKRDB_ABI_VERSION_MINOR and
++/// RKRDB_ABI_LAYOUT_REVISION as declared by a readcon-db.h.
++struct ReadconDbAbi {
++  std::uint32_t major;
++  std::uint32_t minor;
++  std::uint32_t layout_revision;
++};
++
++/// The RKRDB_ABI_* of the readcon-db.h this client was configured against.
++/// Empty when that header declares none, as headers of libraries without
++/// the ABI queries do.
++std::optional<ReadconDbAbi> readcon_db_configured_abi();
++
++enum class ReadconDbAbiStatus {
++  NotLoaded,     ///< no readcon-db library is loaded
++  NoRequirement, ///< no required ABI is known; compatibility is not established
++  QueryMissing,  ///< the loaded library does not export rkrdb_abi_compatible
++  Incompatible,  ///< the loaded library rejects the required ABI
++  Compatible,    ///< the loaded library accepts the required ABI
++};
++
++/// Asks the loaded library's rkrdb_abi_compatible whether it serves a caller
++/// built against `required`. readcon-db.h defines the answer: equal major,
++/// equal layout revision, and a library minor at least the caller's.
++ReadconDbAbiStatus readcon_db_loaded_abi_status(
++    std::optional<ReadconDbAbi> required = readcon_db_configured_abi());
++
+ } // namespace eonc::io
+diff --git a/client/ReadconDbMirror.cpp b/client/ReadconDbMirror.cpp
+index 0056be5..6466f30 100644
+--- a/client/ReadconDbMirror.cpp
++++ b/client/ReadconDbMirror.cpp
+@@ -88,11 +88,13 @@ corpus_dir(const std::filesystem::path &con_path) {
+ using OpenFn = int (*)(const char *, std::size_t *);
+ using AppendFn = int (*)(std::size_t, std::uint64_t, const char *, const char *,
+                          std::uint32_t *);
++using AbiCompatibleFn = int (*)(std::uint32_t, std::uint32_t, std::uint32_t);
+ 
+ struct Api {
+   LibHandle lib = nullptr;
+   OpenFn open = nullptr;
+   AppendFn append_str = nullptr;
++  AbiCompatibleFn abi_compatible = nullptr;
+   bool missing = false;
+   bool from_process = false;
+   int epoch = -1;
+@@ -148,6 +150,9 @@ bool resolve_symbols(Api &out, LibHandle handle) {
+   out.open = reinterpret_cast<OpenFn>(symbol(handle, "rkrdb_open"));
+   out.append_str =
+       reinterpret_cast<AppendFn>(symbol(handle, "rkrdb_append_trajectory_str"));
++  // Optional: present exactly when the library exports the ABI queries.
++  out.abi_compatible =
++      reinterpret_cast<AbiCompatibleFn>(symbol(handle, "rkrdb_abi_compatible"));
+   return out.open != nullptr && out.append_str != nullptr;
+ }
+ 
+@@ -296,4 +301,32 @@ const char *readcon_db_loaded_version() {
+   return EON_READCON_DB_VERSION;
+ }
+ 
++std::optional<ReadconDbAbi> readcon_db_configured_abi() {
++#if defined(EON_READCON_DB_ABI_MAJOR) && defined(EON_READCON_DB_ABI_MINOR) &&   \
++    defined(EON_READCON_DB_ABI_LAYOUT_REVISION)
++  return ReadconDbAbi{EON_READCON_DB_ABI_MAJOR, EON_READCON_DB_ABI_MINOR,
++                      EON_READCON_DB_ABI_LAYOUT_REVISION};
++#else
++  return std::nullopt;
++#endif
++}
++
++ReadconDbAbiStatus
++readcon_db_loaded_abi_status(std::optional<ReadconDbAbi> required) {
++  const Api &fns = api();
++  if (!readcon_db_mirror_ok()) {
++    return ReadconDbAbiStatus::NotLoaded;
++  }
++  if (!required) {
++    return ReadconDbAbiStatus::NoRequirement;
++  }
++  if (fns.abi_compatible == nullptr) {
++    return ReadconDbAbiStatus::QueryMissing;
++  }
++  return fns.abi_compatible(required->major, required->minor,
++                            required->layout_revision) != 0
++             ? ReadconDbAbiStatus::Compatible
++             : ReadconDbAbiStatus::Incompatible;
++}
++
+ } // namespace eonc::io
+diff --git a/client/meson.build b/client/meson.build
+index 468febd..fe88a4c 100644
+--- a/client/meson.build
++++ b/client/meson.build
+@@ -1125,6 +1125,30 @@ else
+     )
+ endif
+ _deps += [readcon_db_dep]
++# The RKRDB_ABI_* of the configured readcon-db.h are the ABI this client
++# requires from the loaded library (ReadconDbMirror.cpp). A header declares
++# them exactly when its library exports the ABI queries; without them the
++# client has no requirement to check.
++_readcon_db_abi = []
++foreach _part : ['VERSION_MAJOR', 'VERSION_MINOR', 'LAYOUT_REVISION']
++    _readcon_db_abi += cc.get_define(
++        'RKRDB_ABI_' + _part,
++        prefix: '#include <readcon-db.h>',
++        dependencies: readcon_db_dep,
++    )
++endforeach
++_readcon_db_has_abi = '' not in _readcon_db_abi
++if _readcon_db_has_abi
++    _deps += [
++        declare_dependency(
++            compile_args: [
++                '-DEON_READCON_DB_ABI_MAJOR=' + _readcon_db_abi[0] + 'u',
++                '-DEON_READCON_DB_ABI_MINOR=' + _readcon_db_abi[1] + 'u',
++                '-DEON_READCON_DB_ABI_LAYOUT_REVISION=' + _readcon_db_abi[2] + 'u',
++            ],
++        ),
++    ]
++endif
+ 
+ # Potentials
+ 
+@@ -2673,6 +2697,67 @@ if get_option('with_tests')
+             depends: _case_depends,
+         )
+     endforeach
++    # Stand-ins for libreadcon_db that test_readcon_db_abi loads through
++    # EON_READCON_DB_LIBRARY, with ABIs around the configured one (or 1.0,
++    # layout 1 when the configured header declares none). 'missing' exports
++    # no ABI queries.
++    _rdb_base = _readcon_db_has_abi ? [
++        _readcon_db_abi[0].to_int(),
++        _readcon_db_abi[1].to_int(),
++        _readcon_db_abi[2].to_int(),
++    ] : [1, 0, 1]
++    _rdb_fixture_abis = {
++        'match': _rdb_base,
++        'newer_minor': [_rdb_base[0], _rdb_base[1] + 1, _rdb_base[2]],
++        'other_major': [_rdb_base[0] + 1, _rdb_base[1], _rdb_base[2]],
++        'other_layout': [_rdb_base[0], _rdb_base[1], _rdb_base[2] + 1],
++        'missing': [],
++    }
++    _rdb_fixture_args = [
++        '-DEON_RDB_BASE_ABI_MAJOR=@0@u'.format(_rdb_base[0]),
++        '-DEON_RDB_BASE_ABI_MINOR=@0@u'.format(_rdb_base[1]),
++        '-DEON_RDB_BASE_ABI_LAYOUT_REVISION=@0@u'.format(_rdb_base[2]),
++        '-DEON_RDB_CONFIGURED_ABI=@0@'.format(_readcon_db_has_abi ? 1 : 0),
++    ]
++    _rdb_fixtures = []
++    foreach _kind, _abi : _rdb_fixture_abis
++        _abi_args = _abi.length() == 0 ? [] : [
++            '-DEON_FIXTURE_ABI_MAJOR=@0@u'.format(_abi[0]),
++            '-DEON_FIXTURE_ABI_MINOR=@0@u'.format(_abi[1]),
++            '-DEON_FIXTURE_ABI_LAYOUT_REVISION=@0@u'.format(_abi[2]),
++        ]
++        _fixture = shared_library(
++            'eon_test_readcon_db_abi_' + _kind,
++            'unit_tests/fixtures/ReadconDbAbiFixture.cpp',
++            cpp_args: _abi_args,
++            gnu_symbol_visibility: 'hidden',
++            install: false,
++        )
++        _rdb_fixtures += [_fixture]
++        _rdb_fixture_args += [
++            '-DEON_RDB_FIXTURE_' + _kind.to_upper() + '="'
++            + _fixture.full_path().replace('\\', '/') + '"',
++        ]
++    endforeach
++    test(
++        'test_readcon_db_abi',
++        executable(
++            'test_readcon_db_abi',
++            sources: [
++                'unit_tests/ReadconDbAbiTest.cpp',
++                'thirdparty/catch2/catch_amalgamated.cpp',
++            ],
++            include_directories: _incdirs,
++            cpp_args: test_args + _rdb_fixture_args,
++            link_args: _linkargs,
++            dependencies: test_deps,
++            link_with: test_link,
++            build_rpath: ':'.join(_runtime_rpath),
++        ),
++        depends: _rdb_fixtures,
++        timeout: 60,
++        env: _test_env,
++    )
+     if get_option('with_water')
+         test(
+             'test_water_cutover',
+diff --git a/client/unit_tests/ReadconDbAbiTest.cpp b/client/unit_tests/ReadconDbAbiTest.cpp
+new file mode 100644
+index 0000000..f8713e6
+--- /dev/null
++++ b/client/unit_tests/ReadconDbAbiTest.cpp
+@@ -0,0 +1,173 @@
++/*
++** This file is part of eOn.
++**
++** SPDX-License-Identifier: BSD-3-Clause
++**
++** Copyright (c) 2010--present, eOn Development Team
++** All rights reserved.
++**
++** Repo:
++** https://github.com/TheochemUI/eOn
++*/
++
++#include "ReadconDbMirror.h"
++#include "TestUtils.hpp"
++#include "catch2/catch_amalgamated.hpp"
++
++#include <cstdlib>
++#include <optional>
++#include <string>
++
++using eonc::io::ReadconDbAbi;
++using eonc::io::ReadconDbAbiStatus;
++
++template <> struct Catch::StringMaker<ReadconDbAbiStatus> {
++  static std::string convert(ReadconDbAbiStatus status) {
++    switch (status) {
++    case ReadconDbAbiStatus::NotLoaded:
++      return "NotLoaded";
++    case ReadconDbAbiStatus::NoRequirement:
++      return "NoRequirement";
++    case ReadconDbAbiStatus::QueryMissing:
++      return "QueryMissing";
++    case ReadconDbAbiStatus::Incompatible:
++      return "Incompatible";
++    case ReadconDbAbiStatus::Compatible:
++      return "Compatible";
++    }
++    return "unknown";
++  }
++};
++
++namespace tests {
++namespace {
++
++void set_library_override(const char *path) {
++#if defined(_WIN32)
++  _putenv_s("EON_READCON_DB_LIBRARY", path == nullptr ? "" : path);
++#else
++  if (path == nullptr) {
++    unsetenv("EON_READCON_DB_LIBRARY");
++  } else {
++    setenv("EON_READCON_DB_LIBRARY", path, 1);
++  }
++#endif
++}
++
++void use_library(const char *path) {
++  set_library_override(path);
++  eonc::io::readcon_db_mirror_reset();
++}
++
++ReadconDbAbiStatus status(std::optional<ReadconDbAbi> required) {
++  return eonc::io::readcon_db_loaded_abi_status(required);
++}
++
++// The ABI the fixtures are built around: the configured one, or 1.0 layout 1
++// when the configured readcon-db.h declares none.
++constexpr ReadconDbAbi kBase{EON_RDB_BASE_ABI_MAJOR, EON_RDB_BASE_ABI_MINOR,
++                             EON_RDB_BASE_ABI_LAYOUT_REVISION};
++constexpr bool kConfiguredAbi = EON_RDB_CONFIGURED_ABI != 0;
++
++// What the linked library must answer for the configured requirement.
++constexpr ReadconDbAbiStatus kConfiguredStatus =
++    kConfiguredAbi ? ReadconDbAbiStatus::Compatible
++                   : ReadconDbAbiStatus::NoRequirement;
++
++// Leaves the linked library selected however a test case ends.
++struct LinkedLibraryAfter {
++  ~LinkedLibraryAfter() { use_library(nullptr); }
++};
++
++} // namespace
++
++static eonc::helpers::test::QuillTestLogger _quill_setup;
++
++TEST_CASE("configured ABI comes from the configured readcon-db.h",
++          "[readcon-db][abi]") {
++  const auto configured = eonc::io::readcon_db_configured_abi();
++  REQUIRE(configured.has_value() == kConfiguredAbi);
++  if (configured) {
++    REQUIRE(configured->major == kBase.major);
++    REQUIRE(configured->minor == kBase.minor);
++    REQUIRE(configured->layout_revision == kBase.layout_revision);
++  }
++}
++
++TEST_CASE("linked readcon-db serves the configured ABI", "[readcon-db][abi]") {
++  LinkedLibraryAfter restore;
++  use_library(nullptr);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(eonc::io::readcon_db_loaded_abi_status() == kConfiguredStatus);
++}
++
++TEST_CASE("loaded library decides ABI compatibility", "[readcon-db][abi]") {
++  LinkedLibraryAfter restore;
++  const ReadconDbAbi newer_caller{kBase.major, kBase.minor + 1,
++                                  kBase.layout_revision};
++  const ReadconDbAbi other_layout_caller{kBase.major, kBase.minor,
++                                         kBase.layout_revision + 1};
++
++  use_library(EON_RDB_FIXTURE_MATCH);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Compatible);
++  // Library minor older than the caller's.
++  REQUIRE(status(newer_caller) == ReadconDbAbiStatus::Incompatible);
++  REQUIRE(status(other_layout_caller) == ReadconDbAbiStatus::Incompatible);
++
++  use_library(EON_RDB_FIXTURE_NEWER_MINOR);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Compatible);
++  REQUIRE(status(newer_caller) == ReadconDbAbiStatus::Compatible);
++
++  use_library(EON_RDB_FIXTURE_OTHER_MAJOR);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Incompatible);
++
++  use_library(EON_RDB_FIXTURE_OTHER_LAYOUT);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Incompatible);
++
++  use_library(EON_RDB_FIXTURE_MISSING);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::QueryMissing);
++}
++
++TEST_CASE("no required ABI does not establish compatibility",
++          "[readcon-db][abi]") {
++  LinkedLibraryAfter restore;
++  use_library(EON_RDB_FIXTURE_MATCH);
++  REQUIRE(status(std::nullopt) == ReadconDbAbiStatus::NoRequirement);
++  use_library(EON_RDB_FIXTURE_MISSING);
++  REQUIRE(status(std::nullopt) == ReadconDbAbiStatus::NoRequirement);
++}
++
++TEST_CASE("failed readcon-db load reports NotLoaded", "[readcon-db][abi]") {
++  LinkedLibraryAfter restore;
++#if defined(_WIN32)
++  use_library("C:/no/such/readcon_db.dll");
++#else
++  use_library("/no/such/libreadcon_db.so");
++#endif
++  REQUIRE_FALSE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::NotLoaded);
++  REQUIRE(status(std::nullopt) == ReadconDbAbiStatus::NotLoaded);
++}
++
++TEST_CASE("ABI status follows readcon_db_mirror_reset", "[readcon-db][abi]") {
++  LinkedLibraryAfter restore;
++  use_library(EON_RDB_FIXTURE_OTHER_MAJOR);
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Incompatible);
++
++  // A changed override takes effect only at the next reset.
++  set_library_override(EON_RDB_FIXTURE_MATCH);
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Incompatible);
++  eonc::io::readcon_db_mirror_reset();
++  REQUIRE(status(kBase) == ReadconDbAbiStatus::Compatible);
++
++  use_library(nullptr);
++  REQUIRE(eonc::io::readcon_db_mirror_ok());
++  REQUIRE(eonc::io::readcon_db_loaded_abi_status() == kConfiguredStatus);
++}
++
++} // namespace tests
+diff --git a/client/unit_tests/fixtures/ReadconDbAbiFixture.cpp b/client/unit_tests/fixtures/ReadconDbAbiFixture.cpp
+new file mode 100644
+index 0000000..9291290
+--- /dev/null
++++ b/client/unit_tests/fixtures/ReadconDbAbiFixture.cpp
+@@ -0,0 +1,60 @@
++/*
++** This file is part of eOn.
++**
++** SPDX-License-Identifier: BSD-3-Clause
++**
++** Copyright (c) 2010--present, eOn Development Team
++** All rights reserved.
++**
++** Repo:
++** https://github.com/TheochemUI/eOn
++*/
++
++// Test-only stand-in for libreadcon_db, loaded through EON_READCON_DB_LIBRARY.
++// It exports the two entry points the mirror requires. With EON_FIXTURE_ABI_*
++// defined it also exports readcon-db.h's ABI queries for that ABI, answering
++// rkrdb_abi_compatible by the rule readcon-db.h documents. The entry points
++// are never called by test_readcon_db_abi; they fail if anything does.
++
++#include <cstddef>
++#include <cstdint>
++
++#if defined(_WIN32)
++#define EON_FIXTURE_EXPORT __declspec(dllexport)
++#else
++#define EON_FIXTURE_EXPORT __attribute__((visibility("default")))
++#endif
++
++extern "C" {
++
++EON_FIXTURE_EXPORT int rkrdb_open(const char *, std::size_t *) { return -1; }
++
++EON_FIXTURE_EXPORT int rkrdb_append_trajectory_str(std::size_t, std::uint64_t,
++                                                   const char *, const char *,
++                                                   std::uint32_t *) {
++  return -1;
++}
++
++#if defined(EON_FIXTURE_ABI_MAJOR)
++EON_FIXTURE_EXPORT std::uint32_t rkrdb_abi_version_major() {
++  return EON_FIXTURE_ABI_MAJOR;
++}
++
++EON_FIXTURE_EXPORT std::uint32_t rkrdb_abi_version_minor() {
++  return EON_FIXTURE_ABI_MINOR;
++}
++
++EON_FIXTURE_EXPORT std::uint32_t rkrdb_abi_layout_revision() {
++  return EON_FIXTURE_ABI_LAYOUT_REVISION;
++}
++
++// Equal major, equal layout revision, library minor at least the caller's.
++EON_FIXTURE_EXPORT int rkrdb_abi_compatible(std::uint32_t major,
++                                            std::uint32_t minor,
++                                            std::uint32_t layout_revision) {
++  return major == EON_FIXTURE_ABI_MAJOR &&
++         layout_revision == EON_FIXTURE_ABI_LAYOUT_REVISION &&
++         minor <= EON_FIXTURE_ABI_MINOR;
++}
++#endif
++}

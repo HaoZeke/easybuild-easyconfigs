@@ -1,0 +1,72 @@
+Build readcon-db 0.2.0 against readcon-core 0.17.1 with readcon-core's default
+features disabled, so the C API of the bundled readcon-core (its `capi` feature,
+on by default) is not compiled into libreadcon_db or the Python extension, and
+add the runtime-export-isolation Meson test. Needs
+readcon-core-0.17.1_capi-feature-gating.patch in the vendored crate, which puts
+that C API behind `capi`.
+
+Provider repair candidate readcon-db-production.diff (sha256
+3868f061bdca8e1ae145995f10e52ba79b9c2f1d14704e70e9f3a6c4c36ff2e4), written
+against readcon-db 9cf3abf; it applies unchanged to the v0.2.0 tree. Only the
+Cargo.toml comment differs: the candidate called readcon-core's C ABI
+"opt-in", but it is a default feature that this provider disables.
+
+diff --git a/Cargo.toml b/Cargo.toml
+index fe2c5f6..e5e09ca 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -26,8 +26,10 @@ mpi = ["dep:mpi"]
+ 
+ [dependencies]
+ heed = "0.21"
+-# The pinned writer provides exact numeric CON and JSON round trips.
+-readcon-core = "=0.17.1"
++# The pinned writer provides exact numeric CON and JSON round trips.
++# readcon-core enables its C API (capi) by default; disabling its default
++# features keeps this provider's exports to the documented rkrdb ABI.
++readcon-core = { version = "=0.17.1", default-features = false }
+ thiserror = "2"
+ serde = { version = "1", features = ["derive"] }
+ serde_json = "1"
+diff --git a/meson.build b/meson.build
+index 60030c5..3d77b1c 100644
+--- a/meson.build
++++ b/meson.build
+@@ -141,6 +141,12 @@ if get_option('with_tests')
+         dependencies: readcon_dep,
+     )
+     test('runtime-dependency', runtime_consumer, env: {'LD_LIBRARY_PATH': ''})
++    export_isolation = executable(
++        'test_export_isolation',
++        files('tests/meson-wrap/export_isolation.c'),
++        dependencies: readcon_dep,
++    )
++    test('runtime-export-isolation', export_isolation, env: {'LD_LIBRARY_PATH': ''})
+     test(
+         'cargo-tests',
+         cargo_prog,
+diff --git a/tests/meson-wrap/export_isolation.c b/tests/meson-wrap/export_isolation.c
+new file mode 100644
+index 0000000..ed797b1
+--- /dev/null
++++ b/tests/meson-wrap/export_isolation.c
+@@ -0,0 +1,19 @@
++#include <dlfcn.h>
++#include <stdio.h>
++
++int main(void) {
++    void *db = dlopen("libreadcon_db.so", RTLD_NOW | RTLD_LOCAL);
++    if (db == NULL) {
++        fprintf(stderr, "dlopen: %s\n", dlerror());
++        return 1;
++    }
++    if (dlsym(db, "rkrdb_abi_version_major") == NULL) {
++        fprintf(stderr, "missing rkrdb ABI: %s\n", dlerror());
++        return 2;
++    }
++    if (dlsym(db, "rkr_library_version") != NULL) {
++        fprintf(stderr, "readcon-core C ABI leaked from provider\n");
++        return 3;
++    }
++    return 0;
++}

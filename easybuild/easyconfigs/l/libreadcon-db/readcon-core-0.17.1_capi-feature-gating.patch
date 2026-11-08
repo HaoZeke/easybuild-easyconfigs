@@ -1,0 +1,81 @@
+Gate readcon-core 0.17.1's C API behind its `capi` feature and make `capi` a
+default feature, so a consumer that disables default features (readcon-db 0.2.0
+with readcon-db-production.diff) links the Rust API without exporting any rkr_*
+symbol, while any consumer using the defaults keeps the C API it had.
+
+Provider repair candidate readcon-core-default-capi.diff (sha256
+3f30ce94c0dd7ad96d0cb5e42c15b9f632a47894a9d5cf6d95e9f4b9b60221d3), written
+against readcon-core v0.17.1 (6993e306). The src/ hunks below are verbatim. The
+crates.io crate (sha256 c8c9ec4a...) ships the cargo-normalized Cargo.toml, with
+the git manifest as Cargo.toml.orig, so the Cargo.toml hunk makes the same
+change (default = [] -> default = ["capi"]) in the published manifest.
+Applied in the vendored crate: sourcepath ../easybuild_vendor/readcon-core-0.17.1.
+
+diff --git a/Cargo.toml b/Cargo.toml
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -67,7 +67,7 @@
+     "chemfiles/build-from-sources",
+ ]
+ cuda = ["dep:cudarc"]
+-default = []
++default = ["capi"]
+ grammar = [
+     "dep:pest",
+     "dep:pest_derive",
+diff --git a/src/distrib.rs b/src/distrib.rs
+index bae9776..c5e3de6 100644
+--- a/src/distrib.rs
++++ b/src/distrib.rs
+@@ -46,6 +46,7 @@ pub fn block_owner(n_frames: usize, n_ranks: usize, i: usize) -> Option<usize> {
+ ///
+ /// # Safety
+ /// `start` and `end` must be null or valid for writes.
++#[cfg(feature = "capi")]
+ #[unsafe(no_mangle)]
+ pub unsafe extern "C" fn rkr_block_range(
+     n_frames: u64,
+@@ -156,6 +157,7 @@ mod with_mpi {
+     ///
+     /// # Safety
+     /// MPI must be initialized; `size` and `rank` must be valid for writes.
++    #[cfg(feature = "capi")]
+     #[unsafe(no_mangle)]
+     pub unsafe extern "C" fn rkr_mpi_comm_info_f(
+         comm_f: ffi::RSMPI_Fint,
+diff --git a/src/distrib_read.rs b/src/distrib_read.rs
+index b6586bc..e2fd0ce 100644
+--- a/src/distrib_read.rs
++++ b/src/distrib_read.rs
+@@ -325,6 +325,7 @@ fn read_scatter(comm: &Comm, path: &Path, threads: Option<usize>) -> Result<Rank
+ /// MPI must be initialized; `comm_f` must be a live intra-communicator;
+ /// `path_c` must be a NUL-terminated string; the out pointers must be
+ /// valid for writes. Every rank of the communicator must call this.
++#[cfg(feature = "capi")]
+ #[unsafe(no_mangle)]
+ pub unsafe extern "C" fn rkr_mpi_read_block_f(
+     comm_f: ::mpi::ffi::RSMPI_Fint,
+diff --git a/src/distrib_write.rs b/src/distrib_write.rs
+index bf661a0..3d33ab3 100644
+--- a/src/distrib_write.rs
++++ b/src/distrib_write.rs
+@@ -370,6 +370,7 @@ fn write_gather(comm: &Comm, path: &Path, bytes: &[u8], total: u64) -> Result<()
+ /// MPI must be initialized; `comm_f` must be a live intra-communicator;
+ /// `path_c` must be a NUL-terminated string; `frames` must hold
+ /// `num_frames` live frame handles. Every rank must call this.
++#[cfg(feature = "capi")]
+ #[unsafe(no_mangle)]
+ pub unsafe extern "C" fn rkr_mpi_write_block_f(
+     comm_f: ffi::RSMPI_Fint,
+diff --git a/src/lib.rs b/src/lib.rs
+index 60ac1f7..e42e796 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -8,6 +8,7 @@ pub mod distrib_read;
+ #[cfg(feature = "mpi")]
+ pub mod distrib_write;
+ pub mod error;
++#[cfg(feature = "capi")]
+ pub mod ffi;
+ pub mod frame_index;
+ #[cfg(feature = "grammar")]
