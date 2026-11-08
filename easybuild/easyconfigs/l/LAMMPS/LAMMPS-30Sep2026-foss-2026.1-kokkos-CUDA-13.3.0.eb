@@ -40,11 +40,17 @@ sources = [
         'source_urls': ['https://pyyaml.org/download/libyaml/'],
         'extract_cmd': 'cp %s .',
     },
+    {
+        'filename': 'runner2-2.0.5_20260820.tar.gz',
+        'source_urls': ['https://gitlab.com/runner-suite/runner2/-/archive/2.0.5_20260820/'],
+        'extract_cmd': 'cp %s .',
+    },
 ]
 patches = [
     'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch',
     'LAMMPS-2Aug2023_python_venv.patch',
     'LAMMPS-30Sep2026_fix_time_step.patch',
+    'LAMMPS-30Sep2026_runner_url.patch',
     # the bundled Kokkos 5.2.1 nvcc_wrapper glues CMake's quoted object response files into one
     # -Xcompiler argument, which exceeds the kernel's single-argument limit when liblammps links
     # (kokkos/kokkos#9573)
@@ -56,10 +62,14 @@ checksums = [
      '21e9d7ad2094eef0f19958d154866fc725fc6ccfa82ec3681ef2b006545ced96'},
     {'googletest-1.18.0.tar.gz': '6e3191c1455468b3fc35a417fb565c1c5071aee1b7e7f85e30cf48a98d37d8b5'},
     {'yaml-0.2.5.tar.gz': 'c642ae9b75fee120b2d96c712538bd2cf283228d2337df2cf2988e3c02678ef4'},
+    {'runner2-2.0.5_20260820.tar.gz':
+     '5ac9badfff4fabc4388b8448d3c06ac1f2f9f4767551ab7f9bb5b94d6fb85f2c'},
     {'LAMMPS-22Jul2025_install_lammps_python_package_in_eb_software_module.patch':
      '0cab0fa4dc8b2c68b45cd9df4398b9c2c37d69dcd1dc054aacb44f78698a2c84'},
     {'LAMMPS-2Aug2023_python_venv.patch': '87fd13b0c66f0886877885412ff13dfd092782e2237ba1fae157f803437828d6'},
     {'LAMMPS-30Sep2026_fix_time_step.patch': 'e1797660780f895f2bded109c55f3051f7968d52ba975cef2517c3dcf567f3d8'},
+    {'LAMMPS-30Sep2026_runner_url.patch':
+     '111dc5d1c752862fb23d0b05ae7d46691d9f56854b8eac77ee73fa3a856e881c'},
     {'LAMMPS-30Sep2026_kokkos-nvcc_wrapper-response-file.patch':
      '428a40371f65a0a19c18243ee0b468fe13794c82d2cee68448f65246d97179ad'},
 ]
@@ -123,6 +133,7 @@ configopts = ' '.join([
     '-DLOCAL_ML-PACE=%(builddir)s/lammps-user-pace-v.2025.12.4.p1',
     '-DGTEST_URL=file://%(builddir)s/googletest-1.18.0.tar.gz',
     '-DYAML_URL=file://%(builddir)s/yaml-0.2.5.tar.gz',
+    '-DRUNNER_URL=file://%(builddir)s/runner2-2.0.5_20260820.tar.gz',
 ])
 
 # include the following extra packages into the build

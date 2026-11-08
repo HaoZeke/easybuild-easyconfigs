@@ -1,0 +1,31 @@
+--- a/cmake/Modules/Packages/ML-RUNNER.cmake
++++ b/cmake/Modules/Packages/ML-RUNNER.cmake
+@@ -74,11 +74,24 @@
+ 
+   set(RUNNER_LIB_FULL_NAME ${RUNNER_LIB_NAME}${RUNNER_LIB_EXT})
+ 
++  # Optional content-source override (file:// or https), analogous to GTEST_URL.
++  # Empty keeps the upstream git pin: gitlab.com/runner-suite/runner2 @ 2.0.5_20260820.
++  set(RUNNER_URL "" CACHE STRING "URL of RuNNer source archive for ExternalProject")
++  mark_as_advanced(RUNNER_URL)
++  if(RUNNER_URL)
++    message(STATUS "Using RUNNER_URL for RuNNer ExternalProject: ${RUNNER_URL}")
++    set(_runner_ep_source URL ${RUNNER_URL})
++  else()
++    set(_runner_ep_source
++      GIT_REPOSITORY "https://gitlab.com/runner-suite/runner2.git"
++      GIT_TAG "2.0.5_20260820"
++      GIT_SHALLOW YES
++      GIT_PROGRESS YES
++    )
++  endif()
++
+   ExternalProject_Add(runner_build
+-    GIT_REPOSITORY "https://gitlab.com/runner-suite/runner2.git"
+-    GIT_TAG "2.0.5_20260820"
+-    GIT_SHALLOW YES
+-    GIT_PROGRESS YES
++    ${_runner_ep_source}
+     DEPENDS ${RUNNER_DEPENDS_BLAS}
+ 
+     # Pass CMake arguments to RuNNer's build system
