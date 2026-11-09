@@ -269,8 +269,6 @@ crates = [
 ]
 checksums = [
     {'readcon-core-0.18.0.tar.gz': '575ef01eb7e56d3db5d1f39fe57b8d6e021522df20f750cd6616f2daf3cdc3ba'},
-    {'readcon-core-0.18.0_archive-source-inventory.patch':
-     '62b01945b5169f65091c9e8911443d1b7e97d7d9df4f75024db5a710e4e6e1cb'},
     {'adler2-2.0.1.tar.gz': '320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa'},
     {'ahash-0.8.12.tar.gz': '5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75'},
     {'aho-corasick-1.1.4.tar.gz': 'ddd31a130427c27518df266943a5308ed92d4b226cc639f5a8f1002816174301'},
@@ -522,6 +520,8 @@ checksums = [
     {'zstd-0.13.3.tar.gz': 'e91ee311a569c327171651566e07972200e76fcfe2242a4fa446149a3881c08a'},
     {'zstd-safe-7.2.4.tar.gz': '8f49c4d5f0abb602a93fb8736af2a4f4dd9512e36f7f570d66e65ff867ed3b9d'},
     {'zstd-sys-2.0.16+zstd.1.5.7.tar.gz': '91e19ebc2adc8f83e43039e79776e3fda8ca919132d68a1fed6a5faca2683748'},
+    {'readcon-core-0.18.0_archive-source-inventory.patch':
+     '62b01945b5169f65091c9e8911443d1b7e97d7d9df4f75024db5a710e4e6e1cb'},
 ]
 
 builddependencies = [
