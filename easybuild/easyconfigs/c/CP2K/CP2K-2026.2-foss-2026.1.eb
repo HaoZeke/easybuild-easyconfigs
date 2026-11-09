@@ -20,6 +20,9 @@ patches = [
     'CP2K-2026.2_regtest-3-spglib-requires-tblite.patch',
     # closed-shell TDDFPT sized an index array by an unset entry of nmo, gigabytes per MPI rank
     'CP2K-2026.2_fix-tddfpt-guess-reverse-index.patch',
+    # cp2k/cp2k#5646: an atom on a half-cell boundary took either periodic image depending on rounding, so
+    # the k-point symmetry gauge and the neighbour lists could disagree and c_geo_opt_kpsym_spglib aborts
+    'CP2K-2026.2_stable-periodic-images.patch',
 ]
 checksums = [
     {'cp2k-2026.2.tar.bz2': 'f9bd86f580f57a53a0768c0045d1417f9f9a1d66d851ed7f662f496200043373'},
@@ -29,6 +32,8 @@ checksums = [
      'e2db90466e96080d6e2afc3522937fc0eec5c046f66aca05936a1351b675ede8'},
     {'CP2K-2026.2_fix-tddfpt-guess-reverse-index.patch':
      '5a9f1412c944c54efa9099f5b6a5d753e485914d1ee28f1d8f5270164fcf78d7'},
+    {'CP2K-2026.2_stable-periodic-images.patch':
+     'fa30a6035e4c9591d3a07dea8edcb7790df3be525f76eb0bd5cc4f4efa544f53'},
 ]
 
 builddependencies = [

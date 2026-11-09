@@ -1,0 +1,530 @@
+diff -ruN a/src/CMakeLists.txt b/src/CMakeLists.txt
+--- a/src/CMakeLists.txt	2026-07-13 09:41:47.834336500 -0500
++++ b/src/CMakeLists.txt	2026-11-09 16:14:25.288578295 -0600
+@@ -1532,6 +1532,7 @@
+     common/gemm_square_unittest.F
+     common/memory_utilities_unittest.F
+     common/parallel_rng_types_unittest.F
++    subsys/cell_types_unittest.F
+     pw/realspace_grid_cube_unittest.F
+     metadyn_tools/graph.F
+     motion/dumpdcd.F
+@@ -1929,6 +1930,7 @@
+   "gemm_square_unittest"
+   "memory_utilities_unittest"
+   "parallel_rng_types_unittest"
++  "cell_types_unittest"
+   "realspace_grid_cube_unittest"
+   "graph"
+   "dumpdcd"
+@@ -1947,6 +1949,7 @@
+ add_executable(gemm_square_unittest common/gemm_square_unittest.F)
+ add_executable(memory_utilities_unittest common/memory_utilities_unittest.F)
+ add_executable(parallel_rng_types_unittest common/parallel_rng_types_unittest.F)
++add_executable(cell_types_unittest subsys/cell_types_unittest.F)
+ add_executable(realspace_grid_cube_unittest pw/realspace_grid_cube_unittest.F)
+ add_executable(graph metadyn_tools/graph.F)
+ add_executable(dumpdcd motion/dumpdcd.F)
+diff -ruN a/src/casino_utils.F b/src/casino_utils.F
+--- a/src/casino_utils.F	2026-07-13 09:24:02.679391900 -0500
++++ b/src/casino_utils.F	2026-11-09 16:14:25.290421558 -0600
+@@ -15,7 +15,10 @@
+    USE atomic_kind_types,               ONLY: get_atomic_kind
+    USE basis_set_types,                 ONLY: get_gto_basis_set,&
+                                               gto_basis_set_type
+-   USE cell_types,                      ONLY: cell_type
++   USE cell_types,                      ONLY: cell_type,&
++                                              pbc,&
++                                              pbc_stable,&
++                                              real_to_scaled
+    USE cp2k_info,                       ONLY: cp2k_version
+    USE cp_blacs_env,                    ONLY: cp_blacs_env_type
+    USE cp_control_types,                ONLY: dft_control_type
+@@ -115,7 +118,7 @@
+                                                             valence_charge
+       REAL(KIND=dp), ALLOCATABLE, DIMENSION(:, :)        :: coord, kvec, mo_energy, mos_sgf, &
+                                                             mos_sgf_im, shell_position
+-      REAL(KIND=dp), DIMENSION(3)                        :: scoord
++      REAL(KIND=dp), DIMENSION(3)                        :: r_pbc, scoord, scoord_pbc
+       REAL(KIND=dp), DIMENSION(:, :), POINTER            :: xkp, zetas
+       REAL(KIND=dp), DIMENSION(:, :, :), POINTER         :: gcc
+       TYPE(cell_type), POINTER                           :: cell
+@@ -338,8 +341,14 @@
+       IF (do_kpoints .AND. .NOT. use_real_wfn) THEN
+          ALLOCATE (agauge(3*natoms))
+          DO iatom = 1, natoms
+-            scoord(:) = MATMUL(cell%h_inv, particle_set(iatom)%r(1:3))
+-            agauge(3*(iatom - 1) + 1:3*iatom) = -NINT(scoord(:))
++            CALL real_to_scaled(scoord, particle_set(iatom)%r(1:3), cell)
++            IF (kpoints%symmetry) THEN
++               r_pbc = pbc_stable(particle_set(iatom)%r(1:3), cell)
++            ELSE
++               r_pbc = pbc(particle_set(iatom)%r(1:3), cell)
++            END IF
++            CALL real_to_scaled(scoord_pbc, r_pbc, cell)
++            agauge(3*(iatom - 1) + 1:3*iatom) = NINT(scoord_pbc - scoord)
+          END DO
+       END IF
+ 
+diff -ruN a/src/hfx_admm_utils.F b/src/hfx_admm_utils.F
+--- a/src/hfx_admm_utils.F	2026-03-24 12:26:10.119673000 -0500
++++ b/src/hfx_admm_utils.F	2026-11-09 16:14:25.290824380 -0600
+@@ -700,14 +700,15 @@
+       CALL pair_radius_setup(aux_fit_present, aux_fit_present, aux_fit_radius, aux_fit_radius, pair_radius, pdist)
+       pair_radius = pair_radius + cutoff_screen_factor*roperator
+       CALL build_neighbor_lists(admm_env%sab_aux_fit, particle_set, atom2d, cell, pair_radius, &
+-                                mic=mic, molecular=molecule_only, subcells=subcells, nlname="sab_aux_fit")
++                                mic=mic, molecular=molecule_only, subcells=subcells, nlname="sab_aux_fit", &
++                                stable_images=kpoints%symmetry)
+       CALL build_neighbor_lists(admm_env%sab_aux_fit_asymm, particle_set, atom2d, cell, pair_radius, &
+                                 mic=mic, symmetric=.FALSE., molecular=molecule_only, subcells=subcells, &
+-                                nlname="sab_aux_fit_asymm")
++                                nlname="sab_aux_fit_asymm", stable_images=kpoints%symmetry)
+       CALL pair_radius_setup(aux_fit_present, orb_present, aux_fit_radius, orb_radius, pair_radius)
+       CALL build_neighbor_lists(admm_env%sab_aux_fit_vs_orb, particle_set, atom2d, cell, pair_radius, &
+                                 mic=mic, symmetric=.FALSE., molecular=molecule_only, subcells=subcells, &
+-                                nlname="sab_aux_fit_vs_orb")
++                                nlname="sab_aux_fit_vs_orb", stable_images=kpoints%symmetry)
+ 
+       CALL write_neighbor_lists(admm_env%sab_aux_fit, particle_set, cell, para_env, neighbor_list_section, &
+                                 "/SAB_AUX_FIT", "sab_aux_fit", "AUX_FIT_ORBITAL AUX_FIT_ORBITAL")
+diff -ruN a/src/kpoint_methods.F b/src/kpoint_methods.F
+--- a/src/kpoint_methods.F	2026-07-14 03:25:05.230944000 -0500
++++ b/src/kpoint_methods.F	2026-11-09 16:14:25.291240598 -0600
+@@ -15,7 +15,7 @@
+ MODULE kpoint_methods
+    USE atomic_kind_types,               ONLY: get_atomic_kind
+    USE cell_types,                      ONLY: cell_type,&
+-                                              pbc,&
++                                              pbc_stable,&
+                                               real_to_scaled
+    USE cp_blacs_env,                    ONLY: cp_blacs_env_create,&
+                                               cp_blacs_env_type
+@@ -191,7 +191,7 @@
+          agauge = 0
+          IF (kpoint%symmetry) THEN
+             DO i = 1, natom
+-               r_pbc(1:3) = pbc(particle_set(i)%r(1:3), cell)
++               r_pbc(1:3) = pbc_stable(particle_set(i)%r(1:3), cell)
+                CALL real_to_scaled(scoord_pbc, r_pbc, cell)
+                agauge(1:3, i) = NINT(scoord_pbc(1:3) - scoord(1:3, i))
+             END DO
+@@ -406,7 +406,7 @@
+             kpoint%atype = atype
+             ALLOCATE (agauge(3, natom))
+             DO i = 1, natom
+-               r_pbc(1:3) = pbc(particle_set(i)%r(1:3), cell)
++               r_pbc(1:3) = pbc_stable(particle_set(i)%r(1:3), cell)
+                CALL real_to_scaled(scoord_pbc, r_pbc, cell)
+                agauge(1:3, i) = NINT(scoord_pbc(1:3) - scoord(1:3, i))
+             END DO
+diff -ruN a/src/qs_neighbor_lists.F b/src/qs_neighbor_lists.F
+--- a/src/qs_neighbor_lists.F	2026-07-13 09:41:47.876338700 -0500
++++ b/src/qs_neighbor_lists.F	2026-11-09 16:14:25.301350606 -0600
+@@ -27,6 +27,7 @@
+    USE cell_types,                      ONLY: cell_type,&
+                                               get_cell,&
+                                               pbc,&
++                                              pbc_stable,&
+                                               plane_distance,&
+                                               real_to_scaled,&
+                                               scaled_to_real
+@@ -298,7 +299,7 @@
+                                                             maxatom, ngp, nkind, zat
+       LOGICAL :: all_potential_present, almo, cneo_potential_present, dftb, do_hfx, dokp, &
+          gth_potential_present, lri_optbas, lrigpw, mic, molecule_only, nddo, paw_atom, &
+-         paw_atom_present, rigpw, sgp_potential_present, xtb
++         paw_atom_present, rigpw, sgp_potential_present, stable_images, xtb
+       LOGICAL, ALLOCATABLE, DIMENSION(:) :: all_present, aux_fit_present, aux_present, &
+          cneo_present, core_present, default_present, nonbond1_atom, nonbond2_atom, oce_present, &
+          orb_present, ppl_present, ppnl_present, ri_present, xb1_atom, xb2_atom
+@@ -414,6 +415,7 @@
+                       sab_cneo=sab_cneo)
+ 
+       dokp = (kpoints%nkp > 0)
++      stable_images = dokp .AND. kpoints%symmetry
+       nddo = dft_control%qs_control%semi_empirical
+       dftb = dft_control%qs_control%dftb
+       xtb = dft_control%qs_control%xtb
+@@ -605,7 +607,8 @@
+       END IF
+       CALL pair_radius_setup(orb_present, orb_present, orb_radius, orb_radius, pair_radius, pdist)
+       CALL build_neighbor_lists(sab_orb, particle_set, atom2d, cell, pair_radius, &
+-                                mic=mic, subcells=subcells, molecular=molecule_only, nlname="sab_orb")
++                                mic=mic, subcells=subcells, molecular=molecule_only, nlname="sab_orb", &
++                                stable_images=stable_images)
+       CALL set_ks_env(ks_env=ks_env, sab_orb=sab_orb)
+       CALL write_neighbor_lists(sab_orb, particle_set, cell, para_env, neighbor_list_section, &
+                                 "/SAB_ORB", "sab_orb", "ORBITAL ORBITAL")
+@@ -615,7 +618,8 @@
+       ! might not be optimal. It should be verified for each operator.
+       IF (.NOT. (nddo .OR. dftb .OR. xtb)) THEN
+          CALL build_neighbor_lists(sab_all, particle_set, atom2d, cell, pair_radius, &
+-                                   mic=mic, symmetric=.FALSE., subcells=subcells, molecular=molecule_only, nlname="sab_all")
++                                   mic=mic, symmetric=.FALSE., subcells=subcells, molecular=molecule_only, &
++                                   nlname="sab_all", stable_images=stable_images)
+          CALL set_ks_env(ks_env=ks_env, sab_all=sab_all)
+       END IF
+ 
+@@ -623,7 +627,7 @@
+       IF (.NOT. (nddo .OR. dftb .OR. xtb)) THEN
+          CALL pair_radius_setup(core_present, core_present, core_radius, core_radius, pair_radius)
+          CALL build_neighbor_lists(sab_core, particle_set, atom2d, cell, pair_radius, subcells=subcells, &
+-                                   operator_type="PP", nlname="sab_core")
++                                   operator_type="PP", nlname="sab_core", stable_images=stable_images)
+          CALL set_ks_env(ks_env=ks_env, sab_core=sab_core)
+          CALL write_neighbor_lists(sab_core, particle_set, cell, para_env, neighbor_list_section, &
+                                    "/SAB_CORE", "sab_core", "CORE CORE")
+@@ -675,12 +679,13 @@
+             CALL pair_radius_setup(orb_present, orb_present, orb_radius, orb_radius, pair_radius)
+          END IF
+          CALL build_neighbor_lists(sab_kp, particle_set, atom2d, cell, pair_radius, &
+-                                   subcells=subcells, nlname="sab_kp")
++                                   subcells=subcells, nlname="sab_kp", stable_images=stable_images)
+          CALL set_ks_env(ks_env=ks_env, sab_kp=sab_kp)
+ 
+          IF (do_hfx) THEN
+             CALL build_neighbor_lists(sab_kp_nosym, particle_set, atom2d, cell, pair_radius, &
+-                                      subcells=subcells, nlname="sab_kp_nosym", symmetric=.FALSE.)
++                                      subcells=subcells, nlname="sab_kp_nosym", symmetric=.FALSE., &
++                                      stable_images=stable_images)
+             CALL set_ks_env(ks_env=ks_env, sab_kp_nosym=sab_kp_nosym)
+          END IF
+       END IF
+@@ -690,14 +695,16 @@
+          IF (ANY(ppl_present)) THEN
+             CALL pair_radius_setup(orb_present, ppl_present, orb_radius, ppl_radius, pair_radius)
+             CALL build_neighbor_lists(sac_ppl, particle_set, atom2d, cell, pair_radius, &
+-                                      subcells=subcells, operator_type="ABC", nlname="sac_ppl")
++                                      subcells=subcells, operator_type="ABC", nlname="sac_ppl", &
++                                      stable_images=stable_images)
+             CALL set_ks_env(ks_env=ks_env, sac_ppl=sac_ppl)
+             CALL write_neighbor_lists(sac_ppl, particle_set, cell, para_env, neighbor_list_section, &
+                                       "/SAC_PPL", "sac_ppl", "ORBITAL GTH-PPL")
+             IF (lrigpw) THEN
+                IF (qs_env%lri_env%ppl_ri) THEN
+                   CALL build_neighbor_lists(sac_lri, particle_set, atom2d, cell, pair_radius, &
+-                                            subcells=subcells, symmetric=.FALSE., operator_type="PP", nlname="sac_lri")
++                                            subcells=subcells, symmetric=.FALSE., operator_type="PP", &
++                                            nlname="sac_lri", stable_images=stable_images)
+                   CALL set_ks_env(ks_env=ks_env, sac_lri=sac_lri)
+                END IF
+             END IF
+@@ -706,7 +713,8 @@
+          IF (ANY(ppnl_present)) THEN
+             CALL pair_radius_setup(orb_present, ppnl_present, orb_radius, ppnl_radius, pair_radius)
+             CALL build_neighbor_lists(sap_ppnl, particle_set, atom2d, cell, pair_radius, &
+-                                      subcells=subcells, operator_type="ABBA", nlname="sap_ppnl")
++                                      subcells=subcells, operator_type="ABBA", nlname="sap_ppnl", &
++                                      stable_images=stable_images)
+             CALL set_ks_env(ks_env=ks_env, sap_ppnl=sap_ppnl)
+             CALL write_neighbor_lists(sap_ppnl, particle_set, cell, para_env, neighbor_list_section, &
+                                       "/SAP_PPNL", "sap_ppnl", "ORBITAL GTH-PPNL")
+@@ -718,7 +726,8 @@
+          IF (ANY(oce_present)) THEN
+             CALL pair_radius_setup(orb_present, oce_present, orb_radius, oce_radius, pair_radius)
+             CALL build_neighbor_lists(sap_oce, particle_set, atom2d, cell, pair_radius, &
+-                                      subcells=subcells, operator_type="ABBA", nlname="sap_oce")
++                                      subcells=subcells, operator_type="ABBA", nlname="sap_oce", &
++                                      stable_images=stable_images)
+             CALL set_ks_env(ks_env=ks_env, sap_oce=sap_oce)
+             CALL write_neighbor_lists(sap_oce, particle_set, cell, para_env, neighbor_list_section, &
+                                       "/SAP_OCE", "sap_oce", "ORBITAL(A) PAW-PRJ")
+@@ -730,7 +739,8 @@
+          IF (all_potential_present .OR. sgp_potential_present) THEN
+             CALL pair_radius_setup(orb_present, all_present, orb_radius, all_pot_rad, pair_radius)
+             CALL build_neighbor_lists(sac_ae, particle_set, atom2d, cell, pair_radius, &
+-                                      subcells=subcells, operator_type="ABC", nlname="sac_ae")
++                                      subcells=subcells, operator_type="ABC", nlname="sac_ae", &
++                                      stable_images=stable_images)
+             CALL set_ks_env(ks_env=ks_env, sac_ae=sac_ae)
+             CALL write_neighbor_lists(sac_ae, particle_set, cell, para_env, neighbor_list_section, &
+                                       "/SAC_AE", "sac_ae", "ORBITAL ERFC POTENTIAL")
+@@ -1054,6 +1064,7 @@
+ !> \param operator_type ...
+ !> \param nlname ...
+ !> \param atomb_to_keep the list of atom indices to keep for pairs from the atom2d%b_list
++!> \param stable_images use a deterministic half-cell convention for atom images
+ !> \date    20.03.2002
+ !> \par History
+ !>          - Major refactoring (25.07.2010,jhu)
+@@ -1063,7 +1074,7 @@
+ ! **************************************************************************************************
+    SUBROUTINE build_neighbor_lists(ab_list, particle_set, atom, cell, pair_radius, subcells, &
+                                    mic, symmetric, molecular, subset_of_mol, current_subset, &
+-                                   operator_type, nlname, atomb_to_keep)
++                                   operator_type, nlname, atomb_to_keep, stable_images)
+ 
+       TYPE(neighbor_list_set_p_type), DIMENSION(:), &
+          POINTER                                         :: ab_list
+@@ -1078,6 +1089,7 @@
+       CHARACTER(LEN=*), INTENT(IN), OPTIONAL             :: operator_type
+       CHARACTER(LEN=*), INTENT(IN)                       :: nlname
+       INTEGER, DIMENSION(:), INTENT(IN), OPTIONAL        :: atomb_to_keep
++      LOGICAL, INTENT(IN), OPTIONAL                      :: stable_images
+ 
+       CHARACTER(len=*), PARAMETER :: routineN = 'build_neighbor_lists'
+ 
+@@ -1091,7 +1103,8 @@
+       INTEGER, DIMENSION(3)                              :: cell_b, ncell, nsubcell, periodic
+       INTEGER, DIMENSION(:), POINTER                     :: index_list
+       LOGICAL                                            :: include_ab, my_mic, &
+-                                                            my_molecular, my_symmetric, my_sort_atomb
++                                                            my_molecular, my_stable_images, &
++                                                            my_symmetric, my_sort_atomb
+       LOGICAL, ALLOCATABLE, DIMENSION(:)                 :: pres_a, pres_b
+       REAL(dp)                                           :: rab2, rab2_max, rab_max, rabm, deth, subcell_scale
+       REAL(dp), DIMENSION(3)                             :: r, rab, ra, rb, sab_max, sb, &
+@@ -1117,6 +1130,8 @@
+       my_molecular = .FALSE.
+       ! if we have a molecular NL, MIC has to be used
+       IF (PRESENT(molecular)) my_molecular = molecular
++      my_stable_images = .FALSE.
++      IF (PRESENT(stable_images)) my_stable_images = stable_images
+       ! check for operator types
+       IF (PRESENT(operator_type)) THEN
+          SELECT CASE (operator_type)
+@@ -1170,7 +1185,11 @@
+       natom = SIZE(particle_set)
+       ALLOCATE (r_pbc(3, natom))
+       DO i = 1, natom
+-         r_pbc(1:3, i) = pbc(particle_set(i)%r(1:3), cell)
++         IF (my_stable_images) THEN
++            r_pbc(1:3, i) = pbc_stable(particle_set(i)%r(1:3), cell)
++         ELSE
++            r_pbc(1:3, i) = pbc(particle_set(i)%r(1:3), cell)
++         END IF
+       END DO
+ 
+       ! setup the local lists of atoms
+diff -ruN a/src/subsys/cell_types.F b/src/subsys/cell_types.F
+--- a/src/subsys/cell_types.F	2026-07-13 09:24:02.781397300 -0500
++++ b/src/subsys/cell_types.F	2026-11-09 16:14:25.291836386 -0600
+@@ -97,6 +97,7 @@
+    ! Public functions
+    PUBLIC :: plane_distance, &
+              pbc, &
++             pbc_stable, &
+              real_to_scaled, &
+              scaled_to_real
+ 
+@@ -107,6 +108,28 @@
+ CONTAINS
+ 
+ ! **************************************************************************************************
++!> \brief Select a stable periodic image index close to half-cell boundaries.
++!> \param s Scaled coordinate
++!> \return image_shift ...
++! **************************************************************************************************
++   PURE ELEMENTAL FUNCTION pbc_image_shift(s) RESULT(image_shift)
++
++      REAL(KIND=dp), INTENT(IN)                          :: s
++      REAL(KIND=dp)                                      :: image_shift
++
++      REAL(KIND=dp)                                      :: half_boundary, tolerance
++
++      image_shift = ANINT(s)
++      half_boundary = ANINT(s - 0.5_dp) + 0.5_dp
++      tolerance = MIN(1.0e-8_dp, 64.0_dp*EPSILON(1.0_dp)*MAX(1.0_dp, ABS(s)))
++      IF (ABS(s - half_boundary) <= tolerance) THEN
++         ! Select the lower side for every lattice-equivalent half-cell boundary.
++         image_shift = half_boundary + 0.5_dp
++      END IF
++
++   END FUNCTION pbc_image_shift
++
++! **************************************************************************************************
+ !> \brief Clone cell variable
+ !> \param cell_in Cell variable to be clone
+ !> \param cell_out Cloned cell variable
+@@ -390,6 +413,43 @@
+    END FUNCTION pbc1
+ 
+ ! **************************************************************************************************
++!> \brief Apply a stable periodic-image convention for k-point Bloch gauges.
++!> \param r ...
++!> \param cell ...
++!> \return r_pbc ...
++! **************************************************************************************************
++   FUNCTION pbc_stable(r, cell) RESULT(r_pbc)
++
++      REAL(KIND=dp), DIMENSION(3), INTENT(IN)            :: r
++      TYPE(cell_type), POINTER                           :: cell
++      REAL(KIND=dp), DIMENSION(3)                        :: r_pbc
++
++      REAL(KIND=dp), DIMENSION(3)                        :: s
++
++      CPASSERT(ASSOCIATED(cell))
++
++      IF (cell%orthorhombic) THEN
++         r_pbc(1) = r(1) - cell%hmat(1, 1)*cell%perd(1)* &
++                    pbc_image_shift(cell%h_inv(1, 1)*r(1))
++         r_pbc(2) = r(2) - cell%hmat(2, 2)*cell%perd(2)* &
++                    pbc_image_shift(cell%h_inv(2, 2)*r(2))
++         r_pbc(3) = r(3) - cell%hmat(3, 3)*cell%perd(3)* &
++                    pbc_image_shift(cell%h_inv(3, 3)*r(3))
++      ELSE
++         s(1) = cell%h_inv(1, 1)*r(1) + cell%h_inv(1, 2)*r(2) + cell%h_inv(1, 3)*r(3)
++         s(2) = cell%h_inv(2, 1)*r(1) + cell%h_inv(2, 2)*r(2) + cell%h_inv(2, 3)*r(3)
++         s(3) = cell%h_inv(3, 1)*r(1) + cell%h_inv(3, 2)*r(2) + cell%h_inv(3, 3)*r(3)
++         s(1) = s(1) - cell%perd(1)*pbc_image_shift(s(1))
++         s(2) = s(2) - cell%perd(2)*pbc_image_shift(s(2))
++         s(3) = s(3) - cell%perd(3)*pbc_image_shift(s(3))
++         r_pbc(1) = cell%hmat(1, 1)*s(1) + cell%hmat(1, 2)*s(2) + cell%hmat(1, 3)*s(3)
++         r_pbc(2) = cell%hmat(2, 1)*s(1) + cell%hmat(2, 2)*s(2) + cell%hmat(2, 3)*s(3)
++         r_pbc(3) = cell%hmat(3, 1)*s(1) + cell%hmat(3, 2)*s(2) + cell%hmat(3, 3)*s(3)
++      END IF
++
++   END FUNCTION pbc_stable
++
++! **************************************************************************************************
+ !> \brief   Apply the periodic boundary conditions defined by a simulation
+ !>          cell to a position vector r subtracting nl from the periodic images
+ !> \param r ...
+diff -ruN a/src/subsys/cell_types_unittest.F b/src/subsys/cell_types_unittest.F
+--- a/src/subsys/cell_types_unittest.F	1969-12-31 18:00:00.000000000 -0600
++++ b/src/subsys/cell_types_unittest.F	2026-11-09 16:14:25.291895859 -0600
+@@ -0,0 +1,87 @@
++!--------------------------------------------------------------------------------------------------!
++!   CP2K: A general program to perform molecular dynamics simulations                              !
++!   Copyright 2000-2026 CP2K developers group <https://cp2k.org>                                   !
++!                                                                                                  !
++!   SPDX-License-Identifier: GPL-2.0-or-later                                                      !
++!--------------------------------------------------------------------------------------------------!
++
++PROGRAM cell_types_TEST
++   USE cell_types,                      ONLY: cell_type,&
++                                              pbc_stable,&
++                                              real_to_scaled,&
++                                              scaled_to_real
++   USE kinds,                           ONLY: dp
++
++   IMPLICIT NONE
++
++   TYPE(cell_type), POINTER                           :: cell
++
++   ALLOCATE (cell)
++   cell%hmat = 0.0_dp
++   cell%h_inv = 0.0_dp
++   cell%hmat(1, 1) = 2.0_dp
++   cell%hmat(2, 2) = 3.0_dp
++   cell%hmat(3, 3) = 4.0_dp
++   cell%h_inv(1, 1) = 0.5_dp
++   cell%h_inv(2, 2) = 1.0_dp/3.0_dp
++   cell%h_inv(3, 3) = 0.25_dp
++   cell%perd = 1
++
++   cell%orthorhombic = .TRUE.
++   CALL check_half_cell_boundaries(cell)
++
++   cell%orthorhombic = .FALSE.
++   cell%hmat(1, 2) = 0.5_dp
++   cell%h_inv(1, 2) = -1.0_dp/12.0_dp
++   CALL check_half_cell_boundaries(cell)
++
++   DEALLOCATE (cell)
++
++CONTAINS
++
++! **************************************************************************************************
++!> \brief Check that roundoff around half-cell boundaries does not change the periodic image.
++!> \param cell ...
++! **************************************************************************************************
++   SUBROUTINE check_half_cell_boundaries(cell)
++
++      TYPE(cell_type), POINTER                           :: cell
++
++      INTEGER, DIMENSION(3), PARAMETER :: lattice_translation = [-1, 1, -2]
++      REAL(KIND=dp), PARAMETER                           :: delta = 8.0_dp*EPSILON(1.0_dp)
++
++      REAL(KIND=dp), DIMENSION(3)                        :: r, scaled, wrapped, wrapped_scaled, &
++                                                            wrapped_translated, &
++                                                            wrapped_translated_scaled
++
++      scaled = [0.5_dp - delta, -0.5_dp + delta, 1.5_dp - delta]
++      CALL scaled_to_real(r, scaled, cell)
++      wrapped = pbc_stable(r, cell)
++      CALL real_to_scaled(wrapped_scaled, wrapped, cell)
++      IF (ANY(SIGN(1.0_dp, wrapped_scaled) /= [-1.0_dp, -1.0_dp, -1.0_dp])) THEN
++         ERROR STOP "Roundoff changed the image at a half-cell boundary"
++      END IF
++      IF (ANY(ABS(ABS(wrapped_scaled) - 0.5_dp) > 2.0_dp*delta)) THEN
++         ERROR STOP "Unexpected wrapped coordinate at a half-cell boundary"
++      END IF
++
++      CALL scaled_to_real(r, scaled + REAL(lattice_translation, KIND=dp), cell)
++      wrapped_translated = pbc_stable(r, cell)
++      CALL real_to_scaled(wrapped_translated_scaled, wrapped_translated, cell)
++      IF (ANY(ABS(wrapped_translated_scaled - wrapped_scaled) > 4.0_dp*delta)) THEN
++         ERROR STOP "Periodic wrapping changed under a lattice translation"
++      END IF
++
++      scaled = [0.5_dp - 128.0_dp*EPSILON(1.0_dp), &
++                -0.5_dp - 128.0_dp*EPSILON(1.0_dp), &
++                1.5_dp + 128.0_dp*EPSILON(1.0_dp)]
++      CALL scaled_to_real(r, scaled, cell)
++      wrapped = pbc_stable(r, cell)
++      CALL real_to_scaled(wrapped_scaled, wrapped, cell)
++      IF (ANY(SIGN(1.0_dp, wrapped_scaled) /= [1.0_dp, 1.0_dp, -1.0_dp])) THEN
++         ERROR STOP "Coordinate outside the boundary tolerance changed image"
++      END IF
++
++   END SUBROUTINE check_half_cell_boundaries
++
++END PROGRAM cell_types_TEST
+diff -ruN a/src/trexio_utils.F b/src/trexio_utils.F
+--- a/src/trexio_utils.F	2026-07-13 09:24:02.786397700 -0500
++++ b/src/trexio_utils.F	2026-11-09 16:14:25.292127136 -0600
+@@ -18,7 +18,7 @@
+    USE ai_onecenter, ONLY: sg_overlap
+    USE atomic_kind_types, ONLY: get_atomic_kind
+    USE basis_set_types, ONLY: gto_basis_set_type, get_gto_basis_set
+-   USE cell_types, ONLY: cell_type
++   USE cell_types, ONLY: cell_type, pbc, pbc_stable, real_to_scaled
+    USE cp2k_info, ONLY: cp2k_version
+    USE cp_blacs_env, ONLY: cp_blacs_env_type
+    USE cp_control_types, ONLY: dft_control_type
+@@ -188,18 +188,17 @@
+       ! Per-atom Bloch-gauge correction:
+       ! CP2K's k-space matrix builder (rskp_transform) Bloch-sums real-space blocks with
+       ! lattice vectors R supplied by the neighbour list. The neighbour list, in turn,
+-      ! wraps interatomic vectors through subsys/cell_types.F :: pbc1, which uses
+-      !     s = s - perd * ANINT(s)
+-      ! Hence the effective per-atom gauge is agauge(:,i) = -ANINT(scoord(:,i)), i.e.
+-      ! Fortran's round-half-away-from-zero ANINT (so e.g. scoord=+1/2 wraps to -1/2 and
+-      ! scoord=-1/2 wraps to +1/2). Note that the agauge in kpoint_methods.F ::
+-      ! kpoint_initialize is the SYMMETRY-DETECTION gauge (with a -eps_geo offset) and is
+-      ! NOT the one the matrix builder uses; we must mirror pbc1 here. Since nucleus_coord
+-      ! is written as the raw particle_set(i)%r, we rephase each atom's MO block by
++      ! wraps interatomic vectors through subsys/cell_types.F :: pbc or, for symmetry reduction,
++      ! pbc_stable. Hence the effective
++      ! per-atom gauge is the image shift between the raw and wrapped coordinates, as used by
++      ! kpoint_methods.F :: kpoint_initialize. Derive it through the matching wrapper instead of
++      ! duplicating its boundary convention. Since nucleus_coord is written as the raw particle_set(i)%r, we
++      ! rephase each atom's MO block by
+       ! exp(-i 2*pi * k * agauge_i) so the (coord, MO) pair is self-consistent in the
+       ! standard Bloch convention used by TREXIO consumers.
+       INTEGER, DIMENSION(:, :), ALLOCATABLE              :: agauge
+-      REAL(KIND=dp)                                      :: scoord(3), kdotg, cval, sval, re_old, im_old
++      REAL(KIND=dp)                                      :: scoord(3), scoord_pbc(3), r_pbc(3), &
++                                                            kdotg, cval, sval, re_old, im_old
+       INTEGER, DIMENSION(:), POINTER                     :: nshell, npgf
+       INTEGER, DIMENSION(:, :), POINTER                  :: l_shell_set
+       REAL(KIND=dp), DIMENSION(:), ALLOCATABLE           :: charge, shell_factor, exponents, coefficients, &
+@@ -913,8 +912,14 @@
+          CALL get_kpoint_info(trexio_kpoints, xkp=xkp)
+          ALLOCATE (agauge(3, natoms))
+          DO iatom = 1, natoms
+-            scoord(:) = MATMUL(cell%h_inv, particle_set(iatom)%r(1:3))
+-            agauge(:, iatom) = -NINT(scoord(:))
++            CALL real_to_scaled(scoord, particle_set(iatom)%r(1:3), cell)
++            IF (kpoints%symmetry) THEN
++               r_pbc = pbc_stable(particle_set(iatom)%r(1:3), cell)
++            ELSE
++               r_pbc = pbc(particle_set(iatom)%r(1:3), cell)
++            END IF
++            CALL real_to_scaled(scoord_pbc, r_pbc, cell)
++            agauge(:, iatom) = NINT(scoord_pbc - scoord)
+          END DO
+       END IF
+ 
