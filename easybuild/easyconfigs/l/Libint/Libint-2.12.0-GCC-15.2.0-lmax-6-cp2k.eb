@@ -40,7 +40,10 @@ libint_compiler_configopts = f'--enable-eri=1 --enable-eri2=1 --enable-eri3=1 --
 libint_compiler_configopts += f'--with-eri-max-am={local_eri_max_am} '
 libint_compiler_configopts += f'--with-eri2-max-am={local_eri23_max_am} '
 libint_compiler_configopts += f'--with-eri3-max-am={local_eri23_max_am} '
-libint_compiler_configopts += '--enable-generic-code --disable-unrolling'
+libint_compiler_configopts += '--enable-generic-code --disable-unrolling '
+# without --with-boost, AX_BOOST_BASE prefers a Boost under /usr and adds -I/usr/include,
+# which shadows libint's own memory.h
+libint_compiler_configopts += '--with-boost=$EBROOTBOOST'
 
 with_fortran = True
 
