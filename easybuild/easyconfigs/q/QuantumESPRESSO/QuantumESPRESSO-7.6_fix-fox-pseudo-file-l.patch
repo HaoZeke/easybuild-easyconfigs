@@ -1,0 +1,19 @@
+Allocate the l attribute of pseudo_file before the FoX read: FoX fills an
+array attribute only up to the size of the target, and the unallocated
+target makes every restart read stop with 'Too many elements found'.
+author: Rohit Goswami (SURF)
+--- qe-7.6.orig/Modules/qes_read_module.f90	2026-11-09 04:41:02.671716056 -0600
++++ qe-7.6/Modules/qes_read_module.f90	2026-11-09 04:41:02.681293522 -0600
+@@ -14904,6 +14904,12 @@
+     END IF
+     ! 
+     IF (hasAttribute(xml_node, "l")) THEN
++      ! FoX fills an array attribute only up to the size of the target, so the
++      ! target needs one element per projector before the read
++      IF (.NOT. obj%nbeta_ispresent) &
++        CALL errore ("qes_read: pseudo_fileType", "attribute l needs attribute nbeta", 10)
++      IF (ALLOCATED(obj%l)) DEALLOCATE(obj%l)
++      ALLOCATE(obj%l(obj%nbeta))
+       CALL extractDataAttribute(xml_node, "l", obj%l)
+       obj%l_ispresent = .TRUE.
+     ELSE

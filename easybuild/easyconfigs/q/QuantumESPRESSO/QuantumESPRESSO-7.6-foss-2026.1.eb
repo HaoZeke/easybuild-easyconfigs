@@ -32,7 +32,10 @@ sources = [
         'source_urls': ['https://gitlab.com/QEF/q-e/-/archive/qe-%(version)s'],
     },
 ]
-patches = ['QuantumESPRESSO-7.5_wannier2pw.x.patch']
+patches = [
+    'QuantumESPRESSO-7.5_wannier2pw.x.patch',
+    'QuantumESPRESSO-7.6_fix-fox-pseudo-file-l.patch',
+]
 checksums = [
     {'q-e-qe-7.6.tar.gz': '945c8f16ab330c8f0b30f4de1a9a088b85038476fcd819394e641f4d2d8b7d51'},
     {'lapack-12d82539.tar.xz': '88aea5bca5e730e99fda0a5b9d677d6036c7dd82874e0deaed5cccef1f880111'},
@@ -43,6 +46,8 @@ checksums = [
     {'pw2qmcpack-f72ab25f.tar.xz': 'bc9513c4901ec2469d56b8a6b66f56878cb13e3bc7fbcdc5dba0ca6dad880ab9'},
     {'wannier90-1d6b1873.tar.xz': '351531aaf3434a9aac92d39ee40df5eb949aa27d14fcb93518bf08444478cd2a'},
     {'QuantumESPRESSO-7.5_wannier2pw.x.patch': '9114dd265ab6a85fd0432487d2b6194a29798313f235a838ddae66b8f1e0329e'},
+    {'QuantumESPRESSO-7.6_fix-fox-pseudo-file-l.patch':
+     'e02e9742f1562ad5c7514d0a08eec83a5758a811944d2c5780d38084421f4c98'},
 ]
 
 _github_repos = [
