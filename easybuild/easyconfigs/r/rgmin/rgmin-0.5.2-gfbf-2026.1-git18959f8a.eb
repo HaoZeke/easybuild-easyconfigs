@@ -336,8 +336,8 @@ sanity_check_paths = {
 
 sanity_check_commands = [
     'pkg-config --exact-version=%(version)s rgmin',
-    # the installed header is the curated one, not cbindgen output
-    '! grep -q "RGMIN.H_" %(installdir)s/include/rgmin.h',
+    # the installed header is the curated one shipped by cargo cinstall
+    'grep -q "#define RGMIN_H_MINOR 5" %(installdir)s/include/rgmin.h',
     'grep -q "#define RGMIN_ABI_VERSION_MAJOR 1" %(installdir)s/include/rgmin.h',
 ]
 
