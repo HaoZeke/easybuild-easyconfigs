@@ -17,10 +17,16 @@ toolchain = {'name': 'foss', 'version': '2026.1'}
 # eOn has no OpenMP code; openmp would only thread Eigen's products.
 toolchainopts = {'pic': True}
 
-source_urls = ['https://github.com/TheochemUI/eOn/archive/']
+# The build and its tests read the revision with git rev-parse HEAD, so the
+# checkout keeps its .git directory; the commit hash pins the content.
 sources = [{
-    'download_filename': f'{local_commit}.tar.gz',
-    'filename': '%(name)s-%(version)s%(versionsuffix)s.tar.gz',
+    'filename': '%(name)s-%(version)s%(versionsuffix)s-gitdir.tar.gz',
+    'git_config': {
+        'url': 'https://github.com/TheochemUI',
+        'repo_name': 'eOn',
+        'commit': local_commit,
+        'keep_git_dir': True,
+    },
 }]
 # Not upstream: the loaded libreadcon_db's rkrdb_abi_compatible decides whether it serves
 # the configured readcon-db.h ABI, with test_readcon_db_abi and its test-only fixture
@@ -30,7 +36,7 @@ patches = [
     'eOn-3.6.0-git0bb29da9_readcon-db-mirror-abi-contract.patch',
 ]
 checksums = [
-    {'eOn-3.6.0-git0bb29da9.tar.gz': '517f2882d96a883fc4e9cc513a57a2a08ebfd50b98016d7e676f14af3c3c6500'},
+    None,
     {'eOn-3.6.0-git0bb29da9_readcon-db-abi-compatible.patch':
      'fd2c7bd5f46e8f5934c3aba47ab327d64d2f0fa7458dc14bc19f360d876a7527'},
     {'eOn-3.6.0-git0bb29da9_readcon-db-mirror-abi-contract.patch':
