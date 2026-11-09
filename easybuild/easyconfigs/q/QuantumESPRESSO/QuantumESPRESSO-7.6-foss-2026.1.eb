@@ -19,7 +19,6 @@ toolchainopts = {
 _lapack_hash = '12d825396fcef1e0a1b27be9f119f9e554621e55'
 _mbd_hash = '89a3cc199c0a200c9f0f688c3229ef6b9a8d63bd'
 _devxlib_hash = 'a6b89ef77b1ceda48e967921f1f5488d2df9226d'
-_fox_hash = '3453648e6837658b747b895bb7bef4b1ed2eac40'
 # qe-gipaw tag 7.6; QE 7.6 still records the 7.4.1 tag, which does not build against 7.6
 _qe_gipaw_hash = '4ae3c458560c6d3f7eebf2aec748d36248d3a3dd'
 _qmcpack_hash = 'f72ab25fa4ea755c1b4b230ae8074b47d5509c70'
@@ -38,7 +37,6 @@ checksums = [
     {'lapack-12d82539.tar.xz': '88aea5bca5e730e99fda0a5b9d677d6036c7dd82874e0deaed5cccef1f880111'},
     {'mbd-89a3cc19.tar.xz': 'd026bf0e9334874670a23cd854f445baac003d4f099afa46bab667bc67abb450'},
     {'devxlib-a6b89ef7.tar.xz': '0a9b7e5350f44017a2390c85176d1683c6ecec0e4b716a59d727f7650f16e807'},
-    {'fox-3453648e.tar.xz': 'c8c55cdf9eb2709aebac86a58f936480ee66438dffd3d65c6a35ca7771c031b3'},
     {'qe-gipaw-4ae3c458.tar.xz': '0e63546e560f246f2e53672dacdedb158517c5fc3ae3a6d399e8edf90116058f'},
     {'pw2qmcpack-f72ab25f.tar.xz': 'bc9513c4901ec2469d56b8a6b66f56878cb13e3bc7fbcdc5dba0ca6dad880ab9'},
     {'wannier90-1d6b1873.tar.xz': '351531aaf3434a9aac92d39ee40df5eb949aa27d14fcb93518bf08444478cd2a'},
@@ -49,7 +47,6 @@ _github_repos = [
     ('github', 'Reference-LAPACK', 'lapack', _lapack_hash, 'lapack'),
     ('github', 'libmbd', 'libmbd', _mbd_hash, 'mbd'),
     ('gitlab', 'max-centre/components', 'devicexlib', _devxlib_hash, 'devxlib'),
-    ('github', 'pietrodelugas', 'fox', _fox_hash, 'fox'),
     ('github', 'dceresoli', 'qe-gipaw', _qe_gipaw_hash, 'qe-gipaw'),
     ('github', 'QMCPACK', 'pw2qmcpack', _qmcpack_hash, 'pw2qmcpack'),
     ('github', 'wannier-developers', 'wannier90', _w90_hash, 'wannier90'),
@@ -79,7 +76,7 @@ dependencies = [
     ('Environ', '3.1.1'),
 ]
 
-# the FoX submodule declares a CMake minimum below 3.5, which CMake 4 rejects
+# bundled submodules may declare a CMake minimum below 3.5, which CMake 4 rejects
 configopts = "-DENVIRON_ROOT=$EBROOTENVIRON -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 
 # Disabled because of
@@ -87,7 +84,9 @@ configopts = "-DENVIRON_ROOT=$EBROOTENVIRON -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 # https://github.com/anharmonic/d3q/issues/15
 build_shared_libs = False
 with_scalapack = True
-with_fox = True
+# QE 7.6 reads its XML data files with its own xmltools by default; with FoX the restart
+# steps of the pw test suite fail in FoX arraytointeger while reading data-file-schema.xml
+with_fox = False
 with_gipaw = True
 # d3q calls sgam_ph, which QE 7.6 removed; no d3q commit (up to 1e075ad4, June 2026) builds against 7.6
 with_d3q = False
