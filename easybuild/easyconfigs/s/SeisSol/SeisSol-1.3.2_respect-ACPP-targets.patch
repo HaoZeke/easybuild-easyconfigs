@@ -1,0 +1,18 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -471,8 +471,13 @@
+         set(HIPSYCL_TARGETS "cuda-nvcxx:${NVCPP_ARCH}" CACHE STRING "" FORCE)
+         set(ACPP_TARGETS "cuda-nvcxx:${NVCPP_ARCH}" CACHE STRING "" FORCE)
+       else()
+-        set(HIPSYCL_TARGETS "cuda:${DEVICE_ARCH}" CACHE STRING "" FORCE)
+-        set(ACPP_TARGETS "cuda:${DEVICE_ARCH}" CACHE STRING "" FORCE)
++        # Explicit compiler flows are independent of the CUDA volume-kernel target.
++        if(DEFINED ACPP_TARGETS AND NOT "${ACPP_TARGETS}" STREQUAL "")
++          set(HIPSYCL_TARGETS "${ACPP_TARGETS}" CACHE STRING "" FORCE)
++        else()
++          set(HIPSYCL_TARGETS "cuda:${DEVICE_ARCH}" CACHE STRING "" FORCE)
++          set(ACPP_TARGETS "cuda:${DEVICE_ARCH}" CACHE STRING "" FORCE)
++        endif()
+         target_compile_options(general-sycl-offloading PRIVATE -Wno-unknown-cuda-version)
+       endif()
+       target_compile_definitions(general-sycl-offloading PRIVATE SYCL_PLATFORM_NVIDIA)
