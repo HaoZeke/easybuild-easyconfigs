@@ -1,0 +1,27 @@
+Take readcon-core 0.17.1 from crates.io: the pinned git revision 694e8080 is no
+longer reachable from any ref of lode-org/readcon-core, so it cannot be fetched.
+The published 0.17.1 has the same required dependencies.
+author: Rohit Goswami (SURF)
+--- a/Cargo.toml	2026-11-09 07:27:05.713446517 -0600
++++ b/Cargo.toml	2026-11-09 07:27:05.714446535 -0600
+@@ -46,7 +46,7 @@
+ # crates.io has no 0.17.1. 694e808 is main, and its Cargo.toml version
+ # is already 0.17.1. When tag v0.17.1 is published, drop the git pin
+ # and keep version = "=0.17.1".
+-readcon-core = { version = "=0.17.1", git = "https://github.com/lode-org/readcon-core", rev = "694e808080c49979ee3099afcfa18e5420c40433", optional = true }
++readcon-core = { version = "=0.17.1", optional = true }
+ 
+ [dev-dependencies]
+ approx = "0.5"
+--- a/Cargo.lock	2026-11-09 07:27:05.713446517 -0600
++++ b/Cargo.lock	2026-11-09 07:27:05.714446535 -0600
+@@ -777,7 +777,8 @@
+ [[package]]
+ name = "readcon-core"
+ version = "0.17.1"
+-source = "git+https://github.com/lode-org/readcon-core?rev=694e808080c49979ee3099afcfa18e5420c40433#694e808080c49979ee3099afcfa18e5420c40433"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c8c9ec4a34748765fc3ef137aef2c4eb007b0ae395dd2ac165071471e6fcaf0c"
+ dependencies = [
+  "dlpk",
+  "fast-float2",

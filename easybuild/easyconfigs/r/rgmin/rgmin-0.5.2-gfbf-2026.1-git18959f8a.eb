@@ -17,12 +17,15 @@ toolchain = {'name': 'gfbf', 'version': '2026.1'}
 # rgmin main at 18959f8a: v0.5.2 plus #52, which evaluates the Exp preconditioner
 # weight and the sine probe with the libm crate instead of the host libm, so the
 # results do not depend on the instruction set. Cargo.toml still says 0.5.2. The
-# repository Cargo.lock takes the optional readcon-core from git revision 694e8080.
+# repository Cargo.lock takes the optional readcon-core from git revision 694e8080,
+# which no ref of lode-org/readcon-core reaches any more; a patch takes the
+# published readcon-core 0.17.1 from crates.io instead.
 source_urls = ['https://github.com/OmniPotentRPC/rgmin/archive/']
 sources = [{
     'download_filename': f'{local_commit}.tar.gz',
     'filename': '%(name)s-%(version)s%(versionsuffix)s.tar.gz',
 }]
+patches = ['%(name)s-%(version)s_readcon-core-from-crates-io.patch']
 crates = [
     ('adler2', '2.0.1'),
     ('aho-corasick', '1.1.5'),
@@ -153,8 +156,7 @@ crates = [
     ('zerocopy-derive', '0.8.56'),
     ('zlib-rs', '0.6.8'),
     ('zmij', '1.0.23'),
-    # Cargo.lock source: rev=694e808080c49979ee3099afcfa18e5420c40433
-    ('readcon-core', '0.17.1', 'https://github.com/lode-org/readcon-core', '694e808080c49979ee3099afcfa18e5420c40433'),
+    ('readcon-core', '0.17.1'),
 ]
 checksums = [
     {'rgmin-0.5.2-git18959f8a.tar.gz': 'f9cce88a2aca008bc043531f8c6066a604f203e556ac36630ef6be52bf4926a1'},
@@ -287,8 +289,9 @@ checksums = [
     {'zerocopy-derive-0.8.56.tar.gz': 'f2ab42fc20575779bd240faa45f94a74256f755c0fa9e89f0ede20d91d0cdfc1'},
     {'zlib-rs-0.6.8.tar.gz': 'b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112'},
     {'zmij-1.0.23.tar.gz': '29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b'},
-    # git crate readcon-core 0.17.1 (694e8080) as EasyBuild 5.4.2 packs it
-    {'readcon-core-0.17.1-694e8080.tar.xz': '320e57bd84a98d0eb87ca6d702b89fbe01baf28e70a3786fe05fb0bd0973af5b'},
+    {'readcon-core-0.17.1.tar.gz': 'c8c9ec4a34748765fc3ef137aef2c4eb007b0ae395dd2ac165071471e6fcaf0c'},
+    {'rgmin-0.5.2_readcon-core-from-crates-io.patch':
+     '908a812ef0b80db3a9ad9c1f2fe57244dc2d81f9f0b8215157e5e1dbeb92efe0'},
 ]
 
 builddependencies = [
