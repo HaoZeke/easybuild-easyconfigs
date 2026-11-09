@@ -25,6 +25,8 @@ _copts = [
     '-DCATALYST_USE_MPI=ON',
     '-DCATALYST_WRAP_PYTHON=ON',
     '-DCATALYST_WRAP_FORTRAN=ON',
+    # tests need GTest, which is not a dependency; a GTest found on the build host breaks the build
+    '-DCATALYST_BUILD_TESTING=OFF',
 ]
 
 configopts = ' '.join(_copts)
