@@ -107,7 +107,7 @@ device_arch = 'auto'
 # Explicitly select PT-SCOTCH (ParMETIS is unavailable under EESSI).
 partitioners = ['ptscotch']
 # Test discovery loads the SYCL runtime before installation.
-preconfigopts = 'omp_runtime="$("%(rootLLVM)s/bin/clang++" -print-file-name=libomp.so)" && '
+preconfigopts = 'omp_runtime="$("${EBROOTLLVM:?}/bin/clang++" -print-file-name=libomp.so)" && '
 preconfigopts += 'test -f "$omp_runtime" && '
 # Generic SSCP avoids Clang's CUDA header wrapper for the SYCL objects.
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
