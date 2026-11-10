@@ -1,0 +1,36 @@
+Preserve host within-bin atom ordering for in-place spin integration.
+Device bin insertion uses atomics; sorting permutation indices restores
+the host order while retaining device sorting.
+
+--- a/src/KOKKOS/kokkos_type.h
++++ b/src/KOKKOS/kokkos_type.h
+@@ -541,6 +541,7 @@
+ 
+ template <class KeyViewType>
+ struct BinOp3DLAMMPS {
++  bool preserve_order = false;
+   int max_bins_[3] = {};
+   double mul_[3]   = {};
+   double min_[3]   = {};
+@@ -587,6 +588,7 @@
+ // NOLINTNEXTLINE
+   KOKKOS_INLINE_FUNCTION bool operator()(ViewType& keys, iType1& i1,
+                                          iType2& i2) const {
++    if (preserve_order) return i1 < i2;
+     if (keys(i1, 2) > keys(i2, 2))
+       return true;
+     else if (keys(i1, 2) == keys(i2, 2)) {
+--- a/src/KOKKOS/atom_kokkos.cpp
++++ b/src/KOKKOS/atom_kokkos.cpp
+@@ -453,7 +453,10 @@
+   using KeyViewType = DAT::t_kkfloat_1d_3_lr;
+   using BinOp = BinOp3DLAMMPS<KeyViewType>;
+   BinOp binner(max_bins, bboxlo, bboxhi);
+-  Kokkos::BinSort<KeyViewType, BinOp> Sorter(d_x, 0, nlocal, binner, false);
++  // In-place spin integration follows host ordering within spatial bins.
++  const bool preserve_order = sp_flag && !modify->get_fix_by_style("^nve/spin").empty();
++  binner.preserve_order = preserve_order;
++  Kokkos::BinSort<KeyViewType, BinOp> Sorter(d_x, 0, nlocal, binner, preserve_order);
+   Sorter.create_permute_vector(LMPDeviceType());
+ 
+   avecKK->sort_kokkos(Sorter);
