@@ -102,6 +102,9 @@ exts_defaultclass = 'PythonPackage'
 exts_default_options = {'source_urls': [PYPI_SOURCE]}
 exts_list = [
     ('eon_schema', '0.2.4', {
+        # The Python extension has no client Meson configuration or parent source directory.
+        'preconfigopts': '',
+        'configopts': '',
         'checksums': ['70aedbf3fc514315a845c795d925f64f4767ac75602885a5394e40f167e48fee'],
     }),
 ]
