@@ -1,0 +1,39 @@
+# Honor CURL_CA_BUNDLE for verified geturl transfers.
+# Use the certificate-bundle selection supported by the KIM package.
+# Author: Rohit Goswami <rgoswami@ieee.org>
+--- a/src/EXTRA-COMMAND/geturl.cpp
++++ b/src/EXTRA-COMMAND/geturl.cpp
+@@ -21,6 +21,7 @@
+ #include "error.h"
+ #include "safe_pointers.h"
+ 
++#include <cstdlib>
+ #include <cstring>
+ 
+ #if defined(LAMMPS_CURL)
+@@ -133,6 +134,11 @@
+     if (!verify) {
+       (void) curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+       (void) curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
++    } else {
++      // as in the KIM package, a non-empty CURL_CA_BUNDLE names the CA certificate file
++      // to verify against; otherwise libcurl keeps its built-in default
++      const char *cabundle = std::getenv("CURL_CA_BUNDLE");
++      if (cabundle && *cabundle) (void) curl_easy_setopt(curl, CURLOPT_CAINFO, cabundle);
+     }
+     auto res = curl_easy_perform(curl);
+     if (res != CURLE_OK) {
+--- a/doc/src/geturl.rst
++++ b/doc/src/geturl.rst
+@@ -57,7 +57,10 @@
+ The *verify* keyword determines whether ``libcurl`` will validate the
+ SSL certificate and hostname for encrypted connections.  Turning this
+ off may be required when using a proxy or connecting to a server with a
+-self-signed SSL certificate.
++self-signed SSL certificate.  With *verify* *yes*, a non-empty
++``CURL_CA_BUNDLE`` environment variable sets the file with the CA
++certificates used for that validation, for example when the default CA
++store compiled into ``libcurl`` is not present on the machine.
+ 
+ The *verbose* keyword determines whether a detailed protocol of the steps
+ performed by libcurl is written to the screen.  Using the argument *yes*

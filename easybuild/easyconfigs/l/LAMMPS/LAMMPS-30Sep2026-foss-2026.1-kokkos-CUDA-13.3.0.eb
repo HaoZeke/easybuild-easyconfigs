@@ -51,6 +51,7 @@ patches = [
     'LAMMPS-2Aug2023_python_venv.patch',
     'LAMMPS-30Sep2026_fix_time_step.patch',
     'LAMMPS-30Sep2026_runner_url.patch',
+    'LAMMPS-30Sep2026_geturl-CURL_CA_BUNDLE.patch',
     # the bundled Kokkos 5.2.1 nvcc_wrapper glues CMake's quoted object response files into one
     # -Xcompiler argument, which exceeds the kernel's single-argument limit when liblammps links
     # (kokkos/kokkos#9573)
@@ -70,6 +71,7 @@ checksums = [
     {'LAMMPS-30Sep2026_fix_time_step.patch': 'e1797660780f895f2bded109c55f3051f7968d52ba975cef2517c3dcf567f3d8'},
     {'LAMMPS-30Sep2026_runner_url.patch':
      '111dc5d1c752862fb23d0b05ae7d46691d9f56854b8eac77ee73fa3a856e881c'},
+    {'LAMMPS-30Sep2026_geturl-CURL_CA_BUNDLE.patch': '359bf5052abf2993d307670158fa55bd91777404c62fc775a7696393e96480d0'},
     {'LAMMPS-30Sep2026_kokkos-nvcc_wrapper-response-file.patch':
      '428a40371f65a0a19c18243ee0b468fe13794c82d2cee68448f65246d97179ad'},
 ]
