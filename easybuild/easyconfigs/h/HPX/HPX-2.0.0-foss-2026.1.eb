@@ -64,7 +64,8 @@ configopts += '-DHPX_WITH_FETCH_STDEXEC=ON '
 configopts += '-DFETCHCONTENT_SOURCE_DIR_STDEXEC=%%(builddir)s/stdexec-%s ' % local_stdexec_commit
 configopts += '-DHPX_WITH_FETCH_ASIO=ON '
 configopts += '-DFETCHCONTENT_SOURCE_DIR_ASIO=%%(builddir)s/asio-%s ' % local_asio_tag
-configopts += '-DHPX_WITH_MALLOC=tcmalloc '
+# System malloc reduces mapping pressure while HPX retains its stack guard pages.
+configopts += '-DHPX_WITH_MALLOC=system '
 configopts += '-DHPX_WITH_HWLOC=ON '
 configopts += '-DHPX_WITH_NETWORKING=ON '
 configopts += '-DHPX_WITH_PARCELPORT_MPI=ON '
