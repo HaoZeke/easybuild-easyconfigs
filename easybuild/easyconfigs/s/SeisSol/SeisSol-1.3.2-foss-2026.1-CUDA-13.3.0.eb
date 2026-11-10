@@ -80,6 +80,8 @@ dependencies = [
     # yateto factory.py at submodule 35001bd2 requires chainforge == 0.0.3.
     ('chainforge', '0.0.3'),
     ('CUDA', '13.3.0', '', SYSTEM),
+    # The SYCL runtime and build-tree test discovery use LLVM's OpenMP library.
+    ('LLVM', '21.1.8', '', ('GCCcore', '15.2.0')),
     # CMakeLists.txt builds general-sycl-offloading for every WITH_GPU backend,
     # including cuda (process_users_input.cmake sets WITH_GPU when DEVICE_BACKEND
     # is not none) and find_package(AdaptiveCpp) because SYCL_CC defaults to acpp.
@@ -104,9 +106,13 @@ device_arch = 'auto'
 # from the same values. TESTING builds the SeisSol-serial-test target (doctest).
 # Explicitly select PT-SCOTCH (ParMETIS is unavailable under EESSI).
 partitioners = ['ptscotch']
+# Test discovery loads the SYCL runtime before installation.
+preconfigopts = 'omp_runtime="$("%(rootLLVM)s/bin/clang++" -print-file-name=libomp.so)" && '
+preconfigopts += 'test -f "$omp_runtime" && '
 # Generic SSCP avoids Clang's CUDA header wrapper for the SYCL objects.
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
 configopts += '-DACPP_TARGETS=generic '
+configopts += '-DCMAKE_BUILD_RPATH="$(dirname "$omp_runtime")" '
 
 runtest = True
 
