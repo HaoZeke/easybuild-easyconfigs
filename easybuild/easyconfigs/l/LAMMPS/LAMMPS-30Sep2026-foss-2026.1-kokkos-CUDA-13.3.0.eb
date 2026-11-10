@@ -74,7 +74,7 @@ checksums = [
      '111dc5d1c752862fb23d0b05ae7d46691d9f56854b8eac77ee73fa3a856e881c'},
     {'LAMMPS-30Sep2026_geturl-CURL_CA_BUNDLE.patch': '359bf5052abf2993d307670158fa55bd91777404c62fc775a7696393e96480d0'},
     {'LAMMPS-30Sep2026_kokkos-stable-spin-sort.patch':
-     'c3b83aab6455849f8fd1c945a4d865135f9fe9a158f39ab409e3bdcaa9752249'},
+     'c93ce6083a4f808a68eaa3b840a9884a86aa76e05603c9e37c76f08b5a4fe19e'},
     {'LAMMPS-30Sep2026_kokkos-nvcc_wrapper-response-file.patch':
      '428a40371f65a0a19c18243ee0b468fe13794c82d2cee68448f65246d97179ad'},
 ]
