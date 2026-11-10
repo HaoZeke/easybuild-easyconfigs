@@ -1,0 +1,66 @@
+The requires_gloo/requires_nccl decorator cause the function to just return.
+In the way they are used this skips the initialization done by a helper function.
+So the test is not skipped and then fails due to missing variables.
+
+Decorate the class instead.
+
+Author: Alexander Grund (TU Dresden)
+
+diff --git a/test/distributed/test_dist2.py b/test/distributed/test_dist2.py
+--- a/test/distributed/test_dist2.py
++++ b/test/distributed/test_dist2.py
+@@ -262,12 +262,12 @@
+             self.assertEqual(merged_pg.group_name, "merged_pg")
+ 
+ 
++@requires_gloo()
+ class ProcessGroupGlooTest(Dist2MultiProcessTestCase):
+     @property
+     def device(self) -> torch.device:
+         return torch.device("cpu")
+ 
+-    @requires_gloo()
+     def new_group(self) -> torch.distributed.ProcessGroup:
+         os.environ["RANK"] = str(self.rank)
+         os.environ["WORLD_SIZE"] = str(self.world_size)
+@@ -281,12 +281,12 @@
+         )
+ 
+ 
++@requires_nccl()
+ class ProcessGroupNCCLTest(Dist2MultiProcessTestCase):
+     @property
+     def device(self) -> torch.device:
+         return torch.device("cuda", self.rank)
+ 
+-    @requires_nccl()
+     @skip_if_lt_x_gpu(2)
+     def new_group(self) -> torch.distributed.ProcessGroup:
+         os.environ["RANK"] = str(self.rank)
+diff --git a/torch/testing/_internal/common_distributed.py b/torch/testing/_internal/common_distributed.py
+--- a/torch/testing/_internal/common_distributed.py
++++ b/torch/testing/_internal/common_distributed.py
+@@ -388,10 +388,7 @@
+ 
+ 
+ def requires_gloo():
+-    return skip_but_pass_in_sandcastle_if(
+-        not c10d.is_gloo_available(),
+-        "c10d was not compiled with the Gloo backend",
+-    )
++    return unittest.skipUnless(c10d.is_gloo_available(), "c10d was not compiled with the Gloo backend")
+ 
+ 
+ def requires_nccl_version(version, msg):
+@@ -416,10 +413,7 @@
+ 
+ 
+ def requires_nccl():
+-    return skip_but_pass_in_sandcastle_if(
+-        not c10d.is_nccl_available(),
+-        "c10d was not compiled with the NCCL backend",
+-    )
++    return unittest.skipUnless(c10d.is_nccl_available(), "c10d was not compiled with the NCCL backend")
+ 
+ 
+ def requires_ucc():

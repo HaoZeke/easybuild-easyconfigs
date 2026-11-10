@@ -1,0 +1,18 @@
+When `GLOO_HAVE_TRANSPORT_IBVERBS` is defined (gloo built with ibverbs, as enabled by `USE_IBVERBS=1`)
+`getCvarString` & `getCvarInt` are used for which `Utils.hpp` needs to be included, otherwise:
+> GlooDeviceFactory.cpp:158:15: error: 'getCvarString' was not declared in this scope
+
+From https://github.com/pytorch/pytorch/pull/182800
+
+diff --git a/torch/csrc/distributed/c10d/GlooDeviceFactory.cpp b/torch/csrc/distributed/c10d/GlooDeviceFactory.cpp
+index aefb79cfa3932..45db1faaacd73 100644
+--- a/torch/csrc/distributed/c10d/GlooDeviceFactory.cpp
++++ b/torch/csrc/distributed/c10d/GlooDeviceFactory.cpp
+@@ -19,6 +19,7 @@
+ 
+ #if GLOO_HAVE_TRANSPORT_IBVERBS
+ #include <gloo/transport/ibverbs/device.h>
++#include <torch/csrc/distributed/c10d/Utils.hpp>
+ #endif
+ 
+ // On Linux, check that the tcp transport is available.

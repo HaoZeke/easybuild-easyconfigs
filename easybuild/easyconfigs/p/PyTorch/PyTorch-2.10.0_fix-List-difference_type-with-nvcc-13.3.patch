@@ -1,0 +1,21 @@
+nvcc from CUDA 13.3 drops the `typename` in `static_cast<typename decltype(impl_->list)::difference_type>`
+when generating the host code, so every CUDA file including ATen/core/function_schema.h fails with
+> List_inl.h:201:52: error: need 'typename' before 'decltype (...)::difference_type' because
+>   'decltype (...)' is a dependent scope
+e.g. torch/csrc/distributed/c10d/symm_mem/CUDASymmetricMemory.cu (with GCC 13 and GCC 15 as host compiler).
+Use the non-dependent type instead.
+
+Backport of the List_inl.h part of https://github.com/pytorch/pytorch/pull/180996 (included in PyTorch 2.13.0)
+
+diff --git a/aten/src/ATen/core/List_inl.h b/aten/src/ATen/core/List_inl.h
+--- a/aten/src/ATen/core/List_inl.h
++++ b/aten/src/ATen/core/List_inl.h
+@@ -198,7 +198,7 @@
+ template<class T>
+ typename List<T>::internal_reference_type List<T>::operator[](size_type pos) {
+   static_cast<void>(impl_->list.at(pos)); // Throw the exception if it is out of range.
+-  return {impl_->list.begin() + static_cast<typename decltype(impl_->list)::difference_type>(pos)};
++  return {impl_->list.begin() + static_cast<typename c10::detail::ListImpl::list_type::difference_type>(pos)};
+ }
+ 
+ template<class T>

@@ -1,0 +1,16 @@
+This test shows segfaults, at least on some system.
+PyTorch CI HUD indicates some failures with it are known.
+
+Author: Alexander Grund (TU Dresden)
+
+diff --git a/test/inductor/test_flex_attention.py b/test/inductor/test_flex_attention.py
+--- a/test/inductor/test_flex_attention.py
++++ b/test/inductor/test_flex_attention.py
+@@ -3746,6 +3746,7 @@
+                 kernel_options={"BACKEND": "INVALID"},
+             )
+ 
++    @unittest.skip("Segfaults on CPU")
+     @supported_platform
+     def test_block_mask_non_divisible(self, device):
+         seq = torch.arange(1023, device=device) // 128
