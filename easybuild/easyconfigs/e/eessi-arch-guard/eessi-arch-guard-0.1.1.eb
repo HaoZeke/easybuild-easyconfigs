@@ -1,0 +1,31 @@
+easyblock = 'Binary'
+
+name = 'eessi-arch-guard'
+version = '0.1.1'
+
+homepage = 'https://github.com/HaoZeke/eessi-arch-guard'
+description = """Slurm task prolog that reloads the EESSI modules when a task runs on another CPU
+or GPU than the one EESSI was loaded for. Set SLURM_TASK_PROLOG to bin/eessi-arch-guard and every
+srun step runs it after the site's TaskProlog; `eessi-arch-guard --shell` covers a batch script.
+EESSI_ARCH_GUARD=0 turns it off."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/HaoZeke/eessi-arch-guard/archive/refs/tags/']
+sources = [{'download_filename': 'v%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
+checksums = ['0c4bf270e1da0e62a1b4d676fcc0fa9894edfd18c5a65d77216aad43c459618c']
+
+extract_sources = True
+
+# One file, started by its own shebang (/usr/bin/python3 -I, standard library only).
+install_cmd = ('install -D -m 0755 %(builddir)s/%(name)s-%(version)s/src/eessi_arch_guard.py '
+               '%(installdir)s/bin/eessi-arch-guard')
+
+sanity_check_paths = {
+    'files': ['bin/eessi-arch-guard'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eessi-arch-guard --version']
+
+moduleclass = 'tools'
