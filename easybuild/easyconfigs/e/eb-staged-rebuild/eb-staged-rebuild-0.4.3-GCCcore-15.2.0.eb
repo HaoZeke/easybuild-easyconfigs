@@ -1,0 +1,35 @@
+easyblock = 'PythonPackage'
+
+name = 'eb-staged-rebuild'
+version = '0.4.3'
+# v0.4.3 plus the fix that makes --version report 0.4.3; the rest of the difference is documentation.
+local_commit = '88d3423456071cd1bc42621632fe25906a2bef5f'
+
+homepage = 'https://github.com/HaoZeke/eb-staged-rebuild'
+description = """Rebuild an installed EasyBuild module in a staging directory and swap it with the
+live installation, so jobs never see a half-written tree; `rollback` restores the previous one.
+`retire` moves a module file out of the module tree and keeps the software directory."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = ['https://github.com/HaoZeke/eb-staged-rebuild/archive/']
+sources = [{
+    'download_filename': '%s.tar.gz' % local_commit,
+    'filename': '%%(name)s-%%(version)s-%s.tar.gz' % local_commit[:7],
+}]
+checksums = ['2b4dba5d890689a1dab80653bbc0763fdded33df07ff71741cedded84080dfd0']
+
+dependencies = [
+    ('Python', '3.14.2'),
+]
+
+options = {'modulename': 'eb_staged_rebuild'}
+
+sanity_check_paths = {
+    'files': ['bin/eb-staged-rebuild'],
+    'dirs': ['lib/python%(pyshortver)s/site-packages/eb_staged_rebuild'],
+}
+
+sanity_check_commands = ['eb-staged-rebuild --version']
+
+moduleclass = 'tools'
