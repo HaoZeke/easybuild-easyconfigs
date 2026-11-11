@@ -1,0 +1,30 @@
+easyblock = 'Binary'
+
+name = 'eb-local'
+version = '1.0'
+
+homepage = 'https://github.com/HaoZeke/eb-local'
+description = """Install software with EasyBuild on top of EESSI 2026.06 into a directory you own.
+Installs go to $HOME/.local/eessi (or a project directory with --project), builds and sources to
+/scratch-shared/$USER/eb, and EESSI-extend supplies EESSI's hooks, RPATH and compat layer.
+`eb-local --help` lists the options."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/HaoZeke/eb-local/archive/refs/tags/']
+sources = [{'download_filename': 'v%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
+checksums = ['3a3918be14b85d75559d6a72aae0b94a8bdd850a0311618244be67dae302f25a']
+
+extract_sources = True
+
+# One Bash script; it loads EESSI/2026.06 and EESSI-extend itself when it runs.
+install_cmd = 'install -D -m 0755 %(builddir)s/%(name)s-%(version)s/eb-local %(installdir)s/bin/eb-local'
+
+sanity_check_paths = {
+    'files': ['bin/eb-local'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eb-local --help']
+
+moduleclass = 'tools'
