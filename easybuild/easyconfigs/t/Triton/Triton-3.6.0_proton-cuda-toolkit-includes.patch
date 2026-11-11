@@ -1,0 +1,67 @@
+Point Proton's CUPTI and CRT include search at the loaded CUDA toolkit.
+
+An offline build (TRITON_OFFLINE_BUILD) does not download the CUDA 12.8 CUPTI
+and CRT redistributables named in cmake/nvidia-toolchain-version.json. The CUDA
+dependency already ships those headers, under extras/CUPTI/include and under
+include/crt or targets/*/include. Add those directories when EBROOTCUDA (or
+CUDA_HOME) is set, and treat them as system includes so -Werror does not trip
+over the toolkit headers.
+
+--- a/third_party/proton/CMakeLists.txt
++++ b/third_party/proton/CMakeLists.txt
+@@ -18,6 +18,35 @@
+ find_package(Python3 REQUIRED Interpreter Development.Module)
+ find_package(pybind11 CONFIG REQUIRED HINTS "${Python3_SITELIB}")
+ 
++# Offline builds skip the CUDA 12.8 CUPTI and CRT redistributables. The loaded
++# CUDA toolkit still has those headers: CUPTI under extras/CUPTI/include, and
++# cuda.h plus crt/ under include or targets/*/include.
++set(PROTON_CUDA_TOOLKIT_INCLUDES "")
++if(DEFINED ENV{EBROOTCUDA} AND NOT "$ENV{EBROOTCUDA}" STREQUAL "")
++  set(_proton_cuda_root "$ENV{EBROOTCUDA}")
++elseif(DEFINED ENV{CUDA_HOME} AND NOT "$ENV{CUDA_HOME}" STREQUAL "")
++  set(_proton_cuda_root "$ENV{CUDA_HOME}")
++else()
++  set(_proton_cuda_root "")
++endif()
++if(_proton_cuda_root)
++  foreach(_rel IN ITEMS "extras/CUPTI/include" "include")
++    if(IS_DIRECTORY "${_proton_cuda_root}/${_rel}")
++      list(APPEND PROTON_CUDA_TOOLKIT_INCLUDES "${_proton_cuda_root}/${_rel}")
++    endif()
++  endforeach()
++  file(GLOB _proton_target_includes LIST_DIRECTORIES true "${_proton_cuda_root}/targets/*/include")
++  foreach(_inc IN LISTS _proton_target_includes)
++    if(IS_DIRECTORY "${_inc}")
++      list(APPEND PROTON_CUDA_TOOLKIT_INCLUDES "${_inc}")
++    endif()
++  endforeach()
++  list(REMOVE_DUPLICATES PROTON_CUDA_TOOLKIT_INCLUDES)
++  if(PROTON_CUDA_TOOLKIT_INCLUDES)
++    message(STATUS "Proton CUDA toolkit includes: ${PROTON_CUDA_TOOLKIT_INCLUDES}")
++  endif()
++endif()
++
+ # ============ Define a GLOBAL property to store object-libraries ============
+ set_property(GLOBAL PROPERTY PROTON_LIBS "")
+ 
+@@ -27,15 +56,17 @@
+ 
+   target_link_libraries(${name} PRIVATE Python3::Module pybind11::headers)
+ 
+-  # Use system to skip warnings caused by legacy clang compilers
++  # Use system to skip warnings caused by legacy clang compilers (and by the
++  # CUDA toolkit headers, which are compiled with -Werror in the Triton build).
+   target_include_directories(${name}
+     SYSTEM PRIVATE
+       "${ROCTRACER_INCLUDE_DIR}"
++      "${CUPTI_INCLUDE_DIR}"
++      ${PROTON_CUDA_TOOLKIT_INCLUDES}
+   )
+ 
+   target_include_directories(${name}
+     PRIVATE
+-      "${CUPTI_INCLUDE_DIR}"
+       "${JSON_INCLUDE_DIR}"
+       "${PROTON_COMMON_DIR}/include"
+       "${PROTON_SRC_DIR}/include"

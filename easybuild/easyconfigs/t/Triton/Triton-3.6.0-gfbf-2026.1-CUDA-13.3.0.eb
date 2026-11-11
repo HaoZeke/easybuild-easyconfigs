@@ -156,6 +156,10 @@ local_preinstallopts = ' '.join([
     'LLVM_SYSPATH="%(builddir)s/llvm_build_dir"',
     'JSON_SYSPATH="$EBROOTNLOHMANN_JSON"',
     'PYBIND11_SYSPATH="$EBROOTPYBIND11"',
+    # Proton's offline build does not download the CUDA 12.8 CUPTI/CRT redistributables.
+    # The CUDA dependency provides them (see Triton-3.6.0_proton-cuda-toolkit-includes.patch).
+    'TRITON_CUPTI_INCLUDE_PATH="$EBROOTCUDA/extras/CUPTI/include"',
+    'TRITON_CUDACRT_PATH="$EBROOTCUDA/include"',
     'MAX_JOBS=%(parallel)s',
     # Build type
     'DEBUG=0 REL_WITH_DEB_INFO=0 TRITON_REL_BUILD_WITH_ASSERTS=1',
@@ -183,6 +187,7 @@ exts_list = [
             'Triton-3.6.0_disable-slp-copyable-elements.patch',
             'Triton-3.6.0_fix-ptxas-blackwell-env-var.patch',
             'Triton-3.6.0_exclude-annotate-from-aggregate-hash.patch',
+            'Triton-3.6.0_proton-cuda-toolkit-includes.patch',
         ],
         'checksums': [
             {'triton-3.6.0-8fedd49bbfc4.tar.gz': '6f1863af27d4454a89dea58190d8305f3fa14a9d1ffa6258886d2a62e4a1abac'},
@@ -192,6 +197,8 @@ exts_list = [
              '57d53426b10b7fa7bbb2b44156044edc1031dfad00f1ab56ea6ac4ca30e60ab9'},
             {'Triton-3.6.0_exclude-annotate-from-aggregate-hash.patch':
              '086b57e6530240b8f4a8ce0eac6edf7d8fa7ed571e3c6eb16ef2fe018a654b20'},
+            {'Triton-3.6.0_proton-cuda-toolkit-includes.patch':
+             'ee6dc216ac5d7337e9f57a09c7dc33ec83d8301ab5065f07755f49869a24efd5'},
         ],
     }),
 ]
@@ -206,7 +213,9 @@ sanity_check_commands = ['TRITON_HOME=$TMPDIR/eb-triton_home '
                          'python %(installdir)s/test/triton_test.py %(cuda_compute_capabilities)s',
                          'python -c "import os; from triton import knobs; n = knobs.nvidia; '
                          'print([t.version for t in (n.ptxas, n.ptxas_blackwell, n.cuobjdump, n.nvdisasm)]); '
-                         'assert os.path.isfile(n.libdevice_path), n.libdevice_path"']
+                         'assert os.path.isfile(n.libdevice_path), n.libdevice_path"',
+                         # Proton is built into this extension; importing it does not require a GPU.
+                         'python -c "import triton._C.libproton"']
 
 sanity_check_paths = {
     'files': ['tools/ptxas', 'tools/blackwell/ptxas', 'tools/cuobjdump', 'tools/nvdisasm',
