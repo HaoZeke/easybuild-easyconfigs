@@ -1,0 +1,89 @@
+--- qrupdate-1.1.2/src/cchinx.f
++++ qrupdate-1.1.2/src/cchinx.f
+@@ -64,8 +64,10 @@
+       do i = j,n
+         u(i) = u(i+1)
+       end do
+-c the diagonal element must be real.
+-      if (imag(t) /= 0e0) goto 30
++c Hermitian diagonals are real. CDOTC can leave an imaginary part
++c of a fraction of an ulp; that is rounding, not a complex diagonal.
++      if (abs(imag(t)).gt.10.*epsilon(1.)*abs(t)+epsilon(1.))
++     $   goto 30
+ 
+ c check for singularity of R.
+       do i = 1,n
+@@ -75,7 +77,7 @@
+       call ctrsv('U','C','N',n,R,ldr,u,1)
+       rho = scnrm2(n,u,1)
+ c check positive definiteness.
+-      rho = t - rho**2
++      rho = real(t) - rho**2
+       if (rho <= 0e0) goto 10
+ c shift columns
+       do i = n,j,-1
+--- qrupdate-1.1.2/src/zchinx.f
++++ qrupdate-1.1.2/src/zchinx.f
+@@ -63,8 +63,10 @@
+       do i = j,n
+         u(i) = u(i+1)
+       end do
+-c the diagonal element must be real.
+-      if (imag(t) /= 0d0) goto 30
++c Hermitian diagonals are real. ZDOTC can leave an imaginary part
++c of a fraction of an ulp; that is rounding, not a complex diagonal.
++      if (abs(imag(t)).gt.10d0*epsilon(1d0)*abs(t)+epsilon(1d0))
++     $   goto 30
+ 
+ c check for singularity of R.
+       do i = 1,n
+@@ -74,7 +76,7 @@
+       call ztrsv('U','C','N',n,R,ldr,u,1)
+       rho = dznrm2(n,u,1)
+ c check positive definiteness.
+-      rho = t - rho**2
++      rho = dble(t) - rho**2
+       if (rho <= 0d0) goto 10
+ c shift columns
+       do i = n,j,-1
+--- qrupdate-1.1.2/test/Makefile
++++ qrupdate-1.1.2/test/Makefile
+@@ -31,8 +31,7 @@
+ 	./report_results $(OUTS)
+ 
+ $(OUTS): %.out: %
+-	echo > $@
+-	./$< | tee $@
++	./$< >$@ 2>&1
+ 
+ $(PROGS): % : %.f utils.o ../libqrupdate.a
+ 	$(FC) $(FFLAGS) -o $@ $^ $(LIBS)
+--- qrupdate-1.1.2/test/report_results
++++ qrupdate-1.1.2/test/report_results
+@@ -9,14 +9,26 @@
+ 	awk '/total:/ { passed += $3; failed += $5; }
+ 	END { printf " TOTAL:     PASSED %3d     FAILED %3d\n", passed, failed; }' $OUTS
+ fi
++status=0
+ for out in $OUTS ; do
+ 	if [ ! -s $out ] ; then
+ 		echo " $out file empty (test crashed)!"
++		status=1
+ 	else
++		if grep -q 'fatal:' $out ; then
++			echo " $out aborted:"
++			grep 'fatal:' $out
++			status=1
++		fi
+ 		if grep -q WARNING $out ; then
+ 			echo " $out produced warnings:"
+ 			grep WARNING $out
+ 		fi
++		nfail=`awk '/total:/ {print $5; exit}' $out`
++		if [ -n "$nfail" ] && [ "$nfail" -gt 0 ] ; then
++			status=1
++		fi
+ 	fi
+ done
++exit $status
+ 
