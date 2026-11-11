@@ -1,0 +1,82 @@
+Recognize AdaptiveCpp generic-flow CUDA interoperability and add a GPU runtime control.
+
+The generic compiler exposes SYCL_EXT_ACPP_BACKEND_CUDA without enabling
+Clang's CUDA language frontend. Preserve the native CUDA stream path for
+that supported backend. The control checks GPU kernel execution and native
+queue extraction; it refuses a CPU fallback.
+
+Reference: https://github.com/AdaptiveCpp/AdaptiveCpp/blob/v25.10.0/include/hipSYCL/sycl/backend.hpp
+--- a/src/Parallel/SyclInterop.h
++++ b/src/Parallel/SyclInterop.h
+@@ -5,7 +5,8 @@
+ #include <utility>
+ 
+ #if defined(__HIPSYCL_ENABLE_CUDA_TARGET__) || defined(__ACPP_ENABLE_CUDA_TARGET__) ||             \
+-    defined(SYCL_BACKEND_CUDA) || defined(SYCL_EXT_ONEAPI_BACKEND_CUDA)
++    defined(SYCL_BACKEND_CUDA) || defined(SYCL_EXT_ACPP_BACKEND_CUDA) ||                          \
++    defined(SYCL_EXT_ONEAPI_BACKEND_CUDA)
+ #define SEISSOL_SYCL_BACKEND_CUDA
+ #endif
+ #if defined(__HIPSYCL_ENABLE_HIP_TARGET__) || defined(__ACPP_ENABLE_HIP_TARGET__) ||               \
+@@ -25,7 +26,7 @@
+ #endif
+ 
+ #if defined(__HIPSYCL_ENABLE_CUDA_TARGET__) || defined(__ACPP_ENABLE_CUDA_TARGET__) ||             \
+-    defined(SYCL_BACKEND_CUDA)
++    defined(SYCL_BACKEND_CUDA) || defined(SYCL_EXT_ACPP_BACKEND_CUDA)
+ constexpr auto SyclBackendCUDA = sycl::backend::cuda;
+ #elif defined(SYCL_EXT_ONEAPI_BACKEND_CUDA)
+ constexpr auto SyclBackendCUDA = sycl::backend::ext_oneapi_cuda;
+--- /dev/null
++++ b/tests/sycl_cuda_interop.cpp
+@@ -0,0 +1,50 @@
++// Check CUDA execution and native stream access under AdaptiveCpp generic flow.
++#include <sycl/sycl.hpp>
++
++#include <atomic>
++#include <exception>
++#include <iostream>
++
++#ifndef SYCL_EXT_ACPP_BACKEND_CUDA
++#error "AdaptiveCpp must expose CUDA backend interoperability"
++#endif
++
++int main() {
++  try {
++    sycl::queue queue{sycl::gpu_selector_v};
++    if (!queue.get_device().is_gpu() ||
++        queue.get_device().get_backend() != sycl::backend::cuda) {
++      std::cerr << "Expected a CUDA GPU queue\n";
++      return 1;
++    }
++
++    int* result = sycl::malloc_shared<int>(1, queue);
++    if (result == nullptr) {
++      std::cerr << "Shared allocation failed\n";
++      return 1;
++    }
++    *result = 0;
++    queue.single_task([=]() { *result = 42; }).wait_and_throw();
++
++    std::atomic<bool> nativeQueueRead{false};
++    queue.submit([&](sycl::handler& handler) {
++      handler.AdaptiveCpp_enqueue_custom_operation([&](sycl::interop_handle& handle) {
++        (void)handle.get_native_queue<sycl::backend::cuda>();
++        nativeQueueRead.store(true, std::memory_order_release);
++      });
++    }).wait_and_throw();
++
++    const bool passed = *result == 42 &&
++                        nativeQueueRead.load(std::memory_order_acquire);
++    sycl::free(result, queue);
++    if (!passed) {
++      std::cerr << "CUDA kernel or native queue check failed\n";
++      return 1;
++    }
++    std::cout << "SeisSol AdaptiveCpp CUDA interop: 42\n";
++    return 0;
++  } catch (const std::exception& error) {
++    std::cerr << error.what() << '\n';
++    return 1;
++  }
++}

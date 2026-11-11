@@ -39,6 +39,7 @@ patches = [
     # names members the class does not have, which only the GPU build compiles
     ('SeisSol-1.3.2_Table-copy-constructor-gcc15.patch', 1),
     ('SeisSol-1.3.2_respect-ACPP-targets.patch', 1),
+    ('SeisSol-1.3.2_AdaptiveCpp-generic-interop.patch', 1),
 ]
 checksums = [
     # Same recursive git_config archive as SeisSol-1.3.2-foss-2026.1.eb.
@@ -51,6 +52,7 @@ checksums = [
     {'SeisSol-1.3.2_Table-copy-constructor-gcc15.patch':
      '8b4eaea13a24f3c515ffcf51779a1f6b995bbacd69bf7454d5ba1553b948ef51'},
     {'SeisSol-1.3.2_respect-ACPP-targets.patch': 'b3122713e140e7796d7fdcb863224d5a7c2e0c2229102222665c0b2acc83ec04'},
+    {'SeisSol-1.3.2_AdaptiveCpp-generic-interop.patch': '85a8da38dd9500b6f1d2d750bf357adb54303c7b831ff849c911ec46445799ff'},
 ]
 
 builddependencies = [
@@ -113,6 +115,13 @@ preconfigopts += 'test -f "$omp_runtime" && '
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
 configopts += '-DACPP_TARGETS=generic '
 configopts += '-DCMAKE_BUILD_RPATH="$(dirname "$omp_runtime")" '
+
+# Validate CUDA execution and stream interoperability before the full CTest command.
+pretestopts = 'omp_runtime="$("${EBROOTLLVM:?}/bin/clang++" -print-file-name=libomp.so)" && '
+pretestopts += 'test -f "$omp_runtime" && '
+pretestopts += 'acpp --acpp-targets=generic -O2 "%(start_dir)s/tests/sycl_cuda_interop.cpp" '
+pretestopts += '-Wl,-rpath,"$(dirname "$omp_runtime")" -o ./seissol-sycl-cuda-interop && '
+pretestopts += 'ACPP_VISIBILITY_MASK=cuda ./seissol-sycl-cuda-interop && '
 
 runtest = True
 
