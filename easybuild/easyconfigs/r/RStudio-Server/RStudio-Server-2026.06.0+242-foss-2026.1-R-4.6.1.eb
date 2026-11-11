@@ -36,7 +36,7 @@ checksums = [
     {'RStudio-Server-2026.06.0+242_fix-fmt-include-order.patch':
      '968a345b48eb5f71dabb9f24e249ca0dd9138bc4d6e750f7c4e112de4ea60270'},
     {'RStudio-Server-2026.06.0+242_riscv64-node-quarto.patch':
-     '7249ab6f1c5946664d5c9a1f35738da94803ea42f65482cb3bc9cddfd6eb78a0'},
+     '921ecebf64732f1e154f29249971b130ec2ebb64119d0f0f9aa8c21eba3deef1'},
 ]
 
 builddependencies = [
@@ -73,6 +73,10 @@ local_pre_cmds = [
 ]
 if ARCH == 'riscv64':
     local_pre_cmds.append("./install-pandoc")
+    # keytar ships prebuilds for x64 and arm64 only. On riscv64 its install
+    # script falls back to node-gyp, which needs libsecret. The panmirror
+    # bundle does not need that native addon.
+    prebuildopts = 'export RSTUDIO_YARN_IGNORE_SCRIPTS=1 && '
 local_pre_cmds.extend([
     "./install-panmirror",
     "./install-npm-dependencies",

@@ -52,3 +52,19 @@
     echo "Node binaries not available for platform '${PLATFORM}'."
     exit 0
  ;;
+--- a/src/gwt/build.xml
++++ b/src/gwt/build.xml
+@@ -276,10 +276,9 @@
+ 
+       <mkdir dir="${panmirror.build.dir}"/>
+       <retry retrycount="3">
+-         <exec executable="${yarn.bin}" dir="${panmirror.dir}" resolveexecutable="true" failonerror="true">
+-            <arg value="install"/>
+-            <arg value="--network-timeout"/>
+-            <arg value="240000"/>
++         <exec executable="bash" dir="${panmirror.dir}" failonerror="true">
++            <arg value="-c"/>
++            <arg value="if [ &quot;${RSTUDIO_YARN_IGNORE_SCRIPTS}&quot; = 1 ]; then exec &quot;${yarn.bin}&quot; install --ignore-scripts --network-timeout 240000; else exec &quot;${yarn.bin}&quot; install --network-timeout 240000; fi"/>
++          </exec>
+       </retry>
+       <exec executable="${yarn.bin}" dir="${panmirror.dir}" resolveexecutable="true" failonerror="true">
