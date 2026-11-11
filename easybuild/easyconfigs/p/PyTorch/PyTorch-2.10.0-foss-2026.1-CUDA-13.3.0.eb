@@ -218,7 +218,9 @@ checksums = [
 osdependencies = [OS_PKG_IBVERBS_DEV]
 
 builddependencies = [
-    ('CMake', '4.2.1'),
+    # The PyTorch easyblock rejects CMake 4, and several bundled projects
+    # still declare cmake_minimum_required below 3.5, which CMake 4 refuses.
+    ('CMake', '3.31.11'),
     ('hypothesis', '6.153.2'),
     # For tests
     ('parameterized', '0.9.0'),
