@@ -1,0 +1,39 @@
+easyblock = 'PythonPackage'
+
+name = 'eb-staged-rebuild'
+version = '0.4.4'
+
+homepage = 'https://github.com/HaoZeke/eb-staged-rebuild'
+description = """Rebuild an installed EasyBuild module in a staging directory and swap it with the
+live installation, so jobs never see a half-written tree; `rollback` restores the previous one.
+`retire` moves a module file out of the module tree and keeps the software directory."""
+
+toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
+
+source_urls = ['https://github.com/HaoZeke/eb-staged-rebuild/archive/refs/tags/']
+sources = [{
+    'download_filename': 'v%(version)s.tar.gz',
+    'filename': SOURCE_TAR_GZ,
+}]
+checksums = ['fdc40d90467021f4b7bb3f49e1364debc4a65bf58b829a9ea60bffa172252571']
+
+dependencies = [
+    ('Python', '3.14.2'),
+]
+
+use_pip = True
+sanity_pip_check = True
+
+options = {'modulename': 'eb_staged_rebuild'}
+
+sanity_check_paths = {
+    'files': ['bin/eb-staged-rebuild'],
+    'dirs': ['lib/python%(pyshortver)s/site-packages/eb_staged_rebuild'],
+}
+
+sanity_check_commands = [
+    'eb-staged-rebuild --version',
+    'python -c "from eb_staged_rebuild import __version__; assert __version__ == \'%(version)s\'"',
+]
+
+moduleclass = 'tools'
