@@ -60,19 +60,26 @@ osdependencies = [
     ('pam-devel', 'libpam0g-dev')
 ]
 
-# Install dependencies via scripts. Done in subshell to preserve PWD
-preconfigopts = '(' + " && ".join([
+# Install dependencies via scripts. Done in subshell to preserve PWD.
+# With Quarto disabled, CMake still requires a pandoc/ directory. install-pandoc
+# creates it, and exits without a binary on architectures that have no tarball.
+local_pre_cmds = [
     "export RSTUDIO_TOOLS_ROOT='%(builddir)s'",
     "cd '%(start_dir)s/dependencies/common'",
     "./install-cef",
     "./install-dictionaries",
     "./install-mathjax",
     "./install-quarto",  # published builds are x86_64 and aarch64; riscv64 skips the download
+]
+if ARCH == 'riscv64':
+    local_pre_cmds.append("./install-pandoc")
+local_pre_cmds.extend([
     "./install-panmirror",
     "./install-npm-dependencies",
     "./install-copilot-language-server",
     "./install-gwt",
-]) + ') && '
+])
+preconfigopts = '(' + " && ".join(local_pre_cmds) + ') && '
 
 # Quarto publishes linux binaries for x86_64 and aarch64 only.
 local_quarto_enabled = 'OFF' if ARCH == 'riscv64' else 'ON'
