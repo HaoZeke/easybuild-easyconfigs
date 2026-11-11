@@ -121,7 +121,13 @@ exts_list = [
         'installopts': "-v ",
         # ensure that libdevice.10.bc from $EBROOTCUDA/nvvm/libdevice is used:
         'postinstallcmds': [
+            # Drop the copy shipped in the Triton tree and point at the CUDA toolkit
+            # copy. The default search path is this location, which still works when
+            # CUDA_HOME is unset because CUDA is only a build dependency.
             'rm -rf %(installdir)s/lib/python%(pyshortver)s/site-packages/triton/backends/nvidia/lib/libdevice.10.bc',
+            'mkdir -p %(installdir)s/lib/python%(pyshortver)s/site-packages/triton/backends/nvidia/lib',
+            'ln -s "$EBROOTCUDA/nvvm/libdevice/libdevice.10.bc" '
+            '%(installdir)s/lib/python%(pyshortver)s/site-packages/triton/backends/nvidia/lib/libdevice.10.bc',
             # TRITON_PTXAS_BLACKWELL_PATH is only honored after this commit, so use the default location
             'mkdir -p %(installdir)s/lib/python%(pyshortver)s/site-packages/triton/backends/nvidia/bin',
             'ln -sr %(installdir)s/tools/ptxas-blackwell '
@@ -152,10 +158,15 @@ sanity_check_commands = ['TRITON_HOME=$TMPDIR/eb-triton_home '
 modextrapaths = {
     'TRITON_PTXAS_PATH': 'tools/ptxas',
 }
-modextravars = {
-    # Search for "_path_to_binary" in Triton sources
-    'TRITON_CUOBJDUMP_PATH': '$CUDA_HOME/bin/cuobjdump',
-    'TRITON_LIBDEVICE_PATH': '$CUDA_HOME/nvvm/libdevice/libdevice.10.bc',
-}
+# Search for "_path_to_binary" in Triton sources.
+# Guard CUDA_HOME: EESSI moves CUDA to a build dependency, so the module is
+# evaluated before CUDA_HOME exists. An unguarded os.getenv("CUDA_HOME") .. path
+# concatenation is a Lua error.
+modluafooter = """
+if os.getenv("CUDA_HOME") then
+    setenv("TRITON_CUOBJDUMP_PATH", pathJoin(os.getenv("CUDA_HOME"), "bin", "cuobjdump"))
+    setenv("TRITON_LIBDEVICE_PATH", pathJoin(os.getenv("CUDA_HOME"), "nvvm", "libdevice", "libdevice.10.bc"))
+end
+"""
 
 moduleclass = 'devel'
