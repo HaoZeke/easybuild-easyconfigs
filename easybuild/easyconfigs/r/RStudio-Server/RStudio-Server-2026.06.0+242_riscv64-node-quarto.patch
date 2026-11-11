@@ -1,0 +1,54 @@
+--- a/dependencies/common/install-quarto
++++ b/dependencies/common/install-quarto
+@@ -65,11 +65,14 @@
+ 
+ "Linux-64")
+   SUBDIR="linux"
+-  if [ "$(arch)" == "aarch64" ]; then
+-    ARCH="arm64"
+-  else
+-    ARCH="amd64"
+-  fi
++  case "$(arch)" in
++    aarch64|arm64) ARCH="arm64" ;;
++    x86_64|amd64) ARCH="amd64" ;;
++    *)
++      echo "Quarto binaries not available for arch '$(arch)'."
++      exit 0
++      ;;
++  esac
+   
+   FILES=(
+     "quarto-${QUARTO_VERSION}-linux-${ARCH}.tar.gz"
+--- a/dependencies/common/install-node
++++ b/dependencies/common/install-node
+@@ -39,6 +39,29 @@
+ "Linux-x86_64")  NODE_FILE="node-v${NODE_VERSION}-linux-x64" ;;
+ "Linux-aarch64") NODE_FILE="node-v${NODE_VERSION}-linux-arm64" ;;
+ *)
++   # No published Node build for this platform. Reuse a Node already on PATH
++   # (for example the EasyBuild nodejs dependency) so later steps can run.
++   node_bin="$(command -v node || true)"
++   if [ -n "${node_bin}" ]; then
++      echo "No prebuilt Node for platform '${PLATFORM}'; using ${node_bin}"
++      mkdir -p "${NODE_SUBDIR}/bin"
++      ln -sfn "${node_bin}" "${NODE_SUBDIR}/bin/node"
++      # npm install -g writes into Node's prefix. The toolchain Node lives on a
++      # read-only prefix, so point npm/npx at this writable directory.
++      prefix="$(cd "${NODE_SUBDIR}" && pwd)"
++      for tool in npm npx; do
++         tool_bin="$(command -v "${tool}" || true)"
++         if [ -n "${tool_bin}" ]; then
++            cat > "${NODE_SUBDIR}/bin/${tool}" << EOF
++#!/bin/sh
++export npm_config_prefix="${prefix}"
++exec "${tool_bin}" "\$@"
++EOF
++            chmod +x "${NODE_SUBDIR}/bin/${tool}"
++         fi
++      done
++      exit 0
++   fi
+    echo "Node binaries not available for platform '${PLATFORM}'."
+    exit 0
+ ;;

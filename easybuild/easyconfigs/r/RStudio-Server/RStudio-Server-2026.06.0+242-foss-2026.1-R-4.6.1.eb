@@ -26,6 +26,7 @@ patches = [
     'RStudio-Server-1.2.1335-fix_env.patch',
     'RStudio-Server-2026.06.0+242_fix-SOCI-4.1.4.patch',
     'RStudio-Server-2026.06.0+242_fix-fmt-include-order.patch',
+    'RStudio-Server-2026.06.0+242_riscv64-node-quarto.patch',
 ]
 checksums = [
     {'v%(version)s.tar.gz': '6a3a1262da1952e60f90e842847482c9d4bed22cd5085adbe04c10eb8790f88a'},
@@ -34,6 +35,8 @@ checksums = [
      '4da3b40b4af1e8838bea6b6dae7f45f95e7446358999de80b40e062559b2bcd2'},
     {'RStudio-Server-2026.06.0+242_fix-fmt-include-order.patch':
      '968a345b48eb5f71dabb9f24e249ca0dd9138bc4d6e750f7c4e112de4ea60270'},
+    {'RStudio-Server-2026.06.0+242_riscv64-node-quarto.patch':
+     '7249ab6f1c5946664d5c9a1f35738da94803ea42f65482cb3bc9cddfd6eb78a0'},
 ]
 
 builddependencies = [
@@ -64,12 +67,15 @@ preconfigopts = '(' + " && ".join([
     "./install-cef",
     "./install-dictionaries",
     "./install-mathjax",
-    "./install-quarto",  # Available for X86 and ARM
+    "./install-quarto",  # published builds are x86_64 and aarch64; riscv64 skips the download
     "./install-panmirror",
     "./install-npm-dependencies",
     "./install-copilot-language-server",
     "./install-gwt",
 ]) + ') && '
+
+# Quarto publishes linux binaries for x86_64 and aarch64 only.
+local_quarto_enabled = 'OFF' if ARCH == 'riscv64' else 'ON'
 
 configopts = " ".join([
     "-DRSTUDIO_TOOLS_ROOT='%(builddir)s'",
@@ -77,7 +83,7 @@ configopts = " ".join([
     "-DRSTUDIO_USE_SYSTEM_BOOST=ON",
     "-DRSTUDIO_USE_SYSTEM_SOCI=ON",
     "-DRSTUDIO_USE_SYSTEM_YAML_CPP=ON",
-    "-DQUARTO_ENABLED=ON",
+    "-DQUARTO_ENABLED=" + local_quarto_enabled,
     "-DRSTUDIO_GIT_REVISION_HASH=" + local_git_rev
 ])
 
