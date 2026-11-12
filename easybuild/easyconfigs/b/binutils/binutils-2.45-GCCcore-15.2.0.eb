@@ -8,7 +8,11 @@ toolchain = {'name': 'GCCcore', 'version': '15.2.0'}
 
 source_urls = [GNU_SOURCE]
 sources = [SOURCE_TAR_GZ]
-checksums = ['8a3eb4b10e7053312790f21ee1a38f7e2bbd6f4096abb590d3429e5119592d96']
+patches = ['binutils-2.45_gprofng-glibc-2.43.patch']
+checksums = [
+    '8a3eb4b10e7053312790f21ee1a38f7e2bbd6f4096abb590d3429e5119592d96',
+    'ef7695d098e6acbe4282dd21fcb96fb08ee644fef488531c84725c16ba113d98',
+]
 
 builddependencies = [
     ('flex', '2.6.4'),
