@@ -1,0 +1,40 @@
+diff --git a/easybuild/tools/systemtools.py b/easybuild/tools/systemtools.py
+index e730a220d..d2bf9c6c8 100644
+--- a/easybuild/tools/systemtools.py
++++ b/easybuild/tools/systemtools.py
+@@ -1079,10 +1079,11 @@ def get_glibc_version():
+     return glibc_ver
+ 
+ 
+-def get_cuda_object_dump_raw(path):
++def get_cuda_object_dump_raw(path, all_fatbin=False):
+     """
+     Get raw ouput from command which extracts information from CUDA binary files in a human-readable format,
+     or None for files containing no CUDA device code.
++    all_fatbin: include relocatable fatbins as well as the linked executable fatbin.
+     See https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#cuobjdump
+     """
+ 
+@@ -1097,7 +1098,8 @@ def get_cuda_object_dump_raw(path):
+         # Make sure we have a cuobjdump command
+         if not shutil.which('cuobjdump'):
+             raise EasyBuildError("Failed to get object dump from CUDA file: cuobjdump command not found")
+-        cuda_cmd = f"cuobjdump {path}"
++        fatbin_option = "--all-fatbin " if all_fatbin else ""
++        cuda_cmd = f"cuobjdump {fatbin_option}{path}"
+         res = run_shell_cmd(cuda_cmd, fail_on_error=False, hidden=True, output_file=False, stream_output=False)
+         if res.exit_code == EasyBuildExit.SUCCESS:
+             result = res.output
+@@ -1152,7 +1154,11 @@ def get_cuda_architectures(path, section_type):
+         path = os.path.realpath(path)
+ 
+     cc_archs = None
+-    cuda_raw = get_cuda_object_dump_raw(path)
++    # Relocatable PTX provides JIT input independently of the linked device ELF.
++    if section_type == 'ptx':
++        cuda_raw = get_cuda_object_dump_raw(path, all_fatbin=True)
++    else:
++        cuda_raw = get_cuda_object_dump_raw(path)
+     if cuda_raw is not None:
+         # extract unique device code architectures from raw dump
+         code_matches = re.findall(code_regex, cuda_raw)
