@@ -42,7 +42,15 @@ def inspect_command(argv):
                 os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-        process.wait(timeout=3)
+        try:
+            process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait(timeout=3)
     finally:
         selector.close()
         process.stdout.close()
@@ -70,7 +78,10 @@ def capture(argv):
         if stream.read(4) != b"\x7fELF":
             raise ValueError("linked test output is not ELF")
         stream.seek(0)
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        digest_state = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest_state.update(chunk)
+        digest = digest_state.hexdigest()
     root = Path(directory)
     if not root.is_absolute():
         raise ValueError("metadata directory must be absolute")
