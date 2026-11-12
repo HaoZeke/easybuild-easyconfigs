@@ -25,7 +25,14 @@ checksums = [
 ]
 
 # install wrapper with linking safeguards for Julia libraries
-postinstallcmds = ["cd %(installdir)s/bin && mv julia julia.bin && mv julia.wrapper julia"]
+postinstallcmds = [
+    "cd %(installdir)s/bin && mv julia julia.bin && mv julia.wrapper julia",
+    # The aarch64 tarball requests /lib/ld-linux-aarch64.so.1. When EasyBuild
+    # is pointed at a sysroot, use that sysroot's dynamic linker instead.
+    "if [ '%(arch)s' = aarch64 ] && [ -n '%(sysroot)s' ]; then "
+    "patchelf --set-interpreter %(sysroot)s/lib/ld-linux-aarch64.so.1 %(installdir)s/bin/julia.bin; "
+    "fi",
+]
 
 sanity_check_paths = {
     'files': ['bin/julia', 'bin/julia.bin', 'include/julia/julia.h', 'lib/libjulia.%s' % SHLIB_EXT],
