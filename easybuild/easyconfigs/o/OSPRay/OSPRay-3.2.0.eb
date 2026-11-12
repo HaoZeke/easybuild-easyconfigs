@@ -9,8 +9,12 @@ description = "Open, Scalable, and Portable Ray Tracing Engine"
 toolchain = SYSTEM
 
 source_urls = ['https://github.com/%(namelower)s/%(name)s/releases/download/v%(version)s/']
-sources = ['%(namelower)s-%(version)s.x86_64.linux.tar.gz']
-checksums = ['d8670e69b4762e24f2aa83629af897e8f33ea1c724e17e613942c0ccc1c723be']
+_archs = {'x86_64': 'x86_64', 'aarch64': 'aarch64'}
+sources = ['%%(namelower)s-%%(version)s.%s.linux.tar.gz' % _archs[ARCH]]
+checksums = [{
+    'ospray-%(version)s.x86_64.linux.tar.gz': 'd8670e69b4762e24f2aa83629af897e8f33ea1c724e17e613942c0ccc1c723be',
+    'ospray-%(version)s.aarch64.linux.tar.gz': 'cdb4b1495c747e8a323e52c82d33df8dd8244500a21df31a65633b8d3b26cfa8',
+}]
 
 sanity_check_paths = {
     'files': ['bin/ospConvertRawToAMR', 'include/ospray/ospray.h',
