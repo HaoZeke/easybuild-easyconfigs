@@ -18,8 +18,12 @@ toolchain = SYSTEM
 
 source_urls = ['https://github.com/It4innovations/hyperqueue/releases/download/v%(version)s/']
 
-sources = ['hq-v%(version)s-linux-x64.tar.gz']
-checksums = ['2c73b6dc866b32b70b4286934610d2b426418437df7fbcc6d2dcccef37220379']
+_archs = {'x86_64': 'x64', 'aarch64': 'arm64-linux'}
+sources = ['hq-v%%(version)s-linux-%s.tar.gz' % _archs[ARCH]]
+checksums = [{
+    'hq-v%(version)s-linux-x64.tar.gz': '2c73b6dc866b32b70b4286934610d2b426418437df7fbcc6d2dcccef37220379',
+    'hq-v%(version)s-linux-arm64-linux.tar.gz': 'd863c0d8b03108b1fdade2376b6d534af5438859f41e2805fb1c7b88b2780f0e',
+}]
 
 sanity_check_paths = {
     'files': ['bin/hq'],
