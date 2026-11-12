@@ -41,6 +41,7 @@ patches = [
     ('SeisSol-1.3.2_respect-ACPP-targets.patch', 1),
     ('SeisSol-1.3.2_AdaptiveCpp-generic-interop.patch', 1),
     ('SeisSol-1.3.2_preserve-Hopper90a-CUDA-target.patch', 1),
+    ('SeisSol-1.3.2_preserve-install-rpath.patch', 1),
 ]
 checksums = [
     # Same recursive git_config archive as SeisSol-1.3.2-foss-2026.1.eb.
@@ -56,6 +57,7 @@ checksums = [
     {'SeisSol-1.3.2_AdaptiveCpp-generic-interop.patch': '7033c0f4bc6831ff8aa2958bf422ee7c3822a62556ad2114de3989c6a4751643'},
     {'SeisSol-1.3.2_preserve-Hopper90a-CUDA-target.patch':
      'bcfbb7123fa1b27c3492c2a57cb9716deb0517c59ce82c76e1fc513ff3718ae2'},
+    {'SeisSol-1.3.2_preserve-install-rpath.patch': '58bba5214e7482525b519166e8673258ca80d744d577bdd16534d4577672585b'},
 ]
 
 builddependencies = [
@@ -119,6 +121,7 @@ preconfigopts += 'test -f "$omp_runtime" && '
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
 configopts += '-DACPP_TARGETS=generic '
 configopts += '-DCMAKE_BUILD_RPATH="$(dirname "$omp_runtime")" '
+configopts += '-DCMAKE_INSTALL_RPATH="$(dirname "$omp_runtime")" '
 
 # Validate CUDA execution and stream interoperability before the full CTest command.
 pretestopts = 'omp_runtime="$("${EBROOTLLVM:?}/bin/clang++" -print-file-name=libomp.so)" && '

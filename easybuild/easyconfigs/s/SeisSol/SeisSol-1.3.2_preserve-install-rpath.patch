@@ -1,0 +1,12 @@
+Preserve caller-supplied runtime paths alongside the installed SeisSol libraries.
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -73,7 +73,7 @@
+   # Note: hip 4.x has a bug during setting rpath while compiling
+   #       device code for nvidia gpus. This scenario is used in
+   #       SeisSol's GPU CI pipeline.
+-  set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
++  list(APPEND CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
+ endif()
+ 
+ if(NUMBER_OF_FUSED_SIMULATIONS GREATER 1)
