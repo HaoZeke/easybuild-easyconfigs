@@ -1,0 +1,33 @@
+easyblock = 'Binary'
+
+name = 'eessi-arch-guard'
+version = '0.1.2'
+
+homepage = 'https://github.com/HaoZeke/eessi-arch-guard'
+description = """Slurm task prolog that reloads EESSI modules when a task runs on another CPU
+or GPU target. The shell mode repairs an explicitly inherited batch environment; the strict mode
+refuses a failed repair. Private workspaces can select the guard without changing the site prolog."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/HaoZeke/eessi-arch-guard/archive/refs/tags/']
+sources = [{'download_filename': 'v%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
+checksums = ['b657a796ca50594a0fc06841109a7df0b024a9c4f8de00bf8eea0f0095253bf3']
+
+extract_sources = True
+
+# The executable uses the system Python interpreter and its standard library.
+install_cmd = ('install -D -m 0755 %(builddir)s/%(name)s-%(version)s/src/eessi_arch_guard.py '
+               '%(installdir)s/bin/eessi-arch-guard')
+
+sanity_check_paths = {
+    'files': ['bin/eessi-arch-guard'],
+    'dirs': [],
+}
+
+sanity_check_commands = [
+    'eessi-arch-guard --version',
+    'eessi-arch-guard --help | grep -- --strict',
+]
+
+moduleclass = 'tools'
