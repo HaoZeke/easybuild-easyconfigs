@@ -1,0 +1,33 @@
+easyblock = 'Binary'
+
+name = 'eb-stack'
+version = '0.7.3'
+
+homepage = 'https://eb-stack.rgoswami.me'
+description = """Plan EasyBuild dependency closures, shard build lists, inspect
+recipes, and maintain authenticated software installation records."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/HaoZeke/eb-stack/releases/download/v%(version)s']
+sources = ['eb_stack-x86_64-unknown-linux-musl.tar.xz']
+checksums = ['9a90b3bfc5285f80f69b0d7fb6c0efedb68d663e7e1f5982ec9302334a8556b5']
+
+extract_sources = True
+install_cmd = 'install -Dm755 eb-stack %(installdir)s/bin/eb-stack'
+
+# The module generator discovers the standard bin directory.
+prepend_to_path = []
+
+sanity_check_paths = {
+    'files': ['bin/eb-stack'],
+    'dirs': [],
+}
+sanity_check_commands = [
+    'eb-stack --version',
+    'eb-stack stack shard --help',
+    'eb-stack stack admit --help',
+    'eb-stack ledger --help',
+]
+
+moduleclass = 'tools'
