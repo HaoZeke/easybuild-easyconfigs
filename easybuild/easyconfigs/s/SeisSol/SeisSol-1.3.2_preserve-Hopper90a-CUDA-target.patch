@@ -1,0 +1,28 @@
+Preserve explicitly selected CUDA90a compilation with SeisSol generic Hopper code generation.
+The exact sm_90/90a pair keeps CMAKE_CUDA_ARCHITECTURES on both CUDA targets;
+all other device architectures retain their existing selection.
+Author: Rohit Goswami
+--- a/src/cuda.cmake
++++ b/src/cuda.cmake
+@@ -25,6 +25,9 @@
+ endif()
+ 
+ string(REPLACE "sm_" "" CUDA_DEVICE_ARCH "${DEVICE_ARCH}")
++if (DEVICE_ARCH STREQUAL "sm_90" AND CMAKE_CUDA_ARCHITECTURES STREQUAL "90a")
++    set(CUDA_DEVICE_ARCH "90a")
++endif()
+ set_target_properties(SeisSol-device-lib PROPERTIES CUDA_ARCHITECTURES "${CUDA_DEVICE_ARCH}")
+ 
+ target_compile_definitions(SeisSol-device-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+--- a/submodules/Device/cuda.cmake
++++ b/submodules/Device/cuda.cmake
+@@ -22,6 +22,9 @@
+ 
+ 
+ string(REPLACE "sm_" "" CUDA_DEVICE_ARCH "${DEVICE_ARCH}")
++if (DEVICE_ARCH STREQUAL "sm_90" AND CMAKE_CUDA_ARCHITECTURES STREQUAL "90a")
++    set(CUDA_DEVICE_ARCH "90a")
++endif()
+ set_target_properties(device PROPERTIES CUDA_ARCHITECTURES "${CUDA_DEVICE_ARCH}")
+ 
+ target_compile_features(device PRIVATE cxx_std_14)
