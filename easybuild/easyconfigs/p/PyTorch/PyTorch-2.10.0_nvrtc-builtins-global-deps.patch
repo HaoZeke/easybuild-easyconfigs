@@ -15,3 +15,13 @@
      if(TARGET torch::nvtoolsext)
        target_link_libraries(torch_global_deps torch::nvtoolsext)
      endif()
+--- a/cmake/Modules/FindCUDAToolkit.cmake
++++ b/cmake/Modules/FindCUDAToolkit.cmake
+@@ -1043,6 +1043,7 @@
+   endif()
+ 
++  _CUDAToolkit_find_and_add_import_lib(nvrtc_builtins ALT nvrtc-builtins)
+   _CUDAToolkit_find_and_add_import_lib(nvrtc DEPS cuda_driver)
+ 
+   _CUDAToolkit_find_and_add_import_lib(nvml ALT nvidia-ml nvml)
+ 
