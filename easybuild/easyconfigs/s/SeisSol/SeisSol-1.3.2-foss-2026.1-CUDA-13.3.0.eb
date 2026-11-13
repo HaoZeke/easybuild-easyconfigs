@@ -121,11 +121,22 @@ preconfigopts += 'test -f "$omp_runtime" && '
 # Resolve the declared CUDA module runtime instead of a host loader-cache entry.
 preconfigopts += f'cuda_runtime="$(readlink -e "${{EBROOTCUDA:?}}/lib64/libcudart.{SHLIB_EXT}")" && '
 preconfigopts += 'test -f "$cuda_runtime" && test -r "$cuda_runtime" && '
+# CMake excludes compiler implicit link directories from automatic install RPATHs.
+preconfigopts += f'asagi_runtime="$(readlink -e "${{EBROOTASAGI:?}}/lib64/libasagi.{SHLIB_EXT}")" && '
+preconfigopts += 'test -f "$asagi_runtime" && test -r "$asagi_runtime" && '
+preconfigopts += f'netcdf_runtime="$(readlink -e "${{EBROOTNETCDF:?}}/lib64/libnetcdf.{SHLIB_EXT}")" && '
+preconfigopts += 'test -f "$netcdf_runtime" && test -r "$netcdf_runtime" && '
+preconfigopts += f'hdf5_runtime="$(readlink -e "${{EBROOTHDF5:?}}/lib64/libhdf5.{SHLIB_EXT}")" && '
+preconfigopts += 'test -f "$hdf5_runtime" && test -r "$hdf5_runtime" && '
+preconfigopts += f'hdf5_hl_runtime="$(readlink -e "${{EBROOTHDF5:?}}/lib64/libhdf5_hl.{SHLIB_EXT}")" && '
+preconfigopts += 'test -f "$hdf5_hl_runtime" && test -r "$hdf5_hl_runtime" && '
+preconfigopts += 'test "$(dirname "$hdf5_runtime")" = "$(dirname "$hdf5_hl_runtime")" && '
 # Generic SSCP avoids Clang's CUDA header wrapper for the SYCL objects.
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
 configopts += '-DACPP_TARGETS=generic '
 configopts += '-DCMAKE_BUILD_RPATH="$(dirname "$omp_runtime")" '
-configopts += '-DCMAKE_INSTALL_RPATH="$(dirname "$omp_runtime");$(dirname "$cuda_runtime")" '
+configopts += '-DCMAKE_INSTALL_RPATH="$(dirname "$omp_runtime");$(dirname "$cuda_runtime");'
+configopts += '$(dirname "$asagi_runtime");$(dirname "$netcdf_runtime");$(dirname "$hdf5_runtime")" '
 # Retain linked provider directories in installed shared libraries.
 configopts += '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON '
 # Both C++ and CUDA compiler drivers accept this linker-option spelling.
