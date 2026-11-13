@@ -91,6 +91,7 @@ patches = [
     'PyTorch-2.10.0_fix-pybind11-3.0.3-return-type-deduction.patch',
     'PyTorch-2.10.0_mark-generated-assembly-nonexec.patch',
     'PyTorch-2.10.0_select-fork-for-CUDA-fork-test.patch',
+    'PyTorch-2.10.0_nvrtc-builtins-global-deps.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -207,6 +208,8 @@ checksums = [
      'b4a9248337de4fee46b480946ec1ce6f90d06f6f1e35687e5866327c4b00f2b8'},
     {'PyTorch-2.10.0_select-fork-for-CUDA-fork-test.patch':
      '33f385163398e6e62aced53160f445fbc4baac3f70f403b6c2fea50bdc621d93'},
+    {'PyTorch-2.10.0_nvrtc-builtins-global-deps.patch':
+     '00f7c58232a76bf35934422213af8ad45904eac5a23246c5dab3b72d07699ce7'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

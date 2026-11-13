@@ -1,0 +1,17 @@
+--- a/caffe2/CMakeLists.txt
++++ b/caffe2/CMakeLists.txt
+@@ -1743,6 +1743,14 @@
+   if(USE_CUDA)
+     target_link_libraries(torch_global_deps ${Caffe2_PUBLIC_CUDA_DEPENDENCY_LIBS})
+     target_link_libraries(torch_global_deps torch::cudart)
++    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET CUDA::nvrtc_builtins)
++      # NVRTC opens its matching builtins by name from dynamically loaded clients.
++      # Keep the provider in the global preload even with --as-needed.
++      target_link_libraries(torch_global_deps
++          "-Wl,--push-state,--no-as-needed"
++          CUDA::nvrtc_builtins
++          "-Wl,--pop-state")
++    endif()
+     if(TARGET torch::nvtoolsext)
+       target_link_libraries(torch_global_deps torch::nvtoolsext)
+     endif()
