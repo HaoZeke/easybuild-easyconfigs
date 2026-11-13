@@ -89,6 +89,7 @@ patches = [
     'PyTorch-2.10.0_fix-MAGMA-2.10-version-encoding.patch',
     'PyTorch-2.10.0_fix-GlooDeviceFactory-with-ibverbs.patch',
     'PyTorch-2.10.0_fix-pybind11-3.0.3-return-type-deduction.patch',
+    'PyTorch-2.10.0_mark-generated-assembly-nonexec.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -201,6 +202,8 @@ checksums = [
      '8d3c2db0575d2e637570d2dc943d1ce33ed14ccb70840aa44cb77d43ed8b0695'},
     {'PyTorch-2.10.0_fix-pybind11-3.0.3-return-type-deduction.patch':
      '70f0308fb341def156f8b6f1580d651251e7c9c2d504cff56850af688a72c061'},
+    {'PyTorch-2.10.0_mark-generated-assembly-nonexec.patch':
+     'b4a9248337de4fee46b480946ec1ce6f90d06f6f1e35687e5866327c4b00f2b8'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
