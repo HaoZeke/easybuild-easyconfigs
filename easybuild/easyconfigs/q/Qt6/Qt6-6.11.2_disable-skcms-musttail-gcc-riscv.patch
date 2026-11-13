@@ -1,0 +1,15 @@
+--- a/qtwebengine/src/3rdparty/chromium/third_party/skia/modules/skcms/src/skcms_internals.h	2026-11-13 04:19:57.178887306 +0000
++++ b/qtwebengine/src/3rdparty/chromium/third_party/skia/modules/skcms/src/skcms_internals.h	2026-11-13 04:19:57.178887306 +0000
+@@ -57,7 +57,11 @@
+             #define SKCMS_HAS_MUSTTAIL 1
+         #endif
+     #elif !defined(__clang__) && !defined(SKCMS_HAS_MUSTTAIL)
+-        #if __has_cpp_attribute(clang::musttail)
++        // GCC 15 accepts [[clang::musttail]] but errors ("tail call production
++        // failed") when it cannot emit the tail call. On RISC-V that aborts
++        // the skcms build. The attribute is optional. Clang already disables
++        // it for __riscv.
++        #if __has_cpp_attribute(clang::musttail) && !defined(__riscv)
+             #define SKCMS_HAS_MUSTTAIL 1
+         #else
+             #define SKCMS_HAS_MUSTTAIL 0
