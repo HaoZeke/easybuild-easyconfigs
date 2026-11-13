@@ -1,0 +1,30 @@
+easyblock = 'MakeCp'
+
+name = 'eb-local'
+version = '1.2'
+
+homepage = 'https://github.com/stackhands/eb-local'
+description = """Install software with EasyBuild on top of EESSI 2026.06 into a directory you own.
+Mutable work uses the allocation's owned, canonical XFS mount, while source archives and logs
+remain with the durable user or project installation. EESSI-extend supplies hooks, RPATH and
+the compatibility layer."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/stackhands/eb-local/archive/refs/tags/']
+sources = [{'download_filename': 'v%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
+checksums = ['a4f838d0dd3dc4781fc2290ace022d0a907ef1427f47b51f6ca1ee3a63073802']
+
+# The package contains one executable script and has no build step.
+skipsteps = ['build']
+files_to_copy = [(['eb-local'], 'bin')]
+postinstallcmds = ['chmod 0755 %(installdir)s/bin/eb-local']
+
+sanity_check_paths = {
+    'files': ['bin/eb-local'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eb-local --help', 'eb-local --env']
+
+moduleclass = 'tools'
