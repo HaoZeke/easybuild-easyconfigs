@@ -1,0 +1,27 @@
+Select the fork context explicitly for the CUDA bad-fork test.
+The expected CUDA error assertion and all inputs are retained.
+Adapted from https://github.com/pytorch/pytorch/pull/202808
+(head a7bc90de908633454225483264663fa4c94c064e).
+
+--- a/test/test_multiprocessing.py
++++ b/test/test_multiprocessing.py
+@@ -650,16 +650,17 @@
+         stderr = TestCase.runWithPytorchAPIUsageStderr(
+             """\
+ import torch
+-from torch.multiprocessing import Process
++from torch.multiprocessing import get_context
+ def run(rank):
+     torch.cuda.set_device(rank)
+ if __name__ == "__main__":
+     size = 2
+     processes = []
++    ctx = get_context("fork")
+     for rank in range(size):
+         # it would work fine without the line below
+         x = torch.rand(20, 2).cuda()
+-        p = Process(target=run, args=(rank,))
++        p = ctx.Process(target=run, args=(rank,))
+         p.start()
+         processes.append(p)
+     for p in processes:
