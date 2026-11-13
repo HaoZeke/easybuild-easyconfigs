@@ -92,6 +92,7 @@ patches = [
     'PyTorch-2.10.0_mark-generated-assembly-nonexec.patch',
     'PyTorch-2.10.0_select-fork-for-CUDA-fork-test.patch',
     'PyTorch-2.10.0_nvrtc-builtins-global-deps.patch',
+    'PyTorch-2.10.0_fix-LocalTensorMode-lifecycle.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -210,6 +211,8 @@ checksums = [
      '33f385163398e6e62aced53160f445fbc4baac3f70f403b6c2fea50bdc621d93'},
     {'PyTorch-2.10.0_nvrtc-builtins-global-deps.patch':
      '00f7c58232a76bf35934422213af8ad45904eac5a23246c5dab3b72d07699ce7'},
+    {'PyTorch-2.10.0_fix-LocalTensorMode-lifecycle.patch':
+     '2806d72afbc7fc9f462adb3b0fb3bf4bb06247225e555a8e717c791fdb16dea9'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
