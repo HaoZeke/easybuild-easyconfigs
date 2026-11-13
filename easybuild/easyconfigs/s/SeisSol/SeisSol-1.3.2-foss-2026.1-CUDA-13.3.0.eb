@@ -118,11 +118,14 @@ partitioners = ['ptscotch']
 # Test discovery loads the SYCL runtime before installation.
 preconfigopts = 'omp_runtime="$("${EBROOTLLVM:?}/bin/clang++" -print-file-name=libomp.so)" && '
 preconfigopts += 'test -f "$omp_runtime" && '
+# Resolve the declared CUDA module runtime instead of a host loader-cache entry.
+preconfigopts += 'cuda_runtime="$(readlink -e "${EBROOTCUDA:?}/lib64/libcudart.so")" && '
+preconfigopts += 'test -f "$cuda_runtime" && test -r "$cuda_runtime" && '
 # Generic SSCP avoids Clang's CUDA header wrapper for the SYCL objects.
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
 configopts += '-DACPP_TARGETS=generic '
 configopts += '-DCMAKE_BUILD_RPATH="$(dirname "$omp_runtime")" '
-configopts += '-DCMAKE_INSTALL_RPATH="$(dirname "$omp_runtime")" '
+configopts += '-DCMAKE_INSTALL_RPATH="$(dirname "$omp_runtime");$(dirname "$cuda_runtime")" '
 # Retain linked provider directories in installed shared libraries.
 configopts += '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON '
 # Both C++ and CUDA compiler drivers accept this linker-option spelling.
