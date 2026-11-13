@@ -1,0 +1,31 @@
+easyblock = 'Binary'
+
+name = 'eb-keep-logs'
+version = '0.1.0'
+
+homepage = 'https://github.com/HaoZeke/eb-keep-logs'
+description = """Keep the logs of EasyBuild builds that a build pipeline would otherwise lose, and keep
+the pipeline's log tree bounded. `eb-keep-logs failed` copies a failed build's EasyBuild log, the
+failing command's output and a meson test log next to the build's stdout log, closed to others;
+`eb-keep-logs rotate` compresses old run directories and removes them past a set age.
+`eb-keep-logs --help` lists the options."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/HaoZeke/eb-keep-logs/archive/refs/tags/']
+sources = [{'download_filename': 'v%(version)s.tar.gz', 'filename': SOURCE_TAR_GZ}]
+checksums = ['461e124d503ff67e2ab9afc551635780c980e2477b7d3e8cec5dbc3b07254f8e']
+
+extract_sources = True
+
+# One Bash script that uses coreutils, find, gzip, awk and, for `failed`, eb.
+install_cmd = 'install -D -m 0755 %(builddir)s/%(name)s-%(version)s/eb-keep-logs %(installdir)s/bin/eb-keep-logs'
+
+sanity_check_paths = {
+    'files': ['bin/eb-keep-logs'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eb-keep-logs --help', 'eb-keep-logs --version']
+
+moduleclass = 'tools'
