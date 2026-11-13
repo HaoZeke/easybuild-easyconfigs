@@ -122,6 +122,10 @@ configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
 configopts += '-DACPP_TARGETS=generic '
 configopts += '-DCMAKE_BUILD_RPATH="$(dirname "$omp_runtime")" '
 configopts += '-DCMAKE_INSTALL_RPATH="$(dirname "$omp_runtime")" '
+# Retain linked provider directories in installed shared libraries.
+configopts += '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON '
+# Both C++ and CUDA compiler drivers accept this linker-option spelling.
+configopts += '-DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS:-} -Xlinker --disable-new-dtags" '
 
 # Validate CUDA execution and stream interoperability before the full CTest command.
 pretestopts = 'omp_runtime="$("${EBROOTLLVM:?}/bin/clang++" -print-file-name=libomp.so)" && '
