@@ -119,7 +119,7 @@ partitioners = ['ptscotch']
 preconfigopts = 'omp_runtime="$("${EBROOTLLVM:?}/bin/clang++" -print-file-name=libomp.so)" && '
 preconfigopts += 'test -f "$omp_runtime" && '
 # Resolve the declared CUDA module runtime instead of a host loader-cache entry.
-preconfigopts += 'cuda_runtime="$(readlink -e "${EBROOTCUDA:?}/lib64/libcudart.so")" && '
+preconfigopts += f'cuda_runtime="$(readlink -e "${{EBROOTCUDA:?}}/lib64/libcudart.{SHLIB_EXT}")" && '
 preconfigopts += 'test -f "$cuda_runtime" && test -r "$cuda_runtime" && '
 # Generic SSCP avoids Clang's CUDA header wrapper for the SYCL objects.
 configopts = '-DASAGI=ON -DNETCDF=ON -DTESTING=ON '
