@@ -1,0 +1,35 @@
+--- a/qtquick3dphysics/src/3rdparty/PhysX/pxshared/include/foundation/PxPreprocessor.h
++++ b/qtquick3dphysics/src/3rdparty/PhysX/pxshared/include/foundation/PxPreprocessor.h
+@@ -131,6 +131,10 @@
+     #else
+         #define PX_WASM_32 1
+     #endif
++#elif defined(__riscv) && (__riscv_xlen == 64)
++// No RISC-V SIMD backend in this PhysX; use the scalar 64-bit path.
++#define PX_RISCV 1
++#define PX_RISCV64 1
+ #else
+ #error "Unknown architecture"
+ #endif
+@@ -224,6 +228,12 @@
+ #ifndef PX_PPC
+ #define PX_PPC 0
+ #endif
++#ifndef PX_RISCV
++#define PX_RISCV 0
++#endif
++#ifndef PX_RISCV64
++#define PX_RISCV64 0
++#endif
+ #ifndef PX_SSE2
+ #define PX_SSE2 0
+ #endif
+@@ -275,7 +285,7 @@
+ // architecture
+ #define PX_INTEL_FAMILY (PX_X64 || PX_X86)
+ #define PX_ARM_FAMILY (PX_ARM || PX_A64)
+-#define PX_P64_FAMILY (PX_X64 || PX_A64 || PX_WASM_64) // shortcut for 64-bit architectures
++#define PX_P64_FAMILY (PX_X64 || PX_A64 || PX_WASM_64 || PX_RISCV64) // shortcut for 64-bit architectures
+ 
+ /**
+ C++ standard library defines
