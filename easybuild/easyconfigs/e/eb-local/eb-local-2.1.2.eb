@@ -1,7 +1,7 @@
 easyblock = 'Binary'
 
 name = 'eb-local'
-version = '2.1.1'
+version = '2.1.2'
 
 homepage = 'https://stackhands.github.io/eb-local/'
 description = """Build your own code and install software with EasyBuild on top of EESSI 2026.06,
@@ -16,8 +16,8 @@ toolchain = SYSTEM
 source_urls = ['https://github.com/stackhands/eb-local/releases/download/v%(version)s/']
 sources = ['eb-local-%(version)s-%(arch)s-linux-musl']
 checksums = [{
-    'eb-local-2.1.1-x86_64-linux-musl': 'f64dfde56990553755f02e8934793caa3982be71b60d92018550daa4726f2df1',
-    'eb-local-2.1.1-aarch64-linux-musl': '8d166bca2ed6f250c8e0ddf561644a4ceb6236e59f84c66a3c437d0edf004bf0',
+    'eb-local-2.1.2-x86_64-linux-musl': '8993268cbbac156e723fe20d957d4de99bc623dac4493de95f285566aa1241a4',
+    'eb-local-2.1.2-aarch64-linux-musl': 'f261f7eb98c5a6e6a61a525dfb9787af70cff7ef028bfbc641c37e115520e4a7',
 }]
 
 extract_sources = False
