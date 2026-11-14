@@ -1,0 +1,20 @@
+TestQuantizeFx.test_copy_node_has_shared_actpp_instance calls
+Module.modules(remove_duplicate=False). In the 2.10.0 tag, modules() takes no
+arguments; remove_duplicate exists only on named_modules(). main added the
+parameter to modules() after the release, so the test and the library disagree.
+
+diff --git a/test/quantization/fx/test_quantize_fx.py b/test/quantization/fx/test_quantize_fx.py
+--- a/test/quantization/fx/test_quantize_fx.py
++++ b/test/quantization/fx/test_quantize_fx.py
+@@ -4633,6 +4633,11 @@ class TestQuantizeFx(QuantizationTestCase):
+         # Make sure this runs without error
+         m = torch.fx.Transformer(m).transform()
+ 
++    @unittest.skip(
++        "PyTorch 2.10.0's Module.modules() does not accept remove_duplicate; "
++        "that parameter is on named_modules() only. main added it to modules() "
++        "after this release, so the test and the library in the 2.10.0 tag disagree."
++    )
+     def test_copy_node_has_shared_actpp_instance(self):
+         """ Test the output of CopyNode to have the same
+         observer/fake_quant instance as the input

@@ -1,0 +1,19 @@
+NumPy 2 rejects int() of a size-1 ndarray. per_channel_tensor() used
+np.random.randint(0, ndim, 1), so the six fake-quant Hypothesis tests that
+draw a per-channel tensor die while generating examples. Drop the size
+argument so randint returns a Python int. Backport of pytorch/pytorch#181144.
+
+diff --git a/torch/testing/_internal/hypothesis_utils.py b/torch/testing/_internal/hypothesis_utils.py
+--- a/torch/testing/_internal/hypothesis_utils.py
++++ b/torch/testing/_internal/hypothesis_utils.py
+@@ -240,7 +240,9 @@ def per_channel_tensor(draw, shapes=None, elements=None, qparams=None):
+     if enforced_zp is not None:
+         zp = enforced_zp
+     # Permute to model quantization along an axis
+-    axis = int(np.random.randint(0, X.ndim, 1))
++    # NumPy 2 rejects int() of a size-1 array. randint without a size returns
++    # a Python scalar. Backport of pytorch/pytorch#181144.
++    axis = int(np.random.randint(0, X.ndim))
+     permute_axes = np.arange(X.ndim)
+     permute_axes[0] = axis
+     permute_axes[axis] = 0

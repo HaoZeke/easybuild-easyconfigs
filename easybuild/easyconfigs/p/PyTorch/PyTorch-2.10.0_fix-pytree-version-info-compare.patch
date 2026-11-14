@@ -1,0 +1,32 @@
+Python 3.14 traces cxx pytree through optree's `sys.version_info >= (3, 15)`
+check. Dynamo's cmp_gt rewrites that as a tuple-on-the-left comparison, and
+sys.version_info is a structseq (UserDefinedTupleVariable), so BaseListVariable
+raises TypeError: < not supported between instances of 'tuple' and 'version_info'.
+Eager mode is unaffected. Upstream main makes UserDefinedTupleVariable a
+TupleVariable; this compares the underlying tuple instead.
+
+diff --git a/torch/_dynamo/variables/lists.py b/torch/_dynamo/variables/lists.py
+--- a/torch/_dynamo/variables/lists.py
++++ b/torch/_dynamo/variables/lists.py
+@@ -312,6 +312,21 @@ class BaseListVariable(VariableTracker):
+ 
+             left = self
+             right = args[0]
++            # sys.version_info is a structseq. Under torch.compile, cmp_gt
++            # rewrites `version_info >= (3, 15)` as `(3, 15) < version_info`.
++            # Dynamo tracks that structseq as a UserDefinedTupleVariable, which
++            # is not a BaseListVariable, so the comparison raised
++            # TypeError: < not supported between instances of 'tuple' and
++            # 'version_info' while tracing cxx pytree (Python 3.14). Compare
++            # the underlying tuple. Upstream does this by subclassing
++            # TupleVariable (main, after 2.10).
++            from .user_defined import UserDefinedTupleVariable
++
++            if (
++                isinstance(right, UserDefinedTupleVariable)
++                and right._tuple_vt is not None
++            ):
++                right = right._tuple_vt
+             # TODO this type check logic mirrors the following
+             # https://github.com/python/cpython/blob/a1c52d1265c65bcf0d9edf87e143843ad54f9b8f/Objects/object.c#L991-L1007
+             # But we should probably move it up the stack to so that we don't

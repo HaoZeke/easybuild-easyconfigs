@@ -97,6 +97,10 @@ patches = [
     'PyTorch-2.10.0_scipy-window-zero-length.patch',
     'PyTorch-2.10.0_numpy-linalg-private-import.patch',
     'PyTorch-2.10.0_parse-jit-executor-before-import.patch',
+    'PyTorch-2.10.0_fix-pytree-version-info-compare.patch',
+    'PyTorch-2.10.0_fix-distributed-no-device-init-check.patch',
+    'PyTorch-2.10.0_skip-test_copy_node_has_shared_actpp_instance.patch',
+    'PyTorch-2.10.0_numpy-randint-scalar.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -227,6 +231,18 @@ checksums = [
     # test_jit_profiling imports test_jit before --jit-executor is parsed.
     {'PyTorch-2.10.0_parse-jit-executor-before-import.patch':
      '566f38497c825da2492564cfb2001cb66960b0d013a63b2cb4acdf7f83a2000e'},
+    # Python 3.14: cxx pytree under torch.compile compares a tuple with sys.version_info.
+    {'PyTorch-2.10.0_fix-pytree-version-info-compare.patch':
+     'bf98053c3f471ee38aa87e3e674211d87fd22aefbe2501e02887785872456f5a'},
+    # CUDA toolkit, no device: distributed tests touch torch.cpu._initialized.
+    {'PyTorch-2.10.0_fix-distributed-no-device-init-check.patch':
+     '32fae2579a0d7fbcc6adbfc5cc40540355afeda7fd74aa8f459dc08ccd78096c'},
+    # 2.10 test calls Module.modules(remove_duplicate=...), which main added later.
+    {'PyTorch-2.10.0_skip-test_copy_node_has_shared_actpp_instance.patch':
+     '070ff2dc47a87c554c2e3842d374de9c2edb31a47a64c942e8ed45c90983b167'},
+    # NumPy 2: six fake-quant Hypothesis tests crash in per_channel_tensor.
+    {'PyTorch-2.10.0_numpy-randint-scalar.patch':
+     '2ef378c8956615b4dae1c8ca818270ecdefc80893f0029ce34f70f533e373d2b'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

@@ -1,0 +1,46 @@
+A CUDA build reports CUDA from current_accelerator() even when the host has
+no device. get_device_module() with no argument then returns torch.cpu, which
+has no _initialized, so test_c10d_common and test_store abort before any test
+runs. Pass the compile-time device type and treat a missing _initialized as
+not initialized, matching upstream main.
+
+diff --git a/test/distributed/test_c10d_common.py b/test/distributed/test_c10d_common.py
+--- a/test/distributed/test_c10d_common.py
++++ b/test/distributed/test_c10d_common.py
+@@ -2267,9 +2267,15 @@ class LocalRankTest(MultiProcessTestCase):
+ 
+ 
+ if __name__ == "__main__":
++    # current_accelerator() is the compile-time accelerator, so a CUDA build
++    # reports "cuda" on a host with no device. get_device_module() with no
++    # argument then follows the runtime accelerator and returns torch.cpu,
++    # which has no _initialized. Pass the compile-time device and tolerate a
++    # module that does not track initialization. Same change as upstream main.
+     if device_type != "cpu":
+-        assert not torch.get_device_module()._initialized, (
+-            f"test_distributed must not have initialized {device_type} context on main process"
+-        )
++        if getattr(torch.get_device_module(device_type), "_initialized", False):
++            raise AssertionError(
++                f"test_distributed must not have initialized {device_type} context on main process"
++            )
+ 
+     run_tests()
+diff --git a/test/distributed/test_store.py b/test/distributed/test_store.py
+--- a/test/distributed/test_store.py
++++ b/test/distributed/test_store.py
+@@ -1188,8 +1188,11 @@ class TestClientProtocol(TestCase):
+ 
+ 
+ if __name__ == "__main__":
++    # See test_c10d_common.py: compile-time CUDA with no device makes
++    # get_device_module() return torch.cpu, which has no _initialized.
+     if device_type != "cpu":
+-        assert not torch.get_device_module()._initialized, (
+-            f"test_distributed must not have initialized {device_type} context on main process"
+-        )
++        if getattr(torch.get_device_module(device_type), "_initialized", False):
++            raise AssertionError(
++                f"test_distributed must not have initialized {device_type} context on main process"
++            )
+     run_tests()
