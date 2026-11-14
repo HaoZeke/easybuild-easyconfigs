@@ -68,10 +68,20 @@ sanity_check_commands = [
     "export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 && "
     "pytest --disable-pytest-warnings --numprocesses %(parallel)s "
     "--pyargs MDAnalysisTests -p no:warnings --dist=loadscope "
+    # test_api.py::init_files() chdirs into the MDAnalysis package during collection
+    # and does not change back. test_start_stop_logging then opens a relative
+    # MDAnalysis.log, which is EACCES once the install dir is read-only.
+    # Run that test on its own from a writable directory below.
+    "--deselect=utils/test_log.py::test_start_stop_logging "
     # Skip two XDR offset lock-file tests that are incompatible with newer filelock
     # Upstream replaced these tests in PR #5237
     "--deselect=coordinates/test_xdr.py::TestTRRReader_offsets::test_offset_lock_created "
-    "--deselect=coordinates/test_xdr.py::TestXTCReader_offsets::test_offset_lock_created"
+    "--deselect=coordinates/test_xdr.py::TestXTCReader_offsets::test_offset_lock_created",
+    "export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 && "
+    "cd \"$(mktemp -d)\" && "
+    "pytest --disable-pytest-warnings "
+    "--pyargs MDAnalysisTests.utils.test_log::test_start_stop_logging "
+    "-p no:warnings",
 ]
 
 moduleclass = 'bio'
