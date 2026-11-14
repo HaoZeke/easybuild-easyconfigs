@@ -1,0 +1,34 @@
+easyblock = 'Binary'
+
+name = 'eb-keep-logs'
+version = '0.2.1'
+
+homepage = 'https://github.com/stackhands/eb-keep-logs'
+description = """Keep the logs of EasyBuild builds that a build pipeline would otherwise lose, and keep
+the pipeline's log tree bounded. `eb-keep-logs failed` copies a failed build's EasyBuild log, the
+failing command's output and a meson test log next to the build's stdout log, closed to others;
+`eb-keep-logs rotate` compresses old run directories and removes them past a set age.
+`eb-keep-logs --help` lists the options."""
+
+toolchain = SYSTEM
+
+# A static binary built reproducibly by the project's release workflow.
+source_urls = ['https://github.com/stackhands/eb-keep-logs/releases/download/v%(version)s/']
+sources = ['%(name)s-%(version)s-%(arch)s-linux-musl']
+checksums = [{
+    'eb-keep-logs-0.2.1-x86_64-linux-musl': '6343ed5621fcf76c08380c515e00cf29ea045ba715a52d9b8c14939f3871983f',
+    'eb-keep-logs-0.2.1-aarch64-linux-musl': '4bf3ff79dfb7d6bc9e3fc33f31a8dcf48dc1d331606d7e0b68098da7c265d0f2',
+}]
+
+extract_sources = False
+
+install_cmd = 'install -D -m 0755 %(builddir)s/%(name)s-%(version)s-%(arch)s-linux-musl %(installdir)s/bin/%(name)s'
+
+sanity_check_paths = {
+    'files': ['bin/eb-keep-logs'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eb-keep-logs --help', 'eb-keep-logs --version']
+
+moduleclass = 'tools'
