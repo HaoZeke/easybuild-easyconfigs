@@ -88,6 +88,7 @@ patches = [
     'PyTorch-2.10.0_fix-List-difference_type-with-nvcc-13.3.patch',
     'PyTorch-2.10.0_fix-GlooDeviceFactory-with-ibverbs.patch',
     'PyTorch-2.10.0_fix-pybind11-3.0.3-return-type-deduction.patch',
+    'PyTorch-2.10.0_fix-magma-2.10-version-macro.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -198,6 +199,8 @@ checksums = [
      '8d3c2db0575d2e637570d2dc943d1ce33ed14ccb70840aa44cb77d43ed8b0695'},
     {'PyTorch-2.10.0_fix-pybind11-3.0.3-return-type-deduction.patch':
      '721c768eec6a9efc83a4360a3467a801bd36823534805a1121c6df6127e824da'},
+    {'PyTorch-2.10.0_fix-magma-2.10-version-macro.patch':
+     '7b33821b418e2798cc760ddd36ff271e2cd39f2d4a9d7605f0bc53d7e30612da'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
