@@ -24,6 +24,8 @@ patches = [
     'Qt6-6.11.2_fix-v8-segmented-table-64k-pages.patch',
     'Qt6-6.11.2_disable-skcms-musttail-gcc-riscv.patch',
     'Qt6-6.11.2_physx-riscv64.patch',
+    'Qt6-6.11.2_physx-scalar-store.patch',
+    'Qt6-6.11.2_ffmpeg-riscv64-config.patch',
 ]
 checksums = [
     {'qt-everywhere-src-6.11.2.tar.xz': '6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33'},
@@ -37,6 +39,10 @@ checksums = [
      'f044424f727a3ca6cac458cb2978b3949af39f2479890fbc05c7e52ffb1a6a79'},
     {'Qt6-6.11.2_physx-riscv64.patch':
      '96a837be447b077bbea4ed42dea275e709809205ffb02ecd2418cb301a6672d9'},
+    {'Qt6-6.11.2_physx-scalar-store.patch':
+     '7725c2704b2d1ba2590ac9575b2c6fec3c653ce78a7d62cd96ca07b428833e9e'},
+    {'Qt6-6.11.2_ffmpeg-riscv64-config.patch':
+     '9050a64d97b7d5a62e9c94f0a7ff73df4cf1358ce5c479c2036d508a1b194111'},
 ]
 
 builddependencies = [
