@@ -30,9 +30,10 @@ checksums = [
             'bb5b2ded252f21c6090cf780b0a408ad0d83bbb557e702955643557f13231880',
         _tarball_tmpl.format('ppc64le'):
             '47825886fd72e86c94e6fd1687a13bebb4ae729e24d2788be0d294589bf07297',
-        # no tar.gz yet for riscv64 at https://github.com/adoptium/temurin25-binaries/releases/tag/jdk-25.0.5%2B8
-        # _tarball_tmpl.format('riscv64'):
-        #    '???',
+        _tarball_tmpl.format('riscv64'):
+            '21d9ee84f64d845e7de888f86cc2abe3256c75853a0d5abe7fd42d6526374e90',
+        _tarball_tmpl.format('s390x'):
+            'dfed6b7b428852ab1a3b9eb7734264f4d4cc163686e4136f93b9942f3d8f44cd',
     },
     {'Java_blocked-certs-eMudhra-CVE-2026-91403.txt':
      '8a11b84b894e7986af1131c10fcff168fb38987bedb4fd7a0d8a7a120288d521'},
