@@ -1,0 +1,34 @@
+easyblock = 'Binary'
+
+name = 'eb-staged-rebuild'
+version = '1.0.0'
+
+homepage = 'https://github.com/stackhands/eb-staged-rebuild'
+description = """Rebuild an existing EasyBuild installation without emptying the live one. EasyBuild builds
+into a separate generation directory; once that generation is complete, eb-staged-rebuild
+exchanges it with the stable software directory in one rename and publishes the module file,
+keeping the previous tree beside it for a rollback. A journal lets a killed run resume or roll
+back. `eb-staged-rebuild --help` lists the commands."""
+
+toolchain = SYSTEM
+
+# A static binary built reproducibly by the project's release workflow.
+source_urls = ['https://github.com/stackhands/eb-staged-rebuild/releases/download/v%(version)s/']
+sources = ['%(name)s-%(version)s-%(arch)s-linux-musl']
+checksums = [{
+    'eb-staged-rebuild-1.0.0-x86_64-linux-musl': 'c5e0b9908d5835e6ab63e96d41247fec7a83c3a8ea465e4ab0c9a6fa72bb7489',
+    'eb-staged-rebuild-1.0.0-aarch64-linux-musl': '95a726e857b279460f418bb889a0c59d26bae5e8565c472f8c18d1600e506785',
+}]
+
+extract_sources = False
+
+install_cmd = 'install -D -m 0755 %(builddir)s/%(name)s-%(version)s-%(arch)s-linux-musl %(installdir)s/bin/%(name)s'
+
+sanity_check_paths = {
+    'files': ['bin/eb-staged-rebuild'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eb-staged-rebuild --help', 'eb-staged-rebuild --version']
+
+moduleclass = 'tools'
