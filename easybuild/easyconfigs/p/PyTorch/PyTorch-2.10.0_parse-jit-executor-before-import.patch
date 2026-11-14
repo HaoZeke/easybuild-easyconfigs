@@ -1,0 +1,20 @@
+test_jit_profiling imports test_jit, which only parses --jit-executor
+when test_jit itself is the main script. The imported JIT modules then
+assert GRAPH_EXECUTOR is set and the file dies before pytest starts.
+Parse the flag first. Python 3.14 still skips run_tests(), matching the
+guard already in this file.
+
+diff --git a/test/test_jit_profiling.py b/test/test_jit_profiling.py
+--- a/test/test_jit_profiling.py
++++ b/test/test_jit_profiling.py
+@@ -2,6 +2,10 @@
+ 
+ import sys
+ sys.argv.append("--jit-executor=profiling")
++# test_jit only parses --jit-executor when it is the main script. Importing it
++# from here otherwise hits `assert GRAPH_EXECUTOR is not None` before main.
++from torch.testing._internal.common_utils import parse_cmd_line_args
++parse_cmd_line_args()
+ from test_jit import *  # noqa: F403
+ 
+ if __name__ == '__main__':

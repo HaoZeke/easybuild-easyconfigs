@@ -93,6 +93,10 @@ patches = [
     'PyTorch-2.10.0_select-fork-for-CUDA-fork-test.patch',
     'PyTorch-2.10.0_nvrtc-builtins-global-deps.patch',
     'PyTorch-2.10.0_fix-LocalTensorMode-lifecycle.patch',
+    'PyTorch-2.10.0_numpy-quantile-method.patch',
+    'PyTorch-2.10.0_scipy-window-zero-length.patch',
+    'PyTorch-2.10.0_numpy-linalg-private-import.patch',
+    'PyTorch-2.10.0_parse-jit-executor-before-import.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -213,6 +217,16 @@ checksums = [
      'bd545fff7fbe98d6752110d0ea7fba0b13e5e397a1620320afb4540a115df41d'},
     {'PyTorch-2.10.0_fix-LocalTensorMode-lifecycle.patch':
      '2806d72afbc7fc9f462adb3b0fb3bf4bb06247225e555a8e717c791fdb16dea9'},
+    # SciPy-bundle 2026.05 is NumPy 2.4 / SciPy 1.17.
+    {'PyTorch-2.10.0_numpy-quantile-method.patch':
+     'ed0d1cc97c354610ec2fbec35671f5fa7d33e05ebdd1a77fd8593c228b21e72b'},
+    {'PyTorch-2.10.0_scipy-window-zero-length.patch':
+     '1a0783f26686a25e71ae1b550105ca354c790c68413a91153af5fac4576350a5'},
+    {'PyTorch-2.10.0_numpy-linalg-private-import.patch':
+     '1093868ef79e3e2081428944eac303376b53205d04f6cd5545b99afa289f11d5'},
+    # test_jit_profiling imports test_jit before --jit-executor is parsed.
+    {'PyTorch-2.10.0_parse-jit-executor-before-import.patch':
+     '566f38497c825da2492564cfb2001cb66960b0d013a63b2cb4acdf7f83a2000e'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

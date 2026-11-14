@@ -1,0 +1,29 @@
+SciPy 1.17 rejects a window length of 0 (ValueError: Parameter Nx=0 is not
+a positive integer). PyTorch still returns an empty window; compare against
+SciPy only for positive lengths.
+
+diff --git a/test/test_tensor_creation_ops.py b/test/test_tensor_creation_ops.py
+--- a/test/test_tensor_creation_ops.py
++++ b/test/test_tensor_creation_ops.py
+@@ -2858,6 +2858,10 @@ class TestTensorCreation(TestCase):
+                     device=device,
+                     dtype=dtype,
+                 )
++                # SciPy 1.17+ rejects Nx=0. PyTorch returns an empty window.
++                if size == 0:
++                    self.assertEqual(res.shape, (0,))
++                    continue
+                 # NB: scipy always returns a float64 result
+                 ref = torch.from_numpy(
+                     signal.get_window(
+@@ -2899,6 +2903,10 @@ class TestTensorCreation(TestCase):
+         for size in [0, 1, 2, 5, 10, 50, 100, 1024, 2048]:
+             for periodic in [True, False]:
+                 res = torch_method(size, sym=not periodic, **kwargs, device=device, dtype=dtype)
++                # SciPy 1.17+ rejects Nx=0. PyTorch returns an empty window.
++                if size == 0:
++                    self.assertEqual(res.shape, (0,))
++                    continue
+                 # NB: scipy always returns a float64 result
+                 ref = torch.from_numpy(signal.get_window((name, *(kwargs.values())), size, fftbins=periodic))
+                 self.assertEqual(res, ref, exact_dtype=False)

@@ -1,0 +1,22 @@
+NumPy 2.0 removed quantile's interpolation keyword. SciPy-bundle 2026.05
+ships NumPy 2.4, so the reference call has to use method instead.
+
+diff --git a/test/test_reductions.py b/test/test_reductions.py
+--- a/test/test_reductions.py
++++ b/test/test_reductions.py
+@@ -2651,8 +2651,13 @@ class TestReductions(TestCase):
+             for interpolation, dim in product(interpolations,
+                                               [None] + list(range(a.ndim))):
+                 result = torch_op(a, q, dim=dim, keepdim=keepdim, interpolation=interpolation)
+-                expected = numpy_op(a.cpu().numpy(), q.cpu().numpy(), dim,
+-                                    interpolation=interpolation, keepdims=keepdim)
++                # NumPy 2 removed the interpolation keyword in favor of method.
++                try:
++                    expected = numpy_op(a.cpu().numpy(), q.cpu().numpy(), dim,
++                                        interpolation=interpolation, keepdims=keepdim)
++                except TypeError:
++                    expected = numpy_op(a.cpu().numpy(), q.cpu().numpy(), dim,
++                                        method=interpolation, keepdims=keepdim)
+                 self.assertEqual(result.cpu(), torch.from_numpy(np.array(expected)).type(result.type()))
+ 
+                 # Test out variation
