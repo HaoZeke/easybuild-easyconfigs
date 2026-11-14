@@ -11,7 +11,15 @@ toolchain = {'name': 'GCC', 'version': '15.2.0'}
 github_account = 'bbuchfink'
 source_urls = [GITHUB_LOWER_SOURCE]
 sources = [V_VERSION_TAR_GZ]
-checksums = ['4be3298f3331bece6a5a436987f2c9965b3807ade89fb808b89d905b6f6291e4']
+# arch_sse4_1/arch_avx2 use -mssse3/-mavx2. Upstream only clears X86 for a few
+# non-x86 CPUs, so riscv64 still builds those objects. The patch clears X86 for
+# any other non-x86 CMAKE_SYSTEM_PROCESSOR; x86_64 and the aarch64 NEON path stay.
+patches = ['DIAMOND-2.2.6_skip-x86-simd-on-non-x86.patch']
+checksums = [
+    {'v2.2.6.tar.gz': '4be3298f3331bece6a5a436987f2c9965b3807ade89fb808b89d905b6f6291e4'},
+    {'DIAMOND-2.2.6_skip-x86-simd-on-non-x86.patch':
+     '0718be00028bb84af4df638ff2885c0c35e35a17032b636d5b25db0a103ecb52'},
+]
 
 builddependencies = [
     ('CMake', '3.31.11'),
