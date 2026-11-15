@@ -27,6 +27,7 @@ patches = [
     'Qt6-6.11.2_physx-scalar-store.patch',
     'Qt6-6.11.2_ffmpeg-riscv64-config.patch',
     'Qt6-6.11.2_v8-liftoff-riscv64-inline-move.patch',
+    'Qt6-6.11.2_v8-riscv-buffer-size.patch',
 ]
 checksums = [
     {'qt-everywhere-src-6.11.2.tar.xz': '6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33'},
@@ -46,6 +47,8 @@ checksums = [
      '9050a64d97b7d5a62e9c94f0a7ff73df4cf1358ce5c479c2036d508a1b194111'},
     {'Qt6-6.11.2_v8-liftoff-riscv64-inline-move.patch':
      '1cca6b76ed6d5413c0aa2020e84f055a575bf897f62b8a26a387fa6e58f8d9fa'},
+    {'Qt6-6.11.2_v8-riscv-buffer-size.patch':
+     'c3953fdb38b0d0ccea6666f2b91845ab79890e95daf3b126372963d8966eb450'},
 ]
 
 builddependencies = [
