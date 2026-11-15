@@ -1,0 +1,86 @@
+diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
+index 944914f..e3dcfdc 100644
+--- a/symengine/llvm_double.cpp
++++ b/symengine/llvm_double.cpp
+@@ -31,6 +31,7 @@
+ #include <algorithm>
+ #include <cassert>
+ #include <memory>
++#include <string>
+ #include <vector>
+ #include <fstream>
+ 
+@@ -72,6 +73,33 @@ class IRBuilder : public llvm::IRBuilder<>
+ {
+ };
+ 
++// MCJIT's EngineBuilder does not merge sys::getHostCPUFeatures(), and
++// LLVM's generic-rv64 CPU is rv64i only (llvm/lib/Target/RISCV/RISCVProcessors.td).
++// Double arithmetic is then lowered to libgcc soft-float helpers such as
++// __adddf3. Those symbols are not exported from libgcc_s, so RuntimeDyld
++// leaves the R_RISCV_CALL_PLT pair as `auipc ra, 0; jalr ra, 0(ra)` and the
++// generated function spins at 100% CPU. The default medlow code model
++// materializes FP constants with lui, which truncates mmap addresses above
++// 2GiB. rv64gc matches the lp64d ABI used by --optarch=GENERIC; medany is
++// PC-relative, which RuntimeDyldELF can apply.
++// Host features from riscv_hwprobe are not used: qemu-user reports V without
++// the zve*/zvl* extensions LLVM requires, and codegen aborts
++// ("'zvl*b' requires 'v' or 'zve*'").
++// Upstream replaced this MCJIT path with ORC LLJIT / detectHost() in
++// https://github.com/symengine/symengine/commit/c9babefe13646500d433cb410e71261b730ea3a8
++// which is not in v0.15.0. detectHost() still trips the zvl check under
++// qemu-user, so the explicit rv64gc + medany settings are required here.
++static void configure_mcjit_for_host(llvm::EngineBuilder &eb)
++{
++#if defined(__riscv)
++    eb.setMCPU("generic-rv64");
++    eb.setMAttrs(std::vector<std::string>{"+m", "+a", "+f", "+d", "+c"});
++    eb.setCodeModel(llvm::CodeModel::Medium);
++#else
++    (void)eb;
++#endif
++}
++
+ LLVMVisitor::LLVMVisitor() = default;
+ LLVMVisitor::~LLVMVisitor() = default;
+ 
+@@ -256,12 +284,13 @@ void LLVMVisitor::init(const vec_basic &inputs, const vec_basic &outputs,
+ 
+     // Now we create the JIT.
+     std::string error;
+-    executionengine = std::unique_ptr<llvm::ExecutionEngine>(
+-        llvm::EngineBuilder(std::move(module))
+-            .setEngineKind(llvm::EngineKind::Kind::JIT)
+-            .setOptLevel(static_cast<CodeGenOptLevel>(opt_level))
+-            .setErrorStr(&error)
+-            .create());
++    llvm::EngineBuilder builder(std::move(module));
++    builder.setEngineKind(llvm::EngineKind::Kind::JIT)
++        .setOptLevel(static_cast<CodeGenOptLevel>(opt_level))
++        .setErrorStr(&error);
++    configure_mcjit_for_host(builder);
++    executionengine
++        = std::unique_ptr<llvm::ExecutionEngine>(builder.create());
+ 
+     // Customization point for subclasses: (may e.g. register custom symbol
+     // resolver)
+@@ -947,12 +976,13 @@ void LLVMVisitor::loads(const std::string &s)
+     auto F = get_function_type(context.get());
+ 
+     std::string error;
+-    executionengine = std::unique_ptr<llvm::ExecutionEngine>(
+-        llvm::EngineBuilder(std::move(module))
+-            .setEngineKind(llvm::EngineKind::Kind::JIT)
+-            .setOptLevel(CodeGenOptLevel::Aggressive)
+-            .setErrorStr(&error)
+-            .create());
++    llvm::EngineBuilder builder(std::move(module));
++    builder.setEngineKind(llvm::EngineKind::Kind::JIT)
++        .setOptLevel(CodeGenOptLevel::Aggressive)
++        .setErrorStr(&error);
++    configure_mcjit_for_host(builder);
++    executionengine
++        = std::unique_ptr<llvm::ExecutionEngine>(builder.create());
+ 
+     // Customization point for subclasses: (may e.g. register custom symbol
+     // resolver)
