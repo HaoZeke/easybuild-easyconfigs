@@ -45,7 +45,7 @@ checksums = [
     {'Qt6-6.11.2_ffmpeg-riscv64-config.patch':
      '9050a64d97b7d5a62e9c94f0a7ff73df4cf1358ce5c479c2036d508a1b194111'},
     {'Qt6-6.11.2_v8-liftoff-riscv64-inline-move.patch':
-     '61e86236ba2e8bf4f5cbce8144b49b3ac109f0d792a33d739f482b1786a3cb1d'},
+     '1cca6b76ed6d5413c0aa2020e84f055a575bf897f62b8a26a387fa6e58f8d9fa'},
 ]
 
 builddependencies = [
