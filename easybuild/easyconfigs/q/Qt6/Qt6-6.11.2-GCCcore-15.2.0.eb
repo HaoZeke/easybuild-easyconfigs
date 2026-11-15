@@ -28,6 +28,7 @@ patches = [
     'Qt6-6.11.2_ffmpeg-riscv64-config.patch',
     'Qt6-6.11.2_v8-liftoff-riscv64-inline-move.patch',
     'Qt6-6.11.2_v8-riscv-buffer-size.patch',
+    'Qt6-6.11.2_blink-delay-scalar-signature.patch',
 ]
 checksums = [
     {'qt-everywhere-src-6.11.2.tar.xz': '6dcfbca271d76a6502741a2c0dc6fc98ef7dd0b7b4cfd0abcebb285a86a26f33'},
