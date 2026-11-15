@@ -1,0 +1,18 @@
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/wasm/baseline/riscv/liftoff-assembler-riscv64-inl.h
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/wasm/baseline/riscv/liftoff-assembler-riscv64-inl.h
+@@ -1022,13 +1022,13 @@
+   }
+ }
+ 
+-void LiftoffAssembler::Move(Register dst, Register src, ValueKind kind) {
++inline void LiftoffAssembler::Move(Register dst, Register src, ValueKind kind) {
+   DCHECK_NE(dst, src);
+   // TODO(ksreten): Handle different sizes here.
+   MacroAssembler::Move(dst, src);
+ }
+ 
+-void LiftoffAssembler::Move(DoubleRegister dst, DoubleRegister src,
++inline void LiftoffAssembler::Move(DoubleRegister dst, DoubleRegister src,
+                             ValueKind kind) {
+   DCHECK_NE(dst, src);
+   if (kind != kS128) {
