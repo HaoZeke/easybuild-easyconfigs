@@ -18,3 +18,18 @@
                              ValueKind kind) {
    DCHECK_NE(dst, src);
    if (kind != kS128) {
+@@ -1039,6 +1041,14 @@
+   }
+ }
+ 
++template <>
++inline void LiftoffAssembler::Move(VRegister dst, VRegister src,
++                                   ValueKind kind) {
++  DCHECK_NE(dst, src);
++  DCHECK_EQ(kind, kS128);
++  VU.set(kScratchReg, E8, m1);
++  MacroAssembler::vmv_vv(dst, src);
++}
+ 
+ void LiftoffAssembler::Spill(int offset, LiftoffRegister reg, ValueKind kind) {
+   RecordUsedSpillOffset(offset);

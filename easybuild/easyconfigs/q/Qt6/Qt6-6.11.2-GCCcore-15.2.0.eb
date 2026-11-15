@@ -46,7 +46,7 @@ checksums = [
     {'Qt6-6.11.2_ffmpeg-riscv64-config.patch':
      '9050a64d97b7d5a62e9c94f0a7ff73df4cf1358ce5c479c2036d508a1b194111'},
     {'Qt6-6.11.2_v8-liftoff-riscv64-inline-move.patch':
-     '1cca6b76ed6d5413c0aa2020e84f055a575bf897f62b8a26a387fa6e58f8d9fa'},
+     '6c848afafd9e4898036947880381fbcd33d6b1ec98051294e872603dd61a4279'},
     {'Qt6-6.11.2_v8-riscv-buffer-size.patch':
      'c3953fdb38b0d0ccea6666f2b91845ab79890e95daf3b126372963d8966eb450'},
 ]
