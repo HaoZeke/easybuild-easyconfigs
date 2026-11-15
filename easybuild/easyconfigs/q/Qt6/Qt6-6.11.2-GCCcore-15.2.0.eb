@@ -50,6 +50,8 @@ checksums = [
      '6c848afafd9e4898036947880381fbcd33d6b1ec98051294e872603dd61a4279'},
     {'Qt6-6.11.2_v8-riscv-buffer-size.patch':
      'c3953fdb38b0d0ccea6666f2b91845ab79890e95daf3b126372963d8966eb450'},
+    {'Qt6-6.11.2_blink-delay-scalar-signature.patch':
+     'cb6e1c44382cfd836f76dff56aba7a3f8199a5dbd9c4a1f081b34bc26d66e916'},
 ]
 
 builddependencies = [
