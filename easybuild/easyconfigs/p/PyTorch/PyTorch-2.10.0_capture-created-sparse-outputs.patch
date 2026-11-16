@@ -1,0 +1,24 @@
+Allow newly created sparse outputs to reach the existing compiler fallbacks.
+Sparse input guards and the explicit export capture policy remain active.
+Sparse autograd paths retain their existing functionalization errors.
+
+Author: Rohit Goswami <rgoswami@ieee.org>
+
+--- a/torch/_dynamo/variables/builder.py
++++ b/torch/_dynamo/variables/builder.py
+@@ -2983,10 +2983,11 @@
+     import torch._utils
+ 
+     if isinstance(example_value, torch.Tensor):
+-        # Check if the result is a sparse tensor -
+-        # We generally don't support sparse tensor so better to graph break here
+-        if is_sparse_any(example_value) and (
+-            not tx.export or not config.capture_sparse_compute
++        # Sparse output capture follows the export policy.
++        if (
++            is_sparse_any(example_value)
++            and tx.export
++            and not config.capture_sparse_compute
+         ):
+             unimplemented(
+                 gb_type="Attempted to wrap sparse Tensor with VariableTracker",
