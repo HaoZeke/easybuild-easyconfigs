@@ -1,0 +1,375 @@
+--- a/test/test_reductions.py
++++ b/test/test_reductions.py
+@@ -2652,7 +2652,7 @@
+                                               [None] + list(range(a.ndim))):
+                 result = torch_op(a, q, dim=dim, keepdim=keepdim, interpolation=interpolation)
+                 expected = numpy_op(a.cpu().numpy(), q.cpu().numpy(), dim,
+-                                    interpolation=interpolation, keepdims=keepdim)
++                                    method=interpolation, keepdims=keepdim)
+                 self.assertEqual(result.cpu(), torch.from_numpy(np.array(expected)).type(result.type()))
+ 
+                 # Test out variation
+--- a/test/test_tensor_creation_ops.py
++++ b/test/test_tensor_creation_ops.py
+@@ -2860,8 +2860,8 @@
+                 )
+                 # NB: scipy always returns a float64 result
+                 ref = torch.from_numpy(
+-                    signal.get_window(
+-                        (name, *(kwargs.values())), size, fftbins=periodic
++                    getattr(signal.windows, name)(
++                        size, *(kwargs.values()), sym=not periodic
+                     )
+                 )
+                 self.assertEqual(res, ref.to(dtype))
+@@ -2900,7 +2900,7 @@
+             for periodic in [True, False]:
+                 res = torch_method(size, sym=not periodic, **kwargs, device=device, dtype=dtype)
+                 # NB: scipy always returns a float64 result
+-                ref = torch.from_numpy(signal.get_window((name, *(kwargs.values())), size, fftbins=periodic))
++                ref = torch.from_numpy(getattr(signal.windows, name)(size, *(kwargs.values()), sym=not periodic))
+                 self.assertEqual(res, ref, exact_dtype=False)
+         self.assertTrue(torch_method(3, requires_grad=True).requires_grad)
+         self.assertFalse(torch_method(3).requires_grad)
+--- a/test/inductor/test_torchinductor_dynamic_shapes.py
++++ b/test/inductor/test_torchinductor_dynamic_shapes.py
+@@ -138,7 +138,7 @@
+ 
+ 
+ class TestInductorDynamic(TestCase):
+-    compile_fn = partial(torch.compile, dynamic=True)
++    compile_fn = staticmethod(partial(torch.compile, dynamic=True))
+ 
+     def setUp(self):
+         # HAS_CUDA_AND_TRITON also checks compute capability to skip tests
+--- a/test/torch_np/numpy_tests/linalg/test_linalg.py
++++ b/test/torch_np/numpy_tests/linalg/test_linalg.py
+@@ -12,7 +12,7 @@
+ 
+ import numpy
+ import pytest
+-from numpy.linalg.linalg import _multi_dot_matrix_chain_order
++from numpy.linalg._linalg import _multi_dot_matrix_chain_order
+ from pytest import raises as assert_raises
+ 
+ from torch.testing._internal.common_utils import (
+--- a/test/test_jit_profiling.py
++++ b/test/test_jit_profiling.py
+@@ -2,6 +2,8 @@
+ 
+ import sys
+ sys.argv.append("--jit-executor=profiling")
++from torch.testing._internal.common_utils import parse_cmd_line_args
++parse_cmd_line_args()
+ from test_jit import *  # noqa: F403
+ 
+ if __name__ == '__main__':
+--- a/test/distributed/test_c10d_common.py
++++ b/test/distributed/test_c10d_common.py
+@@ -2268,7 +2268,7 @@
+ 
+ if __name__ == "__main__":
+     if device_type != "cpu":
+-        assert not torch.get_device_module()._initialized, (
++        assert not torch.get_device_module(device_type)._initialized, (
+             f"test_distributed must not have initialized {device_type} context on main process"
+         )
+ 
+--- a/test/distributed/test_store.py
++++ b/test/distributed/test_store.py
+@@ -1189,7 +1189,7 @@
+ 
+ if __name__ == "__main__":
+     if device_type != "cpu":
+-        assert not torch.get_device_module()._initialized, (
++        assert not torch.get_device_module(device_type)._initialized, (
+             f"test_distributed must not have initialized {device_type} context on main process"
+         )
+     run_tests()
+--- a/test/test_cuda.py
++++ b/test/test_cuda.py
+@@ -4008,7 +4008,8 @@
+ 
+ def fork_and_check_is_pinned():
+     # Create a pipe to communicate between parent and child processes
+-    parent_conn, child_conn = multiprocessing.Pipe()
++    ctx = multiprocessing.get_context("fork")
++    parent_conn, child_conn = ctx.Pipe()
+ 
+     def worker(conn):
+         try:
+@@ -4022,7 +4023,7 @@
+         finally:
+             conn.close()
+     # Fork a new process
+-    p = multiprocessing.Process(target=worker, args=(child_conn,))
++    p = ctx.Process(target=worker, args=(child_conn,))
+     p.start()
+     # Receive the result from the child process
+     result = parent_conn.recv()
+--- a/test/test_dataloader.py
++++ b/test/test_dataloader.py
+@@ -114,6 +114,10 @@
+ # Get a multiprocessing context because some test / third party library will
+ # set start_method when imported, and setting again triggers `RuntimeError`.
+ mp = mp.get_context(method="spawn")
++
++# Forkserver workers share a clean torch import without importing the test module.
++if "forkserver" in torch.multiprocessing.get_all_start_methods():
++    torch.multiprocessing.set_forkserver_preload(["torch"])
+ 
+ 
+ # 60s of timeout?
+--- a/test/inductor/test_triton_kernels.py
++++ b/test/inductor/test_triton_kernels.py
+@@ -5,6 +5,7 @@
+ import functools
+ import logging
+ import os
++import sys
+ 
+ import torch
+ import torch._dynamo.testing
+@@ -2475,9 +2476,9 @@
+             return y
+ 
+         # make sure FLOAT_CONSTANT_C is NOT annotated
+-        self.assertFalse("FLOAT_CONSTANT_C" in globals().get("__annotations__", {}))
++        self.assertFalse("FLOAT_CONSTANT_C" in sys.modules[__name__].__annotations__)
+         # sanity check: STRING_CONSTANT_C _should_ be annotated
+-        self.assertTrue("STRING_CONSTANT_C" in globals().get("__annotations__", {}))
++        self.assertTrue("STRING_CONSTANT_C" in sys.modules[__name__].__annotations__)
+ 
+         x = torch.randn(512, device=GPU_TYPE)
+         expected = x + 3.14
+--- a/test/profiler/test_profiler.py
++++ b/test/profiler/test_profiler.py
+@@ -1492,8 +1492,8 @@
+ 
+     def test_profiler_correlation_id(self):
+         """
+-        We expect the correlation_id to be unique across multiple invocation of the profiler,
+-        So we will reuse id_uniqueness_set.
++        Correlation IDs are unique within their activity domains across profiler
++        invocations. CPU operators and CUDA API records use independent counters.
+         """
+         id_uniqueness_set = set()
+         model = torch.nn.Sequential(
+@@ -1510,8 +1510,9 @@
+             for event in prof.profiler.kineto_results.events():
+                 corr_id = event.correlation_id()
+                 if (corr_id) and event.device_type() == DeviceType.CPU:
+-                    self.assertTrue(corr_id not in id_uniqueness_set)
+-                    id_uniqueness_set.add(corr_id)
++                    identity = (event.activity_type(), corr_id)
++                    self.assertTrue(identity not in id_uniqueness_set)
++                    id_uniqueness_set.add(identity)
+                     self.assertTrue(corr_id < uint32_max)
+ 
+     def test_nested_tensor_with_shapes(self):
+--- a/test/inductor/test_compiled_autograd.py
++++ b/test/inductor/test_compiled_autograd.py
+@@ -5055,16 +5055,14 @@
+         ).load_module()
+ 
+ 
+-def make_wrapped(fn, ctxs):
++def make_wrapped(fn, ctx_fns):
+     @functools.wraps(fn)
+     def wrapped(self):
+         torch._dynamo.reset()
+-        stack = contextlib.ExitStack()
+-        for ctx in ctxs:
+-            stack.enter_context(ctx)
+-        out = fn(self)
+-        stack.close()
+-        return out
++        with contextlib.ExitStack() as stack:
++            for ctx_fn in ctx_fns:
++                stack.enter_context(ctx_fn())
++            return fn(self)
+ 
+     return wrapped
+ 
+@@ -5097,16 +5095,17 @@
+             backend = lookup_backend(name)
+             if not HAS_CUDA_AND_TRITON and backend == "inductor":
+                 continue
+-            ctxs = [
+-                compiled_autograd._enable(
++            ctx_fns = [
++                functools.partial(
++                    compiled_autograd._enable,
+                     make_compiler_fn(
+                         backend=backend,
+                         fullgraph=name not in known_graph_breaks_tests,
+-                    )
++                    ),
+                 ),
+-                test_contexts.get(name, contextlib.nullcontext()),
++                test_contexts.get(name, contextlib.nullcontext),
+             ]
+-            dct[name] = make_wrapped(fn, ctxs)
++            dct[name] = make_wrapped(fn, ctx_fns)
+ 
+     cls = type(
+         orig_cls.__name__ + "WithCompiledAutograd",
+@@ -5234,9 +5233,11 @@
+ }
+ 
+ test_contexts = {
+-    "test_setitem_mask": config.patch(capture_dynamic_output_shape_ops=True),
+-    "test_index_backward_does_not_save_tensor": config.patch(
+-        capture_dynamic_output_shape_ops=True
++    "test_setitem_mask": functools.partial(
++        config.patch, capture_dynamic_output_shape_ops=True
++    ),
++    "test_index_backward_does_not_save_tensor": functools.partial(
++        config.patch, capture_dynamic_output_shape_ops=True
+     ),
+ }
+ 
+--- a/test/inductor/test_inductor_utils.py
++++ b/test/inductor/test_inductor_utils.py
+@@ -18,7 +18,7 @@
+         super().setUpClass()
+         x = torch.rand(1024, 10).cuda().half()
+         w = torch.rand(512, 10).cuda().half()
+-        cls._bench_fn = functools.partial(torch.nn.functional.linear, x, w)
++        cls._bench_fn = staticmethod(functools.partial(torch.nn.functional.linear, x, w))
+ 
+     def test_benchmarker(self):
+         res = benchmarker.benchmark_gpu(self._bench_fn)
+--- a/test/quantization/fx/test_quantize_fx.py
++++ b/test/quantization/fx/test_quantize_fx.py
+@@ -9669,6 +9669,9 @@
+             model = EmbeddingBagLinear().to(device).train()
+             prepared_fx_model = prepare_qat_fx(model, qconfig_dict, example_inputs=(train_indices[0][0],))
+             test_only_train_fn(prepared_fx_model, train_indices)
++            # QAT trains on the selected device; quantized backends evaluate on CPU.
++            prepared_fx_model = prepared_fx_model.cpu()
++            eval_output = [[tensor.cpu() for tensor in batch] for batch in eval_output]
+             quant_model = convert_fx(prepared_fx_model,
+                                      qconfig_mapping=qconfig_dict)
+ 
+--- a/test/run_test.py
++++ b/test/run_test.py
+@@ -621,6 +621,9 @@
+         else None
+     )
+     timeout = 60 * 120
++    if test_file == "distributed/test_c10d_nccl" and "--subprocess" in command:
++        # The file budget covers subprocess dispatch of every selected case.
++        timeout = 60 * 360
+     print_to_stderr(f"Executing {command} ... [{datetime.now()}]")
+ 
+     with ExitStack() as stack:
+@@ -651,6 +654,16 @@
+                 timeout=timeout,
+                 retries=0,
+             )
++
++            if test_file == "distributed/test_c10d_nccl" and "--subprocess" in command:
++                print_to_stderr(
++                    "PYTORCH_TEST_PROCESS " + json.dumps(
++                        {"event": "file_result", "module": test_file,
++                         "timeout_seconds": timeout, "return_code": ret_code,
++                         "effective_return_code": 0 if ret_code == 5 else ret_code,
++                         "was_rerun": was_rerun}
++                    )
++                )
+ 
+             # Pytest return code 5 means no test is collected. Exit code 4 is
+             # returned when the binary is not a C++ test executable, but 4 can
+--- a/torch/testing/_internal/common_utils.py
++++ b/torch/testing/_internal/common_utils.py
+@@ -1035,6 +1035,7 @@
+ 
+ 
+ def wait_for_process(p, timeout=None):
++    deadline_reached = False
+     try:
+         return p.wait(timeout=timeout)
+     except KeyboardInterrupt:
+@@ -1047,6 +1048,14 @@
+             p.kill()
+             raise
+     except subprocess.TimeoutExpired:
++        deadline_reached = True
++        print(
++            "PYTORCH_TEST_PROCESS " + json.dumps(
++                {"event": "deadline_reached", "pid": p.pid,
++                 "timeout_seconds": timeout, "timed_out": True}
++            ),
++            file=sys.stderr, flush=True,
++        )
+         # send SIGINT to give pytest a chance to make xml
+         p.send_signal(signal.SIGINT)
+         exit_status = None
+@@ -1057,7 +1066,7 @@
+         except subprocess.TimeoutExpired:
+             pass
+         if exit_status is not None:
+-            return exit_status
++            return 124
+         else:
+             p.kill()
+         raise
+@@ -1067,6 +1076,15 @@
+     finally:
+         # Always call p.wait() to ensure exit
+         p.wait()
++        if deadline_reached:
++            print(
++                "PYTORCH_TEST_PROCESS " + json.dumps(
++                    {"event": "deadline_result", "pid": p.pid,
++                     "timeout_seconds": timeout, "timed_out": True,
++                     "return_code": p.returncode, "effective_return_code": 124}
++                ),
++                file=sys.stderr, flush=True,
++            )
+ 
+ def shell(command, cwd=None, env=None, stdout=None, stderr=None, timeout=None):
+     sys.stdout.flush()
+@@ -1221,6 +1239,12 @@
+         def pytest_collection_finish(self, session):
+             for item in session.items:
+                 self.tests.append(session.config.cwd_relative_nodeid(item.nodeid))
++            print(
++                "PYTORCH_TEST_PROCESS " + json.dumps(
++                    {"event": "selected", "count": len(self.tests)}
++                ),
++                file=sys.stderr, flush=True,
++            )
+ 
+     test_collector_plugin = TestCollectorPlugin()
+     import pytest
+--- a/test/functorch/test_aotdispatch.py
++++ b/test/functorch/test_aotdispatch.py
+@@ -76,6 +76,7 @@
+     toleranceOverride,
+ )
+ from torch.testing._internal.common_methods_invocations import op_db
++from torch.testing._internal.opinfo.core import gradcheck_wrapper_hermitian_input
+ from torch.testing._internal.common_modules import module_db, modules
+ from torch.testing._internal.common_utils import (
+     compare_equal_outs_and_grads,
+@@ -8253,13 +8254,17 @@
+     )
+     try_check_data_specialization = op.name not in cant_check_data_specialization
+ 
++    func = op.op
++    if op.gradcheck_wrapper is gradcheck_wrapper_hermitian_input:
++        func = partial(op.gradcheck_wrapper, func)
++
+     sample_inputs_itr = op.sample_inputs(device, dtype, requires_grad=True)
+     for sample_input in sample_inputs_itr:
+         t_args = [sample_input.input] + list(sample_input.args)
+         t_kwargs = sample_input.kwargs
+         try:
+             aot_autograd_check(
+-                op.op,
++                func,
+                 t_args,
+                 t_kwargs,
+                 dynamic,
