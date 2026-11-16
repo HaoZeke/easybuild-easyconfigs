@@ -632,6 +632,8 @@ crates = [
     ('rgmin', '0.5.2', 'https://github.com/OmniPotentRPC/rgmin', 'fb3a852cace852dfc7f60be4b573cff28e96d68f'),
     ('rgsaddle', '0.3.2', 'https://github.com/OmniPotentRPC/rgsaddle', '31f48d2cb0f196bd28b2ac9774fecdaad8571688'),
 ]
+# Meson applies the diff_files of each wrap when it copies the wrap source into subprojects/,
+# so the patches here must not repeat them
 patches = [
     'gpridge-0.6.0-20261116_link-flexiblas.patch',
     # applies to the rgmin wrap, which is extracted next to the gpridge sources
