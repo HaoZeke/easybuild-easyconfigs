@@ -1,0 +1,19 @@
+Compute the largest per-atom step in rgmin's scale_cap with a comparison instead of f64::max.
+LLVM 21 (rustc 1.93 and 1.94) crashes with a SIGSEGV in LoopVectorizePass on the stride-3 f64::max
+reduction when it compiles rgmin with optimization; rustc 1.89 (LLVM 20) and 1.100 (LLVM 23) do not.
+The result is unchanged: max_a starts at zero and a NaN distance leaves it as it is in both forms.
+author: Rohit Goswami (rgoswami@ieee.org)
+--- a/rgmin-4ee5151f437380ae0f47ea18d289e9e9d0117157/src/session/drive.rs
++++ b/rgmin-4ee5151f437380ae0f47ea18d289e9e9d0117157/src/session/drive.rs
+@@ -566,7 +566,10 @@
+             let dx = trial[i] - origin[i];
+             let dy = trial[i + 1] - origin[i + 1];
+             let dz = trial[i + 2] - origin[i + 2];
+-            max_a = max_a.max((dx * dx + dy * dy + dz * dz).sqrt());
++            let r = (dx * dx + dy * dy + dz * dz).sqrt();
++            if r > max_a {
++                max_a = r;
++            }
+             i += 3;
+         }
+         if i < trial.len() {
