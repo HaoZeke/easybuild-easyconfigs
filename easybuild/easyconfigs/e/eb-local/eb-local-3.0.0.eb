@@ -29,7 +29,13 @@ sanity_check_paths = {
     'dirs': [],
 }
 
-sanity_check_commands = ['eb-local --version', 'eb-local help', 'eb-local env', 'eb-local dev', 'eb-local site list',
-                          'eb-local --explain example.eb']
+sanity_check_commands = [
+    'eb-local --version',
+    'eb-local help',
+    'eb-local env',
+    'eb-local dev',
+    'eb-local site list',
+    'eb-local --explain example.eb',
+]
 
 moduleclass = 'tools'
