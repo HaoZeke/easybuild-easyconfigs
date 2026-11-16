@@ -11,13 +11,14 @@ toolchain = {'name': 'gfbf', 'version': '2026.1'}
 source_urls = ['https://github.com/symengine/symengine/archive/refs/tags/']
 sources = ['v%(version)s.tar.gz']
 # MCJIT on generic-rv64 emits rv64i soft-float and spins on an unresolved
-# __adddf3 (R_RISCV_CALL_PLT left as auipc/jalr to itself). Upstream ORC
-# migration is c9babefe13646500d433cb410e71261b730ea3a8, which is not in v0.15.0.
+# __adddf3. Calls that do resolve use R_RISCV_CALL_PLT, which only reaches
+# +/- 2GiB, so under qemu-user they SIGSEGV. Upstream ORC migration is
+# c9babefe13646500d433cb410e71261b730ea3a8, which is not in v0.15.0.
 patches = ['SymEngine-0.15.0_riscv64-mcjit.patch']
 checksums = [
     {'v%(version)s.tar.gz': '9f75f0367221abd88b9b60ef7b104b4aa1e34e99d3152c3df2bb2467bad2f04f'},
     {'SymEngine-0.15.0_riscv64-mcjit.patch':
-     'e78fccedae5af3e986d1ef5c65bffa23006743ff83dac69b60a0ff605e82730e'},
+     '43f1d8cb3c6b80137a44d0dbbc526a07826f4717cab11debde108751149a0d1a'},
 ]
 
 builddependencies = [

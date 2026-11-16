@@ -1,8 +1,15 @@
 diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
-index 944914f..e3dcfdc 100644
 --- a/symengine/llvm_double.cpp
 +++ b/symengine/llvm_double.cpp
-@@ -31,6 +31,7 @@
+@@ -2,6 +2,7 @@
+ #include "llvm/ExecutionEngine/ExecutionEngine.h"
+ #include "llvm/ExecutionEngine/GenericValue.h"
+ #include "llvm/ExecutionEngine/MCJIT.h"
++#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+ #include "llvm/Passes/PassBuilder.h"
+ #include "llvm/IR/Argument.h"
+ #include "llvm/IR/Attributes.h"
+@@ -31,6 +32,7 @@
  #include <algorithm>
  #include <cassert>
  #include <memory>
@@ -10,7 +17,7 @@ index 944914f..e3dcfdc 100644
  #include <vector>
  #include <fstream>
  
-@@ -72,6 +73,33 @@ class IRBuilder : public llvm::IRBuilder<>
+@@ -72,6 +74,214 @@
  {
  };
  
@@ -19,23 +26,204 @@ index 944914f..e3dcfdc 100644
 +// Double arithmetic is then lowered to libgcc soft-float helpers such as
 +// __adddf3. Those symbols are not exported from libgcc_s, so RuntimeDyld
 +// leaves the R_RISCV_CALL_PLT pair as `auipc ra, 0; jalr ra, 0(ra)` and the
-+// generated function spins at 100% CPU. The default medlow code model
-+// materializes FP constants with lui, which truncates mmap addresses above
-+// 2GiB. rv64gc matches the lp64d ABI used by --optarch=GENERIC; medany is
-+// PC-relative, which RuntimeDyldELF can apply.
-+// Host features from riscv_hwprobe are not used: qemu-user reports V without
-+// the zve*/zvl* extensions LLVM requires, and codegen aborts
++// generated function spins at 100% CPU. rv64gc matches the lp64d ABI used by
++// --optarch=GENERIC. Host features from riscv_hwprobe are not used: qemu-user
++// reports V without the zve*/zvl* extensions LLVM requires, and codegen aborts
 +// ("'zvl*b' requires 'v' or 'zve*'").
 +// Upstream replaced this MCJIT path with ORC LLJIT / detectHost() in
 +// https://github.com/symengine/symengine/commit/c9babefe13646500d433cb410e71261b730ea3a8
 +// which is not in v0.15.0. detectHost() still trips the zvl check under
-+// qemu-user, so the explicit rv64gc + medany settings are required here.
++// qemu-user.
++//
++// R_RISCV_CALL_PLT only reaches ±2GiB. libm under qemu-user is far outside
++// that window of the default JIT mapping, so the truncated offset SIGSEGVs
++// (test_lambda_double). Keep the JIT image in the low 2GiB, next to the
++// executable PLT, and bounce any farther symbol through an indirect jump.
++#if defined(__riscv)
++#include <sys/mman.h>
++class Low2GiBMemoryManager : public llvm::SectionMemoryManager
++{
++    struct Block
++    {
++        void *ptr;
++        size_t size;
++        bool code;
++    };
++    std::vector<Block> blocks_;
++    static uintptr_t &hint()
++    {
++        static uintptr_t next = 0x20000000;
++        return next;
++    }
++    uint8_t *alloc(uintptr_t Size, unsigned Alignment, bool code)
++    {
++        uintptr_t page = 4096;
++        uintptr_t align = Alignment < page ? page : Alignment;
++        Size = (Size + align - 1) & ~(align - 1);
++        uintptr_t at = (hint() + align - 1) & ~(align - 1);
++        int prot = PROT_READ | PROT_WRITE | (code ? PROT_EXEC : 0);
++        void *p = MAP_FAILED;
++        for (int tries = 0; tries < 128 && at < 0x70000000; ++tries) {
++            p = mmap(reinterpret_cast<void *>(at), Size, prot,
++                     MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE, -1, 0);
++            if (p != MAP_FAILED)
++                break;
++            at += Size + 0x10000;
++        }
++        if (p == MAP_FAILED)
++            return nullptr;
++        hint() = reinterpret_cast<uintptr_t>(p) + Size;
++        blocks_.push_back({p, Size, code});
++        return static_cast<uint8_t *>(p);
++    }
++
++public:
++    ~Low2GiBMemoryManager() override
++    {
++        for (auto &b : blocks_)
++            munmap(b.ptr, b.size);
++    }
++    uint8_t *allocateCodeSection(uintptr_t Size, unsigned Alignment,
++                                 unsigned SectionID,
++                                 llvm::StringRef SectionName) override
++    {
++        return alloc(Size, Alignment, true);
++    }
++    uint8_t *allocateDataSection(uintptr_t Size, unsigned Alignment,
++                                 unsigned SectionID,
++                                 llvm::StringRef SectionName,
++                                 bool IsReadOnly) override
++    {
++        (void)IsReadOnly;
++        return alloc(Size, Alignment, false);
++    }
++    bool finalizeMemory(std::string *ErrMsg) override
++    {
++        for (auto &b : blocks_) {
++            if (!b.code)
++                continue;
++            if (mprotect(b.ptr, b.size, PROT_READ | PROT_EXEC) != 0) {
++                if (ErrMsg)
++                    *ErrMsg = "mprotect of JIT code failed";
++                return true;
++            }
++        }
++        return false;
++    }
++    // R_RISCV_CALL_PLT only reaches ±2GiB. A libm entry that is not in the
++    // executable PLT is mapped far above that. A nearby indirect jump can
++    // still reach it.
++    uint64_t getSymbolAddress(const std::string &Name) override
++    {
++        uint64_t addr = llvm::RTDyldMemoryManager::getSymbolAddress(Name);
++        if (addr == 0 || addr < 0x80000000ULL)
++            return addr;
++        for (auto &stub : stubs_) {
++            if (stub.first == addr)
++                return stub.second;
++        }
++        uint8_t *code = alloc(32, 16, true);
++        if (!code)
++            return addr;
++        auto *ins = reinterpret_cast<uint32_t *>(code);
++        ins[0] = 0x00000297; // auipc t0, 0
++        ins[1] = 0x0102b283; // ld t0, 16(t0)
++        ins[2] = 0x00028067; // jalr zero, t0
++        ins[3] = 0x00000013; // nop, keep the literal 8-byte aligned
++        std::memcpy(code + 16, &addr, sizeof(addr));
++        uint64_t entry = reinterpret_cast<uint64_t>(code);
++        stubs_.push_back({addr, entry});
++        return entry;
++    }
++
++private:
++    std::vector<std::pair<uint64_t, uint64_t>> stubs_;
++};
++#endif
++#if defined(__riscv)
++static void bind_riscv_libm(llvm::ExecutionEngine *ee)
++{
++    using d1 = double (*)(double);
++    using d2 = double (*)(double, double);
++    using d3 = double (*)(double, double, double);
++    using f1 = float (*)(float);
++    using f2 = float (*)(float, float);
++    using f3 = float (*)(float, float, float);
++    struct Map {
++        const char *name;
++        void *addr;
++    };
++    const Map maps[] = {
++        {"log", (void *)static_cast<d1>(::log)},
++        {"exp", (void *)static_cast<d1>(::exp)},
++        {"exp2", (void *)static_cast<d1>(::exp2)},
++        {"pow", (void *)static_cast<d2>(::pow)},
++        {"sin", (void *)static_cast<d1>(::sin)},
++        {"cos", (void *)static_cast<d1>(::cos)},
++        {"tan", (void *)static_cast<d1>(::tan)},
++        {"asin", (void *)static_cast<d1>(::asin)},
++        {"acos", (void *)static_cast<d1>(::acos)},
++        {"atan", (void *)static_cast<d1>(::atan)},
++        {"atan2", (void *)static_cast<d2>(::atan2)},
++        {"sinh", (void *)static_cast<d1>(::sinh)},
++        {"cosh", (void *)static_cast<d1>(::cosh)},
++        {"tanh", (void *)static_cast<d1>(::tanh)},
++        {"asinh", (void *)static_cast<d1>(::asinh)},
++        {"acosh", (void *)static_cast<d1>(::acosh)},
++        {"atanh", (void *)static_cast<d1>(::atanh)},
++        {"tgamma", (void *)static_cast<d1>(::tgamma)},
++        {"lgamma", (void *)static_cast<d1>(::lgamma)},
++        {"erf", (void *)static_cast<d1>(::erf)},
++        {"erfc", (void *)static_cast<d1>(::erfc)},
++        {"floor", (void *)static_cast<d1>(::floor)},
++        {"ceil", (void *)static_cast<d1>(::ceil)},
++        {"trunc", (void *)static_cast<d1>(::trunc)},
++        {"fabs", (void *)static_cast<d1>(::fabs)},
++        {"sqrt", (void *)static_cast<d1>(::sqrt)},
++        {"fma", (void *)static_cast<d3>(::fma)},
++        {"fmod", (void *)static_cast<d2>(::fmod)},
++        {"copysign", (void *)static_cast<d2>(::copysign)},
++        {"logf", (void *)static_cast<f1>(::logf)},
++        {"expf", (void *)static_cast<f1>(::expf)},
++        {"exp2f", (void *)static_cast<f1>(::exp2f)},
++        {"powf", (void *)static_cast<f2>(::powf)},
++        {"sinf", (void *)static_cast<f1>(::sinf)},
++        {"cosf", (void *)static_cast<f1>(::cosf)},
++        {"tanf", (void *)static_cast<f1>(::tanf)},
++        {"asinf", (void *)static_cast<f1>(::asinf)},
++        {"acosf", (void *)static_cast<f1>(::acosf)},
++        {"atanf", (void *)static_cast<f1>(::atanf)},
++        {"atan2f", (void *)static_cast<f2>(::atan2f)},
++        {"sinhf", (void *)static_cast<f1>(::sinhf)},
++        {"coshf", (void *)static_cast<f1>(::coshf)},
++        {"tanhf", (void *)static_cast<f1>(::tanhf)},
++        {"asinhf", (void *)static_cast<f1>(::asinhf)},
++        {"acoshf", (void *)static_cast<f1>(::acoshf)},
++        {"atanhf", (void *)static_cast<f1>(::atanhf)},
++        {"tgammaf", (void *)static_cast<f1>(::tgammaf)},
++        {"lgammaf", (void *)static_cast<f1>(::lgammaf)},
++        {"erff", (void *)static_cast<f1>(::erff)},
++        {"erfcf", (void *)static_cast<f1>(::erfcf)},
++        {"floorf", (void *)static_cast<f1>(::floorf)},
++        {"ceilf", (void *)static_cast<f1>(::ceilf)},
++        {"truncf", (void *)static_cast<f1>(::truncf)},
++        {"fabsf", (void *)static_cast<f1>(::fabsf)},
++        {"sqrtf", (void *)static_cast<f1>(::sqrtf)},
++        {"fmaf", (void *)static_cast<f3>(::fmaf)},
++        {"fmodf", (void *)static_cast<f2>(::fmodf)},
++        {"copysignf", (void *)static_cast<f2>(::copysignf)},
++    };
++    for (const Map &m : maps)
++        ee->addGlobalMapping(m.name, reinterpret_cast<uint64_t>(m.addr));
++}
++#endif
 +static void configure_mcjit_for_host(llvm::EngineBuilder &eb)
 +{
 +#if defined(__riscv)
 +    eb.setMCPU("generic-rv64");
 +    eb.setMAttrs(std::vector<std::string>{"+m", "+a", "+f", "+d", "+c"});
 +    eb.setCodeModel(llvm::CodeModel::Medium);
++    eb.setMCJITMemoryManager(std::make_unique<Low2GiBMemoryManager>());
 +#else
 +    (void)eb;
 +#endif
@@ -44,7 +232,7 @@ index 944914f..e3dcfdc 100644
  LLVMVisitor::LLVMVisitor() = default;
  LLVMVisitor::~LLVMVisitor() = default;
  
-@@ -256,12 +284,13 @@ void LLVMVisitor::init(const vec_basic &inputs, const vec_basic &outputs,
+@@ -256,12 +466,13 @@
  
      // Now we create the JIT.
      std::string error;
@@ -64,7 +252,17 @@ index 944914f..e3dcfdc 100644
  
      // Customization point for subclasses: (may e.g. register custom symbol
      // resolver)
-@@ -947,12 +976,13 @@ void LLVMVisitor::loads(const std::string &s)
+@@ -292,6 +503,9 @@
+     MemoryBufferRefCallback callback(membuffer);
+     executionengine->setObjectCache(&callback);
+     // std::cout << error << std::endl;
++#if defined(__riscv)
++    bind_riscv_libm(executionengine.get());
++#endif
+     executionengine->finalizeObject();
+ 
+     // Get the symbol's address
+@@ -947,12 +1161,13 @@
      auto F = get_function_type(context.get());
  
      std::string error;
@@ -84,3 +282,13 @@ index 944914f..e3dcfdc 100644
  
      // Customization point for subclasses: (may e.g. register custom symbol
      // resolver)
+@@ -980,6 +1195,9 @@
+ 
+     MCJITObjectLoader loader(s);
+     executionengine->setObjectCache(&loader);
++#if defined(__riscv)
++    bind_riscv_libm(executionengine.get());
++#endif
+     executionengine->finalizeObject();
+     // Set func to compiled function pointer
+     func = (intptr_t)executionengine->getPointerToFunction(F);
