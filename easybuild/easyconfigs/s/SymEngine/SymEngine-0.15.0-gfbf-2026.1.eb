@@ -18,7 +18,7 @@ patches = ['SymEngine-0.15.0_riscv64-mcjit.patch']
 checksums = [
     {'v%(version)s.tar.gz': '9f75f0367221abd88b9b60ef7b104b4aa1e34e99d3152c3df2bb2467bad2f04f'},
     {'SymEngine-0.15.0_riscv64-mcjit.patch':
-     '43f1d8cb3c6b80137a44d0dbbc526a07826f4717cab11debde108751149a0d1a'},
+     '7d9900a1e0a001e8fe14162745973b576ae101e266a760dcc800dcb5a9a9017c'},
 ]
 
 builddependencies = [

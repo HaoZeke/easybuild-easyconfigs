@@ -17,7 +17,7 @@ diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
  #include <vector>
  #include <fstream>
  
-@@ -72,6 +74,214 @@
+@@ -72,6 +74,137 @@
  {
  };
  
@@ -140,83 +140,6 @@ diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
 +    std::vector<std::pair<uint64_t, uint64_t>> stubs_;
 +};
 +#endif
-+#if defined(__riscv)
-+static void bind_riscv_libm(llvm::ExecutionEngine *ee)
-+{
-+    using d1 = double (*)(double);
-+    using d2 = double (*)(double, double);
-+    using d3 = double (*)(double, double, double);
-+    using f1 = float (*)(float);
-+    using f2 = float (*)(float, float);
-+    using f3 = float (*)(float, float, float);
-+    struct Map {
-+        const char *name;
-+        void *addr;
-+    };
-+    const Map maps[] = {
-+        {"log", (void *)static_cast<d1>(::log)},
-+        {"exp", (void *)static_cast<d1>(::exp)},
-+        {"exp2", (void *)static_cast<d1>(::exp2)},
-+        {"pow", (void *)static_cast<d2>(::pow)},
-+        {"sin", (void *)static_cast<d1>(::sin)},
-+        {"cos", (void *)static_cast<d1>(::cos)},
-+        {"tan", (void *)static_cast<d1>(::tan)},
-+        {"asin", (void *)static_cast<d1>(::asin)},
-+        {"acos", (void *)static_cast<d1>(::acos)},
-+        {"atan", (void *)static_cast<d1>(::atan)},
-+        {"atan2", (void *)static_cast<d2>(::atan2)},
-+        {"sinh", (void *)static_cast<d1>(::sinh)},
-+        {"cosh", (void *)static_cast<d1>(::cosh)},
-+        {"tanh", (void *)static_cast<d1>(::tanh)},
-+        {"asinh", (void *)static_cast<d1>(::asinh)},
-+        {"acosh", (void *)static_cast<d1>(::acosh)},
-+        {"atanh", (void *)static_cast<d1>(::atanh)},
-+        {"tgamma", (void *)static_cast<d1>(::tgamma)},
-+        {"lgamma", (void *)static_cast<d1>(::lgamma)},
-+        {"erf", (void *)static_cast<d1>(::erf)},
-+        {"erfc", (void *)static_cast<d1>(::erfc)},
-+        {"floor", (void *)static_cast<d1>(::floor)},
-+        {"ceil", (void *)static_cast<d1>(::ceil)},
-+        {"trunc", (void *)static_cast<d1>(::trunc)},
-+        {"fabs", (void *)static_cast<d1>(::fabs)},
-+        {"sqrt", (void *)static_cast<d1>(::sqrt)},
-+        {"fma", (void *)static_cast<d3>(::fma)},
-+        {"fmod", (void *)static_cast<d2>(::fmod)},
-+        {"copysign", (void *)static_cast<d2>(::copysign)},
-+        {"logf", (void *)static_cast<f1>(::logf)},
-+        {"expf", (void *)static_cast<f1>(::expf)},
-+        {"exp2f", (void *)static_cast<f1>(::exp2f)},
-+        {"powf", (void *)static_cast<f2>(::powf)},
-+        {"sinf", (void *)static_cast<f1>(::sinf)},
-+        {"cosf", (void *)static_cast<f1>(::cosf)},
-+        {"tanf", (void *)static_cast<f1>(::tanf)},
-+        {"asinf", (void *)static_cast<f1>(::asinf)},
-+        {"acosf", (void *)static_cast<f1>(::acosf)},
-+        {"atanf", (void *)static_cast<f1>(::atanf)},
-+        {"atan2f", (void *)static_cast<f2>(::atan2f)},
-+        {"sinhf", (void *)static_cast<f1>(::sinhf)},
-+        {"coshf", (void *)static_cast<f1>(::coshf)},
-+        {"tanhf", (void *)static_cast<f1>(::tanhf)},
-+        {"asinhf", (void *)static_cast<f1>(::asinhf)},
-+        {"acoshf", (void *)static_cast<f1>(::acoshf)},
-+        {"atanhf", (void *)static_cast<f1>(::atanhf)},
-+        {"tgammaf", (void *)static_cast<f1>(::tgammaf)},
-+        {"lgammaf", (void *)static_cast<f1>(::lgammaf)},
-+        {"erff", (void *)static_cast<f1>(::erff)},
-+        {"erfcf", (void *)static_cast<f1>(::erfcf)},
-+        {"floorf", (void *)static_cast<f1>(::floorf)},
-+        {"ceilf", (void *)static_cast<f1>(::ceilf)},
-+        {"truncf", (void *)static_cast<f1>(::truncf)},
-+        {"fabsf", (void *)static_cast<f1>(::fabsf)},
-+        {"sqrtf", (void *)static_cast<f1>(::sqrtf)},
-+        {"fmaf", (void *)static_cast<f3>(::fmaf)},
-+        {"fmodf", (void *)static_cast<f2>(::fmodf)},
-+        {"copysignf", (void *)static_cast<f2>(::copysignf)},
-+    };
-+    for (const Map &m : maps)
-+        ee->addGlobalMapping(m.name, reinterpret_cast<uint64_t>(m.addr));
-+}
-+#endif
 +static void configure_mcjit_for_host(llvm::EngineBuilder &eb)
 +{
 +#if defined(__riscv)
@@ -232,7 +155,7 @@ diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
  LLVMVisitor::LLVMVisitor() = default;
  LLVMVisitor::~LLVMVisitor() = default;
  
-@@ -256,12 +466,13 @@
+@@ -256,12 +389,13 @@
  
      // Now we create the JIT.
      std::string error;
@@ -252,17 +175,7 @@ diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
  
      // Customization point for subclasses: (may e.g. register custom symbol
      // resolver)
-@@ -292,6 +503,9 @@
-     MemoryBufferRefCallback callback(membuffer);
-     executionengine->setObjectCache(&callback);
-     // std::cout << error << std::endl;
-+#if defined(__riscv)
-+    bind_riscv_libm(executionengine.get());
-+#endif
-     executionengine->finalizeObject();
- 
-     // Get the symbol's address
-@@ -947,12 +1161,13 @@
+@@ -947,12 +1081,13 @@
      auto F = get_function_type(context.get());
  
      std::string error;
@@ -282,13 +195,3 @@ diff --git a/symengine/llvm_double.cpp b/symengine/llvm_double.cpp
  
      // Customization point for subclasses: (may e.g. register custom symbol
      // resolver)
-@@ -980,6 +1195,9 @@
- 
-     MCJITObjectLoader loader(s);
-     executionengine->setObjectCache(&loader);
-+#if defined(__riscv)
-+    bind_riscv_libm(executionengine.get());
-+#endif
-     executionengine->finalizeObject();
-     // Set func to compiled function pointer
-     func = (intptr_t)executionengine->getPointerToFunction(F);
