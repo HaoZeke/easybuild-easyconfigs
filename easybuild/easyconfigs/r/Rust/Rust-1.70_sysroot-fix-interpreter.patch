@@ -21,15 +21,17 @@ updated by: micketeer@gmail.com
          def get_answer():
              default_encoding = sys.getdefaultencoding()
              try:
-@@ -531,6 +535,20 @@
+@@ -531,6 +535,22 @@
          assert self._should_fix_bins_and_dylibs is True
          print("attempting to patch", fname)
  
 +        easybuild_sysroot = os.getenv("EASYBUILD_SYSROOT")
 +        if easybuild_sysroot:
 +            if ".so" not in fname:
-+                # determine patch to interpreter in host via output produced by 'readelf -l /bin/bash'
-+                readelf_out = subprocess.check_output(['readelf', '-l', '/bin/bash']).decode('ascii', 'ignore').strip()
++                # Use this binary's own PT_INTERP. /bin/bash is the host shell, so its
++                # dynamic linker is the wrong architecture when the stage0 compiler
++                # is not a host binary (qemu-user, or another CPU family in the sysroot).
++                readelf_out = subprocess.check_output(['readelf', '-l', fname]).decode('ascii', 'ignore').strip()
 +                regex = re.compile('.*program interpreter: ([^\]]+)', re.M)
 +                res = regex.search(readelf_out)
 +                interpreter_path = os.path.join(easybuild_sysroot, res.group(1).lstrip('/'))

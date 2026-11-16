@@ -12,7 +12,7 @@ sources = ['rustc-%(version)s-src.tar.gz']
 patches = ['Rust-1.70_sysroot-fix-interpreter.patch']
 checksums = [
     {'rustc-1.70.0-src.tar.gz': 'b2bfae000b7a5040e4ec4bbc50a09f21548190cb7570b0ed77358368413bd27c'},
-    {'Rust-1.70_sysroot-fix-interpreter.patch': 'aa7a7fe784e463b297c640edfe88b8d96acbee0c173251575cef0426baccc57e'},
+    {'Rust-1.70_sysroot-fix-interpreter.patch': 'bf00946ff499d98aeda7d7de64972da4f765d054b076f564c95ff9aa14cc67ee'},
 ]
 
 builddependencies = [
