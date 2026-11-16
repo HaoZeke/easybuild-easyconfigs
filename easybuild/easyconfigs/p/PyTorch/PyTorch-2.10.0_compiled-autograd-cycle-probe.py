@@ -100,25 +100,16 @@ def observe_weak_tensor_refs(torch, reports):
             nodes.append(row)
             temporary.add(id(row))
             if type(obj) is torch.Tensor:
-                row.update(shape=list(obj.shape), dtype=str(obj.dtype),
-                           device=str(obj.device), requires_grad=obj.requires_grad,
-                           use_count=obj._use_count(), same_tensor_impl=obj._cdata == impl)
+                row["same_tensor_impl"] = obj._cdata == impl
             elif isinstance(obj, dict):
-                row["keys"] = [k[:100] for k in obj if isinstance(k, str)][:24]
+                known_keys = {"foo", "meta", "example_value", "val", "tensor_meta",
+                              "steal_arg", "stack_trace"}
+                row["known_torch_metadata_keys"] = sorted(k for k in obj if type(k) is str and k in known_keys)
                 if "__builtins__" in obj and "__name__" in obj:
-                    row["module"] = str(obj["__name__"])
+                    row["module_namespace"] = True
                     return index
-            elif isinstance(obj, (tuple, list)):
-                row["length"] = len(obj)
-            elif isinstance(obj, types.FrameType):
-                row.update(function=obj.f_code.co_name,
-                           file=pathlib.Path(obj.f_code.co_filename).name,
-                           line=obj.f_lineno)
-            elif isinstance(obj, types.FunctionType):
-                row.update(function=obj.__qualname__,
-                           file=pathlib.Path(obj.__code__.co_filename).name)
             elif isinstance(obj, torch.fx.Node):
-                row.update(name=obj.name, op=obj.op)
+                row["op"] = obj.op
             if depth >= 5:
                 row["depth_limit"] = True
                 return index
