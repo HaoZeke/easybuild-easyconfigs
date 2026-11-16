@@ -258,6 +258,7 @@ builddependencies = [
     ('pytest-rerunfailures', '16.3'),
     ('pytest-subtests', '0.15.0'),
     ('tlparse', '0.4.8'),
+    ('tqdm', '4.67.3'),
     ('optree', '0.20.0'),
     ('unittest-xml-reporting', '4.0.0'),
 ]
