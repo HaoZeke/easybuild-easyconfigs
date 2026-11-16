@@ -73,6 +73,19 @@ def observe_weak_tensor_refs(torch, reports):
     def ownership_report(tensor_ref, context_ref, impl, ordinal):
         tensor = tensor_ref()
         context = context_ref() if context_ref is not None else None
+        ownership_counts = {
+            "measurement_phase": "after_real_false_before_object_inventory",
+            "tensor_impl_use_count": tensor._use_count() if tensor is not None else None,
+            "tensor_python_refcount": sys.getrefcount(tensor) if tensor is not None else None,
+            "context_python_refcount": sys.getrefcount(context) if context is not None else None,
+            "python_refcount_observer_contribution": 2,
+            "tensor_gc_tracked": gc.is_tracked(tensor) if tensor is not None else None,
+            "context_gc_tracked": gc.is_tracked(context) if context is not None else None,
+            "tensor_gc_finalized": gc.is_finalized(tensor) if tensor is not None else None,
+            "context_gc_finalized": gc.is_finalized(context) if context is not None else None,
+            "gc_frozen_object_count": gc.get_freeze_count(),
+            "gc_debug_saveall": bool(gc.get_debug() & gc.DEBUG_SAVEALL),
+        }
         snapshot = gc.get_objects()
         roots = []
         temporary = {id(snapshot), id(roots), id(reports)}
@@ -135,6 +148,7 @@ def observe_weak_tensor_refs(torch, reports):
                 "observation_phase": "after_real_result_before_original_assertion",
                 "python_tensor_alive": tensor is not None,
                 "python_context_alive": context is not None,
+                "ownership_counts": ownership_counts,
                 "roots": root_rows, "nodes": nodes, "edges": edges,
                 "limits": {"nodes": 64, "owners_per_node": 8, "depth": 5},
                 "extra_gc_calls": 0}
