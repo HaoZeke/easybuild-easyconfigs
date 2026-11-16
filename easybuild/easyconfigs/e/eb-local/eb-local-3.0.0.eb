@@ -4,12 +4,13 @@ name = 'eb-local'
 version = '3.0.0'
 
 homepage = 'https://stackhands.github.io/eb-local/'
-description = """Build your own code and install software with EasyBuild on top of EESSI 2026.06,
-into a directory you own. `eb-local dev MODULE...` loads EESSI, the modules and a build
-environment so that compilers produce programs that run without LD_LIBRARY_PATH;
-`eb-local env` makes your installed modules visible; builds use the allocation's own
-node-local mount, and `eb-local --explain` prints the commands a build runs. Configuration is layered TOML with profiles; secrets come from the
-environment, owner-only files or a secret store. A static binary."""
+description = """Build your own code and install software with EasyBuild on top of EESSI 2026.06, into a
+directory you own. `eb-local dev MODULE...` loads EESSI, the modules and a build
+environment so that compilers produce programs that run without LD_LIBRARY_PATH; `eb-local
+env` makes your installed modules visible; builds use the allocation's own node-local
+mount, and `eb-local --explain` prints the commands a build runs. Configuration is layered
+TOML with profiles; secrets come from the environment, owner-only files or a secret store.
+A static binary."""
 
 toolchain = SYSTEM
 
