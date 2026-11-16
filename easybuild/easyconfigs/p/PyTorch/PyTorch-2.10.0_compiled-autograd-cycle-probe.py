@@ -78,7 +78,7 @@ def observe_weak_tensor_refs(torch, reports):
             "tensor_impl_use_count": tensor._use_count() if tensor is not None else None,
             "tensor_python_refcount": sys.getrefcount(tensor) if tensor is not None else None,
             "context_python_refcount": sys.getrefcount(context) if context is not None else None,
-            "python_refcount_observer_contribution": 2,
+            "python_refcounts_include_observer_references": True,
             "tensor_gc_tracked": gc.is_tracked(tensor) if tensor is not None else None,
             "context_gc_tracked": gc.is_tracked(context) if context is not None else None,
             "tensor_gc_finalized": gc.is_finalized(tensor) if tensor is not None else None,
