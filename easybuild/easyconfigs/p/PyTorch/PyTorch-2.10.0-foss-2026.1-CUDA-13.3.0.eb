@@ -320,6 +320,8 @@ excluded_tests = {
 }
 
 runtest = (
+    # Parallel code-generation checks require more than one OpenMP thread.
+    ' OMP_NUM_THREADS=4'
     # Disable symbol resolution in stack traces that can cause hangs and slowdowns
     ' TORCH_DISABLE_ADDR2LINE=1'
     ' TORCHINDUCTOR_CUTLASS_DIR=%(start_dir)s/third_party/cutlass'
