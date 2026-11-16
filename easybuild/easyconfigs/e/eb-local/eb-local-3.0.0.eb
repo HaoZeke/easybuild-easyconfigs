@@ -1,0 +1,34 @@
+easyblock = 'Binary'
+
+name = 'eb-local'
+version = '3.0.0'
+
+homepage = 'https://stackhands.github.io/eb-local/'
+description = """Build your own code and install software with EasyBuild on top of EESSI 2026.06,
+into a directory you own. `eb-local dev MODULE...` loads EESSI, the modules and a build
+environment so that compilers produce programs that run without LD_LIBRARY_PATH;
+`eb-local env` makes your installed modules visible; builds use the allocation's own
+node-local mount, and `eb-local --explain` prints the commands a build runs. Configuration is layered TOML with profiles; secrets come from the
+environment, owner-only files or a secret store. A static binary."""
+
+toolchain = SYSTEM
+
+source_urls = ['https://github.com/stackhands/eb-local/releases/download/v%(version)s/']
+sources = ['eb-local-%(version)s-%(arch)s-linux-musl']
+checksums = [{
+    'eb-local-3.0.0-x86_64-linux-musl': 'b2680223ca16bf0e245acc381c6f8513a022a0d17aa1c10aedebe67dcb65ca6d',
+    'eb-local-3.0.0-aarch64-linux-musl': 'f2c963b146ac4ebf1f8c53fff156c3597f7ba5140896e0ef1b27c00c2b266d5a',
+}]
+
+extract_sources = False
+install_cmd = 'install -D -m 0755 %(builddir)s/eb-local-%(version)s-%(arch)s-linux-musl %(installdir)s/bin/eb-local'
+
+sanity_check_paths = {
+    'files': ['bin/eb-local'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eb-local --version', 'eb-local help', 'eb-local env', 'eb-local dev', 'eb-local site list',
+                          'eb-local --explain example.eb']
+
+moduleclass = 'tools'
