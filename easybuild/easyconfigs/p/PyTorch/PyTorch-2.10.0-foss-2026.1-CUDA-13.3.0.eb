@@ -237,6 +237,7 @@ builddependencies = [
     ('CMake', '3.31.11'),
     ('hypothesis', '6.153.2'),
     # For tests
+    ('build', '1.6.1'),
     ('parameterized', '0.9.0'),
     ('pytest-flakefinder', '1.1.0'),
     ('pytest-rerunfailures', '16.3'),
