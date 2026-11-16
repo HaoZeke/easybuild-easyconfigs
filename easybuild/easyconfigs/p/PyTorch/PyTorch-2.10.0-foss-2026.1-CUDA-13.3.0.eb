@@ -219,7 +219,7 @@ checksums = [
      '2806d72afbc7fc9f462adb3b0fb3bf4bb06247225e555a8e717c791fdb16dea9'},
     # Python 3.14: cxx pytree under torch.compile compares a tuple with sys.version_info.
     {'PyTorch-2.10.0_fix-pytree-version-info-compare.patch':
-     'bf98053c3f471ee38aa87e3e674211d87fd22aefbe2501e02887785872456f5a'},
+     '3a4b680735953f488bfc198b100f4c444ed91fdce7a0f314bdf02ea21aededa4'},
     # NumPy 2: six fake-quant Hypothesis tests crash in per_channel_tensor.
     {'PyTorch-2.10.0_numpy-randint-scalar.patch':
      '2ef378c8956615b4dae1c8ca818270ecdefc80893f0029ce34f70f533e373d2b'},
