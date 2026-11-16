@@ -97,6 +97,7 @@ patches = [
     'PyTorch-2.10.0_numpy-randint-scalar.patch',
     'PyTorch-2.10.0_preserve-device-test-descriptors.patch',
     'PyTorch-2.10.0_modules-remove-duplicate.patch',
+    'PyTorch-2.10.0_fix-fp8-reference-layout.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -227,6 +228,8 @@ checksums = [
      '5fb266153d9878b6ce56359a8d5ede211270a2ced0bfb65c5d71fb4281a9a835'},
     {'PyTorch-2.10.0_modules-remove-duplicate.patch':
      'd89fd65b2e7e96b3aaaf8b3b1f8ed4782ab134fff194faf0ffab00472b5fe999'},
+    {'PyTorch-2.10.0_fix-fp8-reference-layout.patch':
+     '79810286145737b5dcd5df991b3dc2dba6aec51a0852f762f97ab4c7234e1ce0'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

@@ -1,0 +1,34 @@
+Use canonical inputs for FP8 reference convolution accumulation.
+The reference path computes in FP32 before converting to the requested output
+dtype. Packed channels-last layouts can change accumulation order at BF16
+rounding boundaries. Canonicalize input and weight for the convolution and
+retain the quantized operator's channels-last output layout.
+
+--- a/aten/src/ATen/native/quantized/cpu/qconv.cpp
++++ b/aten/src/ATen/native/quantized/cpu/qconv.cpp
+@@ -1418,18 +1418,20 @@
+   int kSpatialDim = act.dim() - 2;
+   // conv1d is converted to conv2d before calling this function
+   TORCH_CHECK(kSpatialDim != 1, "Expect 2D or 3D convolution, but got 1D convolution.");
+-  auto act_contig = act.contiguous(kSpatialDim == 2 ?
+-                                   c10::MemoryFormat::ChannelsLast :
+-                                   c10::MemoryFormat::ChannelsLast3d);
+-  auto dqx = act_contig.to(at::kFloat) * act_scale;
++  // Canonical inputs keep reference accumulation independent of packed layouts.
++  auto dqx = act.contiguous().to(at::kFloat) * act_scale;
+   std::vector<int64_t> w_scales_new_shape(weight.dim(), 1);
+   w_scales_new_shape[0] = -1;
+-  auto dqw = weight.to(at::kFloat) * weight_scales.reshape(w_scales_new_shape);
++  auto dqw = weight.contiguous().to(at::kFloat) * weight_scales.reshape(w_scales_new_shape);
+   auto output_padding = std::vector<int64_t>(kSpatialDim, 0);
+   auto bias_float = bias.has_value() ? bias.value().to(at::kFloat) : bias;
+   auto y_f32 = at::convolution(
+     dqx, dqw, bias_float, stride.vec(), padding.vec(), dilation.vec(), /* transposed */false, output_padding, groups
+   );
++  // Quantized convolution retains its channels-last output layout.
++  y_f32 = y_f32.contiguous(kSpatialDim == 2 ?
++                            c10::MemoryFormat::ChannelsLast :
++                            c10::MemoryFormat::ChannelsLast3d);
+   if (!binary_attr.has_value() || binary_attr == "none") {
+     if (unary_attr == "relu") {
+       at::relu_(y_f32);
