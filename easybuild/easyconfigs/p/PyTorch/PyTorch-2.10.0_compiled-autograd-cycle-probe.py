@@ -65,6 +65,31 @@ def apply_single_file_diff(source, patch, relative_path="torch/_dynamo/variables
     return source
 
 
+
+def capture_counter_snapshot(counters):
+    """Read existing process counters without inserting or clearing entries."""
+    keys = (
+        ("compiled_autograd", "captures"),
+        ("compiled_autograd", "compiles"),
+        ("frames", "total"),
+        ("frames", "ok"),
+        ("stats", "calls_captured"),
+        ("stats", "unique_graphs"),
+        ("aot_autograd", "total"),
+        ("aot_autograd", "ok"),
+        ("aot_autograd", "not_ok"),
+        ("inductor", "fxgraph_cache_hit"),
+        ("inductor", "fxgraph_cache_miss"),
+        ("inductor", "fxgraph_cache_bypass"),
+    )
+    result = {}
+    for group, key in keys:
+        value = counters.get(group, {}).get(key, 0)
+        if type(value) is int:
+            result[group + "." + key] = value
+    return result
+
+
 def observe_weak_tensor_refs(torch, reports):
     """Observe owners after a real post-collection expiration check fails."""
     original = torch._C._WeakTensorRef
@@ -85,6 +110,8 @@ def observe_weak_tensor_refs(torch, reports):
             "context_gc_finalized": gc.is_finalized(context) if context is not None else None,
             "gc_frozen_object_count": gc.get_freeze_count(),
             "gc_debug_saveall": bool(gc.get_debug() & gc.DEBUG_SAVEALL),
+            "inductor_compile_threads": torch._inductor.config.compile_threads,
+            "inductor_worker_start_method": torch._inductor.config.worker_start_method,
         }
         snapshot = gc.get_objects()
         roots = []
@@ -149,6 +176,7 @@ def observe_weak_tensor_refs(torch, reports):
                 "python_tensor_alive": tensor is not None,
                 "python_context_alive": context is not None,
                 "ownership_counts": ownership_counts,
+                "capture_counters": capture_counter_snapshot(torch._dynamo.utils.counters),
                 "roots": root_rows, "nodes": nodes, "edges": edges,
                 "limits": {"nodes": 64, "owners_per_node": 8, "depth": 5},
                 "extra_gc_calls": 0}
@@ -329,6 +357,8 @@ def main():
         "source_test_specific_context": "nullcontext", "first_call_only": True,
         "original_test_assertions_unchanged": True, "availability_flags_changed": False,
         "installed_source_edits": False,
+        "capture_counter_scope": "process_totals_without_reset",
+        "capture_counters_before_test": capture_counter_snapshot(counters),
         "source_hashes": {
             "test_autograd": digest(args.autograd_source.read_bytes()),
             "test_compiled_autograd": digest(args.compiled_autograd_source.read_bytes()),
@@ -350,6 +380,7 @@ def main():
     finally:
         if original_weak_tensor_ref is not None:
             torch._C._WeakTensorRef = original_weak_tensor_ref
+    metadata["capture_counters_after_test"] = capture_counter_snapshot(counters)
     metadata["reference_observer_enabled"] = args.observe_reference_owners
     metadata["reference_owner_reports"] = reference_reports
     metadata.update({
