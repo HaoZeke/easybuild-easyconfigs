@@ -100,6 +100,7 @@ patches = [
     'PyTorch-2.10.0_fix-pytree-version-info-compare.patch',
     'PyTorch-2.10.0_fix-distributed-no-device-init-check.patch',
     'PyTorch-2.10.0_numpy-randint-scalar.patch',
+    'PyTorch-2.10.0_preserve-device-test-descriptors.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -239,6 +240,8 @@ checksums = [
     # NumPy 2: six fake-quant Hypothesis tests crash in per_channel_tensor.
     {'PyTorch-2.10.0_numpy-randint-scalar.patch':
      '2ef378c8956615b4dae1c8ca818270ecdefc80893f0029ce34f70f533e373d2b'},
+    {'PyTorch-2.10.0_preserve-device-test-descriptors.patch':
+     '5fb266153d9878b6ce56359a8d5ede211270a2ced0bfb65c5d71fb4281a9a835'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
