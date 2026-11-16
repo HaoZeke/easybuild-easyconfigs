@@ -79,6 +79,7 @@ def observe_weak_tensor_refs(torch, reports):
             if type(obj) is torch.Tensor and obj is not tensor:
                 if obj._cdata == impl or (context is not None and obj.grad_fn is context):
                     roots.append(("tensor_alias", obj))
+        temporary.update(id(entry) for entry in roots)
         nodes, edges, indices = [], [], {}
         temporary.update((id(nodes), id(edges), id(indices)))
 
