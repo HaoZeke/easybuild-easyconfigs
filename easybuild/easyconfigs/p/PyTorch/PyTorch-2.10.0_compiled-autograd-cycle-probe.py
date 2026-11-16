@@ -18,6 +18,8 @@ EXPECTED_AUTOGRAD_SHA = "088fd54272d5df9087e770433dfee556add8d56d8371dff3906960c
 EXPECTED_COMPILED_SHA = "ccc37bdaa8ae3ff36258fabca15f1427f55b775f86407ac832ae284ce4da812c"
 EXPECTED_BUILDER_METHOD_AST_SHA = "744639f675cc9edee7aac4bc3d925cb775d55d7cb15b22be4ac8559f441aebce"
 EXPECTED_BOXED_PATCH_SHA = "e5ce2370fea63451a4d6a5d45a8b377ade99d4c5520cbbfac597039a53550fff"
+EXPECTED_INTERFACE_PATCH_SHA = "ab9f1773304575153006135ccf8f11d4a70322750a590f9c767d9eaea7844c95"
+EXPECTED_APPROVED_COMPILED_SHA = "b2d8271e1577a9a974d3fa81214807266d3a51a27b51077458043ff44dbeb3b4"
 TEST_NAME = "test_custom_function_cycle"
 
 
@@ -35,29 +37,32 @@ def ast_digest(node):
     return digest(ast.dump(node, include_attributes=False).encode())
 
 
-def apply_single_file_diff(source, patch):
+def apply_single_file_diff(source, patch, relative_path="torch/_dynamo/variables/builder.py"):
     lines = patch.splitlines(keepends=True)
-    if not any(line.startswith("--- a/torch/_dynamo/variables/builder.py") for line in lines):
-        raise RuntimeError("The boxed patch does not identify the expected production file")
+    target = "--- a/" + relative_path
+    if sum(line.rstrip("\n") == target for line in lines) != 1:
+        raise RuntimeError("The patch must identify the expected source file exactly once")
     hunks = []
+    active = False
     for line in lines:
-        if line.startswith("@@ "):
+        if line.startswith("--- a/"):
+            active = line.rstrip("\n") == target
+        elif active and line.startswith("@@ "):
             hunks.append([[], []])
-        elif hunks and line.startswith((" ", "-", "+")) and not line.startswith(("--- ", "+++ ")):
+        elif active and hunks and line.startswith((" ", "-", "+")) and not line.startswith(("--- ", "+++ ")):
             if line[0] in " -":
                 hunks[-1][0].append(line[1:])
             if line[0] in " +":
                 hunks[-1][1].append(line[1:])
     if not hunks:
-        raise RuntimeError("No production patch hunk found")
+        raise RuntimeError("No source patch hunk found")
     for old, new in hunks:
         old_text = "".join(old)
         new_text = "".join(new)
         if source.count(old_text) != 1:
-            raise RuntimeError("Boxed patch context must occur exactly once")
+            raise RuntimeError("Source patch context must occur exactly once")
         source = source.replace(old_text, new_text, 1)
     return source
-
 
 
 def observe_weak_tensor_refs(torch, reports):
@@ -183,6 +188,8 @@ def main():
     parser.add_argument("--builder-reference", type=pathlib.Path)
     parser.add_argument("--output", type=pathlib.Path, required=True)
     parser.add_argument("--observe-reference-owners", action="store_true")
+    parser.add_argument("--wrapper-cohort", choices=("original", "approved"), default="original")
+    parser.add_argument("--test-interface-patch", type=pathlib.Path)
     args = parser.parse_args()
 
     import torch
@@ -204,6 +211,19 @@ def main():
         raise RuntimeError("Original compiled-autograd test source hash differs")
     if digest(args.boxed_patch.read_bytes()) != args.expected_boxed_patch_sha256:
         raise RuntimeError("Owned boxed production patch hash differs")
+
+    interface_patch_sha = None
+    if args.wrapper_cohort == "approved":
+        if args.test_interface_patch is None:
+            raise RuntimeError("The approved wrapper requires its exact interface patch")
+        interface_patch = args.test_interface_patch.read_text()
+        interface_patch_sha = digest(args.test_interface_patch.read_bytes())
+        if interface_patch_sha != EXPECTED_INTERFACE_PATCH_SHA:
+            raise RuntimeError("Approved interface patch hash differs")
+        compiler_source = apply_single_file_diff(
+            compiler_source, interface_patch, "test/inductor/test_compiled_autograd.py")
+        if digest(compiler_source.encode()) != EXPECTED_APPROVED_COMPILED_SHA:
+            raise RuntimeError("Approved compiled-autograd source hash differs")
 
     installed_builder_source = pathlib.Path(builder_module.__file__).read_text()
     installed_method = method_ast(installed_builder_source)
@@ -282,8 +302,11 @@ def main():
         capability_label = "Original automatic availability-gated wrapper selection"
     else:
         effective_backend = source_backend
-        contexts = [compiled_autograd._enable(namespace["make_compiler_fn"](
-            backend=effective_backend, fullgraph=fullgraph)), contextlib.nullcontext()]
+        compiler = namespace["make_compiler_fn"](backend=effective_backend, fullgraph=fullgraph)
+        if args.wrapper_cohort == "approved":
+            contexts = [functools.partial(compiled_autograd._enable, compiler), contextlib.nullcontext]
+        else:
+            contexts = [compiled_autograd._enable(compiler), contextlib.nullcontext()]
         members = Original.__dict__.copy()
         members[TEST_NAME] = namespace["make_wrapped"](original_fn, contexts)
         Case = type("TestAutogradWithCompiledAutograd", (Original,), members)
@@ -291,7 +314,8 @@ def main():
         capability_label = "Direct CPU compiler-context control; does not claim automatic GPU-gated collection"
 
     metadata = {
-        "cohort": args.cohort, "mode": args.mode, "capability_label": capability_label,
+        "cohort": args.cohort, "wrapper_cohort": args.wrapper_cohort,
+        "mode": args.mode, "capability_label": capability_label,
         "torch": torch.__version__, "python": __import__("platform").python_version(),
         "has_cuda_and_triton": HAS_CUDA_AND_TRITON, "has_xpu_and_triton": HAS_XPU_AND_TRITON,
         "default_device": default_device, "default_dtype": str(torch.get_default_dtype()),
@@ -303,6 +327,8 @@ def main():
         "source_hashes": {
             "test_autograd": digest(args.autograd_source.read_bytes()),
             "test_compiled_autograd": digest(args.compiled_autograd_source.read_bytes()),
+            "active_test_compiled_autograd": digest(compiler_source.encode()),
+            "approved_interface_patch": interface_patch_sha,
             "boxed_patch": digest(args.boxed_patch.read_bytes()),
             "installed_builder": digest(installed_builder_source.encode()),
             "baseline_wrap_listlike_ast": ast_digest(installed_method),
