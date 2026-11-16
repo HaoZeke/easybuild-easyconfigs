@@ -1,0 +1,16 @@
+Own the end-capture return value with THPObjectPtr.
+The cache holds separate references to the two callable tuple members.
+
+Author: Rohit Goswami <rgoswami@ieee.org>
+
+--- a/torch/csrc/dynamo/python_compiled_autograd.cpp
++++ b/torch/csrc/dynamo/python_compiled_autograd.cpp
+@@ -1142,7 +1142,7 @@
+       }
+     }
+ 
+-    PyObject* res = check(call_end_capture(py_compiler, state.outputs));
++    THPObjectPtr res(check(call_end_capture(py_compiler, state.outputs)));
+     TORCH_CHECK(PyTuple_Check(res), "Expected end_capture to return tuple");
+     TORCH_CHECK(
+         PyTuple_Size(res) == 2,
