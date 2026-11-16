@@ -22,7 +22,7 @@ torch.set_num_threads(4)
 def observed_check(func,args,kwargs,*rest,**kw):
     index=len(events)
     inp=args[0]
-    item={"sample":index,"shape":list(inp.shape),"stride":list(inp.stride()),"kwargs":repr(kwargs),"dtype":str(inp.dtype),"grad":inp.requires_grad}
+    item={"sample":index,"shape":list(inp.shape),"stride":list(inp.stride()),"kwargs":repr(kwargs),"dtype":str(inp.dtype),"grad":inp.requires_grad,"actual_initial_seed":torch.initial_seed()}
     try:
         result=original_check(func,args,kwargs,*rest,**kw)
     except BaseException as error:
@@ -39,13 +39,13 @@ case=TestCase("runTest")
 case.setUp()
 status=0
 try:
-    with patch("functorch.compile.config.debug_assert",True):
+    with patch("torch.testing._internal.common_utils.SEED",seed), patch("functorch.compile.config.debug_assert",True):
         namespace["_test_aot_autograd_helper"](case,"cpu",torch.float32,op,dynamic=True)
 except BaseException:
     status=1
 finally:
     case.tearDown()
-result={"torch":torch.__version__,"seed":seed,"threads":torch.get_num_threads(),"source_sha256":hashlib.sha256(raw).hexdigest(),"unchanged_helper_ast_sha256":hashlib.sha256(ast.dump(helper,include_attributes=False).encode()).hexdigest(),"status":status,"samples":events,"backend_mkl":torch.backends.mkl.is_available(),"scope":"Released helper and OpInfo sampling against public CPU wheel; native EESSI failing sample not established."}
+result={"torch":torch.__version__,"seed":seed,"seed_control":"OpInfo fallback SEED set before each sample","threads":torch.get_num_threads(),"source_sha256":hashlib.sha256(raw).hexdigest(),"unchanged_helper_ast_sha256":hashlib.sha256(ast.dump(helper,include_attributes=False).encode()).hexdigest(),"status":status,"samples":events,"backend_mkl":torch.backends.mkl.is_available(),"scope":"Released helper and OpInfo sampling against public CPU wheel; native EESSI failing sample not established."}
 dest=out/f"result-seed-{seed}.json"
 dest.write_text(json.dumps(result,indent=2)+"\n")
 print(json.dumps({"result":str(dest),"status":status,"samples":len(events),"failures":sum(x["status"]!="PASS" for x in events)}),flush=True)
