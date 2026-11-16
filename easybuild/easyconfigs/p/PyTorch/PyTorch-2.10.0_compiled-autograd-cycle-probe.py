@@ -11,6 +11,8 @@ import pathlib
 import re
 import sys
 import unittest
+import types
+import weakref
 
 EXPECTED_AUTOGRAD_SHA = "088fd54272d5df9087e770433dfee556add8d56d8371dff3906960c910eeb71e"
 EXPECTED_COMPILED_SHA = "ccc37bdaa8ae3ff36258fabca15f1427f55b775f86407ac832ae284ce4da812c"
@@ -57,6 +59,118 @@ def apply_single_file_diff(source, patch):
     return source
 
 
+
+def observe_weak_tensor_refs(torch, reports):
+    """Observe owners after a real post-collection expiration check fails."""
+    original = torch._C._WeakTensorRef
+    count = 0
+
+    def ownership_report(tensor_ref, context_ref, impl, ordinal):
+        tensor = tensor_ref()
+        context = context_ref() if context_ref is not None else None
+        snapshot = gc.get_objects()
+        roots = []
+        temporary = {id(snapshot), id(roots), id(reports)}
+        if tensor is not None:
+            roots.append(("output", tensor))
+        if context is not None:
+            roots.append(("autograd_context", context))
+        for obj in snapshot:
+            if type(obj) is torch.Tensor and obj is not tensor:
+                if obj._cdata == impl or (context is not None and obj.grad_fn is context):
+                    roots.append(("tensor_alias", obj))
+        nodes, edges, indices = [], [], {}
+        temporary.update((id(nodes), id(edges), id(indices)))
+
+        def visit(obj, depth):
+            key = id(obj)
+            if key in indices:
+                return indices[key]
+            if len(nodes) >= 64:
+                return None
+            index = len(nodes)
+            indices[key] = index
+            row = {"index": index, "type": type(obj).__module__ + "." + type(obj).__qualname__}
+            nodes.append(row)
+            temporary.add(id(row))
+            if type(obj) is torch.Tensor:
+                row.update(shape=list(obj.shape), dtype=str(obj.dtype),
+                           device=str(obj.device), requires_grad=obj.requires_grad,
+                           use_count=obj._use_count(), same_tensor_impl=obj._cdata == impl)
+            elif isinstance(obj, dict):
+                row["keys"] = [k[:100] for k in obj if isinstance(k, str)][:24]
+                if "__builtins__" in obj and "__name__" in obj:
+                    row["module"] = str(obj["__name__"])
+                    return index
+            elif isinstance(obj, (tuple, list)):
+                row["length"] = len(obj)
+            elif isinstance(obj, types.FrameType):
+                row.update(function=obj.f_code.co_name,
+                           file=pathlib.Path(obj.f_code.co_filename).name,
+                           line=obj.f_lineno)
+            elif isinstance(obj, types.FunctionType):
+                row.update(function=obj.__qualname__,
+                           file=pathlib.Path(obj.__code__.co_filename).name)
+            elif isinstance(obj, torch.fx.Node):
+                row.update(name=obj.name, op=obj.op)
+            if depth >= 5:
+                row["depth_limit"] = True
+                return index
+            owners = gc.get_referrers(obj)
+            temporary.add(id(owners))
+            kept = 0
+            for owner in owners:
+                if id(owner) in temporary or type(owner) is ObservedWeakTensorRef:
+                    continue
+                if isinstance(owner, types.FrameType) and owner.f_code.co_filename == __file__:
+                    continue
+                owner_index = visit(owner, depth + 1)
+                if owner_index is not None:
+                    edges.append({"owner": owner_index, "owned": index})
+                    kept += 1
+                if kept >= 8:
+                    row["owner_limit"] = True
+                    break
+            return index
+
+        root_rows = [{"role": role, "index": visit(obj, 0)} for role, obj in roots]
+        return {"reference_ordinal": ordinal, "expired_result": False,
+                "observation_phase": "after_real_result_before_original_assertion",
+                "python_tensor_alive": tensor is not None,
+                "python_context_alive": context is not None,
+                "roots": root_rows, "nodes": nodes, "edges": edges,
+                "limits": {"nodes": 64, "owners_per_node": 8, "depth": 5},
+                "extra_gc_calls": 0}
+
+    class ObservedWeakTensorRef:
+        def __init__(self, tensor):
+            nonlocal count
+            count += 1
+            self.ordinal = count
+            self.inner = original(tensor)
+            self.tensor_ref = weakref.ref(tensor)
+            context = tensor.grad_fn
+            self.context_ref = weakref.ref(context) if context is not None else None
+            self.impl = tensor._cdata
+            self.checks = 0
+
+        def expired(self):
+            value = self.inner.expired()
+            self.checks += 1
+            if self.checks == 2 and not value:
+                try:
+                    reports.append(ownership_report(self.tensor_ref, self.context_ref,
+                                                    self.impl, self.ordinal))
+                except Exception as error:
+                    reports.append({"reference_ordinal": self.ordinal,
+                                    "expired_result": value,
+                                    "observation_error": type(error).__name__})
+            return value
+
+    torch._C._WeakTensorRef = ObservedWeakTensorRef
+    return original
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cohort", choices=("baseline", "boxed"), required=True)
@@ -67,6 +181,7 @@ def main():
     parser.add_argument("--expected-boxed-patch-sha256", default=EXPECTED_BOXED_PATCH_SHA)
     parser.add_argument("--builder-reference", type=pathlib.Path)
     parser.add_argument("--output", type=pathlib.Path, required=True)
+    parser.add_argument("--observe-reference-owners", action="store_true")
     args = parser.parse_args()
 
     import torch
@@ -193,8 +308,18 @@ def main():
         },
     }
     print(json.dumps(metadata), flush=True)
-    case = Case(TEST_NAME)
-    result = unittest.TextTestRunner(stream=sys.stdout, verbosity=2).run(unittest.TestSuite([case]))
+    reference_reports = []
+    original_weak_tensor_ref = None
+    if args.observe_reference_owners:
+        original_weak_tensor_ref = observe_weak_tensor_refs(torch, reference_reports)
+    try:
+        case = Case(TEST_NAME)
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=2).run(unittest.TestSuite([case]))
+    finally:
+        if original_weak_tensor_ref is not None:
+            torch._C._WeakTensorRef = original_weak_tensor_ref
+    metadata["reference_observer_enabled"] = args.observe_reference_owners
+    metadata["reference_owner_reports"] = reference_reports
     metadata.update({
         "tests_run": result.testsRun,
         "failures": [text for _, text in result.failures],
