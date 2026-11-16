@@ -1,0 +1,21 @@
+Expose the profiler activity type through the existing KinetoEvent accessor.
+Backport the Python binding from PyTorch v2.15.0. The C++ activityType()
+accessor and libkineto type names are present in v2.10.0.
+
+--- a/torch/csrc/autograd/init.cpp
++++ b/torch/csrc/autograd/init.cpp
+@@ -315,7 +315,13 @@
+       // KinetoEvent metadata
+       .def("metadata_json", [](const KinetoEvent& e) {
+         return e.metadataJson();
+-      });
++      })
++      .def(
++          "activity_type",
++          [](const KinetoEvent& e) {
++            return libkineto::toString(
++                static_cast<libkineto::ActivityType>(e.activityType()));
++          });
+ 
+   m.def("_soft_assert_raises", &setSoftAssertRaises);
+   m.def("_get_sequence_nr", &at::sequence_number::peek);

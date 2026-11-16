@@ -98,6 +98,7 @@ patches = [
     'PyTorch-2.10.0_preserve-device-test-descriptors.patch',
     'PyTorch-2.10.0_modules-remove-duplicate.patch',
     'PyTorch-2.10.0_fix-fp8-reference-layout.patch',
+    'PyTorch-2.10.0_expose-profiler-activity-type.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -230,6 +231,8 @@ checksums = [
      'd89fd65b2e7e96b3aaaf8b3b1f8ed4782ab134fff194faf0ffab00472b5fe999'},
     {'PyTorch-2.10.0_fix-fp8-reference-layout.patch':
      '79810286145737b5dcd5df991b3dc2dba6aec51a0852f762f97ab4c7234e1ce0'},
+    {'PyTorch-2.10.0_expose-profiler-activity-type.patch':
+     '76a50efe0febbb9baee66b240b6271df5c4fa91d826f8fda9f554337227c212a'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
