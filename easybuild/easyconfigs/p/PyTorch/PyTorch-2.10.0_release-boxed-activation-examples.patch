@@ -1,0 +1,24 @@
+Use existing fake tensor examples for boxed activation placeholders.
+Keeping runtime activation tensors in placeholder metadata retains their
+backward graphs and prevents collection of custom-function cycles.
+
+Author: Rohit Goswami <rgoswami@ieee.org>
+
+--- a/torch/_dynamo/variables/builder.py
++++ b/torch/_dynamo/variables/builder.py
+@@ -1759,6 +1759,15 @@
+                 source=source,
+             )
+ 
++            # Placeholder examples must not own the runtime activation tensors.
++            set_example_value(
++                tensor_list_proxy.node,
++                [
++                    tensor_variable.proxy.node.meta["example_value"]
++                    for tensor_variable in list_variable.items
++                ],
++            )
++
+             # Apply relevant logic from `VariableTracker.build(value[i])`
+             # (except for the `create_graph_input` stuff).
+             guards = []

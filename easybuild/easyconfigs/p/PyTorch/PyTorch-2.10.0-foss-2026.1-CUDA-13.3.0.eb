@@ -99,6 +99,7 @@ patches = [
     'PyTorch-2.10.0_modules-remove-duplicate.patch',
     'PyTorch-2.10.0_fix-fp8-reference-layout.patch',
     'PyTorch-2.10.0_expose-profiler-activity-type.patch',
+    'PyTorch-2.10.0_release-boxed-activation-examples.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -233,6 +234,8 @@ checksums = [
      '79810286145737b5dcd5df991b3dc2dba6aec51a0852f762f97ab4c7234e1ce0'},
     {'PyTorch-2.10.0_expose-profiler-activity-type.patch':
      '76a50efe0febbb9baee66b240b6271df5c4fa91d826f8fda9f554337227c212a'},
+    {'PyTorch-2.10.0_release-boxed-activation-examples.patch':
+     '6e1d6d64fa7de18baf3c9b013b38d6604dbd6a8e552762c6bd5c2ecb042d1aca'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
