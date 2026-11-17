@@ -347,6 +347,9 @@ runtest = (
     ' %(excluded_tests)s'
 )
 
+# Every selected test must pass before the installation is published.
+max_failed_tests = 0
+
 postinstallcmds = [
     "mkdir %(installdir)s/extra",
     "cp -r third_party/cutlass %(installdir)s/extra/",
