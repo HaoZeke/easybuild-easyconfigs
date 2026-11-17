@@ -57,8 +57,9 @@ dependencies = [
 ]
 
 # libc and Python's timezone readers use the same host data during PGO and tests.
-prebuildopts = 'TZDIR=/usr/share/zoneinfo '
-pretestopts = 'TZDIR=/usr/share/zoneinfo '
+# Regression workers require a finite process stack for recursion detection.
+prebuildopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
+pretestopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
 
 modextravars = {
