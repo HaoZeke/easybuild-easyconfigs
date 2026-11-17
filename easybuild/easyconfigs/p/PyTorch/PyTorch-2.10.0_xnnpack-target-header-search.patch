@@ -1,0 +1,28 @@
+Use declared include directories for XNNPACK C microkernels.
+Retain existing compiler launchers and all production/test targets.
+
+--- a/third_party/XNNPACK/CMakeLists.txt
++++ b/third_party/XNNPACK/CMakeLists.txt
+@@ -1157,6 +1157,22 @@
+ ENDIF()
+ TARGET_LINK_LIBRARIES(microkernels-prod PRIVATE fxdiv)
+ TARGET_LINK_LIBRARIES(indirection PRIVATE fxdiv)
++
++# Microkernel headers are declared on the targets. Keep dependency-wide
++# implicit include paths out of these compilations.
++FOREACH(_xnnpack_header_target microkernels-prod microkernels-all)
++  IF(TARGET ${_xnnpack_header_target})
++    GET_TARGET_PROPERTY(_xnnpack_header_launcher
++      ${_xnnpack_header_target} C_COMPILER_LAUNCHER)
++    IF(_xnnpack_header_launcher STREQUAL "_xnnpack_header_launcher-NOTFOUND")
++      SET(_xnnpack_header_launcher "")
++    ENDIF()
++    SET_PROPERTY(TARGET ${_xnnpack_header_target} PROPERTY C_COMPILER_LAUNCHER
++      "${CMAKE_COMMAND}" -E env
++      --unset=CPATH --unset=C_INCLUDE_PATH --unset=CPLUS_INCLUDE_PATH
++      ${_xnnpack_header_launcher})
++  ENDIF()
++ENDFOREACH()
+ IF(XNNPACK_BUILD_LIBRARY)
+   TARGET_LINK_LIBRARIES(XNNPACK PRIVATE fxdiv)
+ ENDIF()
