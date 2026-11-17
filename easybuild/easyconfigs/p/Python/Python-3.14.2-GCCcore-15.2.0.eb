@@ -56,6 +56,14 @@ dependencies = [
     ('zstd', '1.5.7'),
 ]
 
+# libc and Python's timezone readers use the same host data during PGO and tests.
+prebuildopts = 'TZDIR=/usr/share/zoneinfo '
+pretestopts = 'TZDIR=/usr/share/zoneinfo '
+
+modextravars = {
+    'TZDIR': {'value': '/usr/share/zoneinfo', 'pushenv': True},
+}
+
 exts_default_options = {
     'source_urls': [PYPI_SOURCE],
 }
