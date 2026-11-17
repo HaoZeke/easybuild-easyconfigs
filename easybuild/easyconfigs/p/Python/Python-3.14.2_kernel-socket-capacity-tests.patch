@@ -1,0 +1,17 @@
+--- a/Lib/test/support/__init__.py
++++ b/Lib/test/support/__init__.py
+@@ -505,6 +505,14 @@
+ # for a discussion of this number.
+ SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
+ 
++# Linux default send buffers can exceed the conservative fixed bound.
++if sys.platform.startswith("linux"):
++    try:
++        with open("/proc/sys/net/core/wmem_default", encoding="ascii") as stream:
++            SOCK_MAX_SIZE = max(SOCK_MAX_SIZE, int(stream.read()) + 1)
++    except (OSError, ValueError):
++        pass
++
+ # decorator for skipping tests on non-IEEE 754 platforms
+ requires_IEEE_754 = unittest.skipUnless(
+     float.__getformat__("double").startswith("IEEE"),

@@ -152,3 +152,31 @@ diff -Nru Python-3.14.2.orig/Lib/ctypes/util.py Python-3.14.2/Lib/ctypes/util.py
  
  
  # Listing loaded libraries on other systems will try to use
+
+--- a/Lib/test/test_ctypes/test_find.py
++++ b/Lib/test/test_ctypes/test_find.py
+@@ -103,19 +103,19 @@
+             out = subprocess.check_output(cmd)
+             self.assertTrue(os.path.exists(dstname))
+             # now check that the .so can't be found (since not in
+-            # LD_LIBRARY_PATH)
++            # LIBRARY_PATH)
+             self.assertIsNone(find_library(libname))
+-            # now add the location to LD_LIBRARY_PATH
++            # add the location to LIBRARY_PATH
+             with os_helper.EnvironmentVarGuard() as env:
+-                KEY = 'LD_LIBRARY_PATH'
++                KEY = 'LIBRARY_PATH'
+                 if KEY not in env:
+                     v = d
+                 else:
+                     v = '%s:%s' % (env[KEY], d)
+                 env.set(KEY, v)
+                 # now check that the .so can be found (since in
+-                # LD_LIBRARY_PATH)
+-                self.assertEqual(find_library(libname), 'lib%s.so' % libname)
++                # LIBRARY_PATH)
++                self.assertEqual(find_library(libname), dstname)
+ 
+     def test_find_library_with_gcc(self):
+         with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None):
