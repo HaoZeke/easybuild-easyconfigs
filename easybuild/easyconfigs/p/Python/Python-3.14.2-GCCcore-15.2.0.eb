@@ -31,11 +31,11 @@ checksums = [
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
     {'Python-3.13.1_ssl-distrust-compromised-eMudhra-intermediate-CA-keys-CVE-2026-115557.patch':
      '7116f4a0bb2f1cabd62588976b9c0e9bacaf6a25f4045c0a89c0e15ba921b360'},
-    {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
     {'Python-3.14.2_restore-generational-gc.patch':
      'c772af0e76f0408ba62a1ec007410f9596558bb73b0559720365d8026f7fa370'},
     {'Python-3.14.2_weakref-finalizer-test-spec.patch':
      'eea2cd8ceb4e6362b119958b4ac0640784aac074db20f4aebf0ec2176cf71ddb'},
+    {'Python-3.14.2-custom-ctypes.patch': '4c7659026a88961330c9629b0a1c23e9a8ed38108af765bfc0f537f55b7d610f'},
 ]
 
 builddependencies = [
