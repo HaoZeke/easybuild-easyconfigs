@@ -27,7 +27,7 @@ patch_ctypes_ld_library_path = 'Python-3.14.2-custom-ctypes.patch'
 checksums = [
     {'Python-3.14.2.tgz': 'c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d'},
     {'Python-3.12.3_avoid-tkinter-build.patch': '34fa44ca67fc08d41c58db2e289317f12f32777a352a982dca2e63459fc089e3'},
-    {'Python-3.14.2_build-libpython-rpath.patch': 'bfe962a8476b42ed64f0c9c97fc7de75c0111a38a2dcb70b1d3ffe8e71f90bad'},
+    {'Python-3.14.2_build-libpython-rpath.patch': 'bfee67e06af98e611c6552a5a92663f8222da24255f4d6c4126e7f10b493c246'},
     {'Python-3.14.2_skip-inf-recursion-tests.patch':
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
     {'Python-3.13.1_ssl-distrust-compromised-eMudhra-intermediate-CA-keys-CVE-2026-115557.patch':
@@ -42,6 +42,7 @@ checksums = [
 ]
 
 builddependencies = [
+    ('patchelf', '0.18.0'),
     ('UnZip', '6.0'),
     ('pkgconf', '2.5.1'),
 ]
@@ -64,6 +65,9 @@ dependencies = [
 prebuildopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
 pretestopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
+
+# Runtime library paths retain installation entries and exclude the build root.
+postinstallcmds = ['%(installdir)s/bin/python3.14 - <<\'PY\'\nimport pathlib\nimport shutil\nimport subprocess\n\nprefix = pathlib.Path("%(installdir)s")\nbuild = str(pathlib.Path("%(start_dir)s").resolve())\npatchelf = shutil.which("patchelf")\nif patchelf is None:\n    raise RuntimeError("patchelf is required to finalize Python library paths")\ncandidates = list((prefix / "bin").glob("python*"))\ncandidates += list((prefix / "lib").glob("libpython*.so*"))\ncandidates += list((prefix / "lib/python3.14/lib-dynload").glob("*.so"))\nfor path in sorted({entry.resolve() for entry in candidates if entry.is_file()}):\n    with path.open("rb") as handle:\n        if handle.read(4) != b"\\x7fELF":\n            continue\n    original = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip()\n    entries = original.split(":") if original else []\n    if build not in entries:\n        continue\n    entries = [entry for entry in entries if entry and entry != build]\n    libdir = str(prefix / "lib")\n    if libdir not in entries:\n        entries.insert(0, libdir)\n    subprocess.run([patchelf, "--force-rpath", "--set-rpath", ":".join(entries), str(path)], check=True)\n    final = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip().split(":")\n    if build in final:\n        raise RuntimeError(f"Python library path retains the build directory: {path}")\nPY']
 
 modextravars = {
     'TZDIR': {'value': '/usr/share/zoneinfo', 'pushenv': True},
