@@ -12,7 +12,7 @@ source_urls = ['https://www.python.org/ftp/%(namelower)s/%(version)s/']
 sources = [SOURCE_TGZ]
 patches = [
     'Python-3.12.3_avoid-tkinter-build.patch',
-    'Python-3.13.1_runshared-ld-preload.patch',
+    'Python-3.14.2_build-libpython-rpath.patch',
     'Python-3.14.2_skip-inf-recursion-tests.patch',
     'Python-3.13.1_ssl-distrust-compromised-eMudhra-intermediate-CA-keys-CVE-2026-115557.patch',
     'Python-3.14.2_restore-generational-gc.patch',
@@ -27,7 +27,7 @@ patch_ctypes_ld_library_path = 'Python-3.14.2-custom-ctypes.patch'
 checksums = [
     {'Python-3.14.2.tgz': 'c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d'},
     {'Python-3.12.3_avoid-tkinter-build.patch': '34fa44ca67fc08d41c58db2e289317f12f32777a352a982dca2e63459fc089e3'},
-    {'Python-3.13.1_runshared-ld-preload.patch': 'ca9ec56c71aafa881e7ddf6fba23fbecc016be48c2d912e5ccd92962ddd38edf'},
+    {'Python-3.14.2_build-libpython-rpath.patch': 'bfe962a8476b42ed64f0c9c97fc7de75c0111a38a2dcb70b1d3ffe8e71f90bad'},
     {'Python-3.14.2_skip-inf-recursion-tests.patch':
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
     {'Python-3.13.1_ssl-distrust-compromised-eMudhra-intermediate-CA-keys-CVE-2026-115557.patch':

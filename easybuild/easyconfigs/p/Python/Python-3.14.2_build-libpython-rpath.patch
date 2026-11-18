@@ -1,0 +1,32 @@
+Resolve the matching shared libpython through executable RPATH entries.
+The build interpreter and Programs/_testembed need the build-root layout,
+while the installed interpreter uses ../lib. Loader environment variables
+must not make host subprocesses preload the build's libpython.
+
+--- a/configure
++++ b/configure
+@@ -7737,7 +7737,9 @@
+     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
+       LDLIBRARY='libpython$(LDVERSION).so'
+       BLDLIBRARY='-L. -lpython$(LDVERSION)'
+-      RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
++      # Build executables resolve libpython without exporting loader settings.
++      RUNSHARED=''
++      LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,-rpath,'\$\$ORIGIN:\$\$ORIGIN/..:\$\$ORIGIN/../lib'"
+ 
+       # The Android Gradle plugin will only package libraries whose names end
+       # with ".so".
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -1580,7 +1580,9 @@
+     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
+       LDLIBRARY='libpython$(LDVERSION).so'
+       BLDLIBRARY='-L. -lpython$(LDVERSION)'
+-      RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
++      # Build executables resolve libpython without exporting loader settings.
++      RUNSHARED=''
++      LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,-rpath,'\$\$ORIGIN:\$\$ORIGIN/..:\$\$ORIGIN/../lib'"
+ 
+       # The Android Gradle plugin will only package libraries whose names end
+       # with ".so".
