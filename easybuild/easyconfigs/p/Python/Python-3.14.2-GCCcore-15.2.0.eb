@@ -67,7 +67,43 @@ pretestopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
 
 # Runtime library paths retain installation entries and exclude the build root.
-postinstallcmds = ['%(installdir)s/bin/python3.14 - <<\'PY\'\nimport pathlib\nimport shutil\nimport subprocess\n\nprefix = pathlib.Path("%(installdir)s")\nbuild = str(pathlib.Path("%(start_dir)s").resolve())\npatchelf = shutil.which("patchelf")\nif patchelf is None:\n    raise RuntimeError("patchelf is required to finalize Python library paths")\ncandidates = list((prefix / "bin").glob("python*"))\ncandidates += list((prefix / "lib").glob("libpython*.so*"))\ncandidates += list((prefix / "lib/python3.14/lib-dynload").glob("*.so"))\nfor path in sorted({entry.resolve() for entry in candidates if entry.is_file()}):\n    with path.open("rb") as handle:\n        if handle.read(4) != b"\\x7fELF":\n            continue\n    original = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip()\n    entries = original.split(":") if original else []\n    if build not in entries:\n        continue\n    entries = [entry for entry in entries if entry and entry != build]\n    libdir = str(prefix / "lib")\n    if libdir not in entries:\n        entries.insert(0, libdir)\n    subprocess.run([patchelf, "--force-rpath", "--set-rpath", ":".join(entries), str(path)], check=True)\n    final = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip().split(":")\n    if build in final:\n        raise RuntimeError(f"Python library path retains the build directory: {path}")\nPY']
+local_finalize_python_rpath = """%(installdir)s/bin/python3.14 - <<'PY'
+import pathlib
+import shutil
+import subprocess
+
+prefix = pathlib.Path("%(installdir)s")
+build = str(pathlib.Path("%(start_dir)s").resolve())
+patchelf = shutil.which("patchelf")
+if patchelf is None:
+    raise RuntimeError("patchelf is required to finalize Python library paths")
+candidates = list((prefix / "bin").glob("python*"))
+candidates += list((prefix / "lib").glob("libpython*.so*"))
+candidates += list((prefix / "lib/python3.14/lib-dynload").glob("*.so"))
+for path in sorted({entry.resolve() for entry in candidates if entry.is_file()}):
+    with path.open("rb") as handle:
+        if handle.read(4) != b"\x7fELF":
+            continue
+    original = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip()
+    entries = original.split(":") if original else []
+    if build not in entries:
+        continue
+    entries = [entry for entry in entries if entry and entry != build]
+    libdir = str(prefix / "lib")
+    if libdir not in entries:
+        entries.insert(0, libdir)
+    subprocess.run(
+        [patchelf, "--force-rpath", "--set-rpath", ":".join(entries), str(path)],
+        check=True,
+    )
+    final = subprocess.check_output(
+        [patchelf, "--print-rpath", str(path)], text=True
+    ).strip().split(":")
+    if build in final:
+        raise RuntimeError(f"Python library path retains the build directory: {path}")
+PY
+"""
+postinstallcmds = [local_finalize_python_rpath]
 
 modextravars = {
     'TZDIR': {'value': '/usr/share/zoneinfo', 'pushenv': True},
