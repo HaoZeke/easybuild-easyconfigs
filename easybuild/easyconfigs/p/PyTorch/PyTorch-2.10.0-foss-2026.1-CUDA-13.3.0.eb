@@ -100,7 +100,6 @@ patches = [
     'PyTorch-2.10.0_fix-fp8-reference-layout.patch',
     'PyTorch-2.10.0_expose-profiler-activity-type.patch',
     'PyTorch-2.10.0_release-boxed-activation-examples.patch',
-    'PyTorch-2.10.0_capture-created-sparse-outputs.patch',
     'PyTorch-2.10.0_align-test-interfaces-and-fixtures.patch',
     'PyTorch-2.10.0_xnnpack-target-header-search.patch',
     'PyTorch-2.10.0_clear-generated-cuda-source-cache.patch',
@@ -240,8 +239,6 @@ checksums = [
      '76a50efe0febbb9baee66b240b6271df5c4fa91d826f8fda9f554337227c212a'},
     {'PyTorch-2.10.0_release-boxed-activation-examples.patch':
      '6e1d6d64fa7de18baf3c9b013b38d6604dbd6a8e552762c6bd5c2ecb042d1aca'},
-    {'PyTorch-2.10.0_capture-created-sparse-outputs.patch':
-     '1f20b2e70b33aa6c7c445ee79b3f024df2ee3774e3fe750f2ffe24a8b54aa59d'},
     {'PyTorch-2.10.0_align-test-interfaces-and-fixtures.patch':
      'ab9f1773304575153006135ccf8f11d4a70322750a590f9c767d9eaea7844c95'},
     {'PyTorch-2.10.0_xnnpack-target-header-search.patch':
