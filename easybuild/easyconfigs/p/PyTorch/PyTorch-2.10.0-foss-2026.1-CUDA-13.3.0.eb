@@ -103,6 +103,7 @@ patches = [
     'PyTorch-2.10.0_capture-created-sparse-outputs.patch',
     'PyTorch-2.10.0_align-test-interfaces-and-fixtures.patch',
     'PyTorch-2.10.0_xnnpack-target-header-search.patch',
+    'PyTorch-2.10.0_clear-generated-cuda-source-cache.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -245,6 +246,8 @@ checksums = [
      'ab9f1773304575153006135ccf8f11d4a70322750a590f9c767d9eaea7844c95'},
     {'PyTorch-2.10.0_xnnpack-target-header-search.patch':
      '99e4b586fe46e190adc101abf95a5c5c91a6b295605bee43e4279d4a7a6da66f'},
+    {'PyTorch-2.10.0_clear-generated-cuda-source-cache.patch':
+     '2d6857dc7d9faf5586ff3504d870b18cbc3f298f66534a2852be89d1a46f9bbf'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

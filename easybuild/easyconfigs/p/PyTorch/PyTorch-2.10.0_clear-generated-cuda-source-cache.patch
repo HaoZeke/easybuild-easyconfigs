@@ -1,0 +1,13 @@
+Invalidate generated CUDA source paths when the code cache is reset.
+Source: https://github.com/pytorch/pytorch/commit/c048a7b870d6bd3fe9b0ad233d67238f19db650b
+
+--- a/torch/_inductor/codecache.py
++++ b/torch/_inductor/codecache.py
+@@ -4059,6 +4059,7 @@
+     def cache_clear() -> None:
+         CUDACodeCache.cache.clear()
+         CUDACodeCache.aot_kernels_o.clear()
++        CUDACodeCache.write.cache_clear()
+ 
+     @staticmethod
+     @lru_cache(maxsize=4)
