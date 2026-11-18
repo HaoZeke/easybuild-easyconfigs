@@ -67,7 +67,7 @@ pretestopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
 
 # Runtime library paths retain installation entries and exclude the build root.
-local_finalize_python_rpath = """%(installdir)s/bin/python3.14 - <<'PY'
+local_finalize_python_rpath = r"""%(installdir)s/bin/python3.14 - <<'PY'
 import pathlib
 import shutil
 import subprocess
