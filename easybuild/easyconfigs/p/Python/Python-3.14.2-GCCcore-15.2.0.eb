@@ -82,8 +82,15 @@ modextravars = {
     'TZDIR': {'value': '/usr/share/zoneinfo', 'pushenv': True},
 }
 
+# The options above drive the interpreter's own make targets. Extensions take a copy of
+# this easyconfig, so each one would run them as well: 'test' as its test command and the
+# libpython link with its own version in the name.
 exts_default_options = {
     'source_urls': [PYPI_SOURCE],
+    'prebuildopts': '',
+    'preinstallopts': '',
+    'pretestopts': '',
+    'runtest': False,
 }
 
 # order is important!
