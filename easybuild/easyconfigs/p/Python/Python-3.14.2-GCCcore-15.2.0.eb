@@ -67,7 +67,10 @@ pretestopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
 
 # Runtime library paths retain installation entries and exclude the build root.
+# Each file is rewritten as a copy and renamed into place: the kernel refuses
+# writes to the running interpreter and to libraries it has mapped.
 local_finalize_python_rpath = r"""%(installdir)s/bin/python3.14 - <<'PY'
+import os
 import pathlib
 import shutil
 import subprocess
@@ -86,20 +89,27 @@ for path in sorted({entry.resolve() for entry in candidates if entry.is_file()})
             continue
     original = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip()
     entries = original.split(":") if original else []
-    if build not in entries:
+    kept = [
+        entry for entry in entries
+        if entry and (entry.startswith("$") or str(pathlib.Path(entry).resolve()) != build)
+    ]
+    if kept == entries:
         continue
-    entries = [entry for entry in entries if entry and entry != build]
+    entries = kept
     libdir = str(prefix / "lib")
     if libdir not in entries:
         entries.insert(0, libdir)
+    staged = path.with_name(path.name + ".rpath-staged")
+    shutil.copy2(path, staged)
     subprocess.run(
-        [patchelf, "--force-rpath", "--set-rpath", ":".join(entries), str(path)],
+        [patchelf, "--force-rpath", "--set-rpath", ":".join(entries), str(staged)],
         check=True,
     )
+    os.replace(staged, path)
     final = subprocess.check_output(
         [patchelf, "--print-rpath", str(path)], text=True
     ).strip().split(":")
-    if build in final:
+    if any(str(pathlib.Path(entry).resolve()) == build for entry in final if entry[:1] == "/"):
         raise RuntimeError(f"Python library path retains the build directory: {path}")
 PY
 """
