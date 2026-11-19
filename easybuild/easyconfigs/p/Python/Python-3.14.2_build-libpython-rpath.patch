@@ -1,43 +1,40 @@
-Resolve the build's own libpython through a run path on the build executables.
+Do not export loader variables when running the build interpreter.
 
-The build interpreter, Programs/_testembed and copies of the interpreter that
-the test suite makes (venvs) must load the libpython of this build. Loader
-environment variables are not used: LD_LIBRARY_PATH loses against the run
-paths the EasyBuild RPATH wrappers add, and LD_PRELOAD is inherited by host
-programs the tests start, which cannot load a libpython built against a newer
-glibc than the host's.
+configure sets RUNSHARED so that make runs ./python with LD_LIBRARY_PATH (or,
+with the EasyBuild patch this replaces, LD_PRELOAD) naming the build
+directory. Every program the test suite starts inherits that. A preloaded
+libpython built against a newer glibc than the host's cannot be loaded by
+host programs, which then exit before main.
 
-The flag is spelled -Wl,-rpath=DIR on purpose. The RPATH wrappers place the
-entries they recognise in command line order ahead of the directories they add
-themselves, which under EESSI end with the compatibility layer's library
-directory and its own libpython of the same soname. A run path passed as
--Wl,-rpath,DIR is not recognised and stays behind those. The easyconfig
-removes the build directory from the installed run paths.
+RUNSHARED is left empty. The build's libpython is found through the run path
+instead: the EasyBuild RPATH wrappers put <installdir>/lib first in every
+binary, and the easyconfig links the build's libpython there for the build
+and test steps. A run path to the build directory itself cannot be used: the
+wrappers filter the build directory out of -rpath=DIR arguments and place
+any other spelling behind the compatibility layer's library directory.
 
 --- a/configure
 +++ b/configure
-@@ -7737,7 +7737,9 @@
+@@ -7737,7 +7737,8 @@
      Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
        LDLIBRARY='libpython$(LDVERSION).so'
        BLDLIBRARY='-L. -lpython$(LDVERSION)'
 -      RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-+      # Build executables resolve libpython without exporting loader settings.
++      # Build executables resolve libpython through their run path.
 +      RUNSHARED=''
-+      LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,-rpath=$(pwd)"
  
        # The Android Gradle plugin will only package libraries whose names end
        # with ".so".
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -1580,7 +1580,9 @@
+@@ -1580,7 +1580,8 @@
      Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
        LDLIBRARY='libpython$(LDVERSION).so'
        BLDLIBRARY='-L. -lpython$(LDVERSION)'
 -      RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-+      # Build executables resolve libpython without exporting loader settings.
++      # Build executables resolve libpython through their run path.
 +      RUNSHARED=''
-+      LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,-rpath=$(pwd)"
  
        # The Android Gradle plugin will only package libraries whose names end
        # with ".so".

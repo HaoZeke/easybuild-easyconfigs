@@ -27,7 +27,7 @@ patch_ctypes_ld_library_path = 'Python-3.14.2-custom-ctypes.patch'
 checksums = [
     {'Python-3.14.2.tgz': 'c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d'},
     {'Python-3.12.3_avoid-tkinter-build.patch': '34fa44ca67fc08d41c58db2e289317f12f32777a352a982dca2e63459fc089e3'},
-    {'Python-3.14.2_build-libpython-rpath.patch': '5131cba102b8931f8ae41d3d8c58713e79d3cc005ff280dfb2a36a24a1cef3bf'},
+    {'Python-3.14.2_build-libpython-rpath.patch': '9824ed11b82f3a6628946801edd451e45d0005eddd354a5bd901d5bf0b5ae2db'},
     {'Python-3.14.2_skip-inf-recursion-tests.patch':
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
     {'Python-3.13.1_ssl-distrust-compromised-eMudhra-intermediate-CA-keys-CVE-2026-115557.patch':
@@ -42,7 +42,6 @@ checksums = [
 ]
 
 builddependencies = [
-    ('patchelf', '0.18.0'),
     ('UnZip', '6.0'),
     ('pkgconf', '2.5.1'),
 ]
@@ -62,63 +61,22 @@ dependencies = [
 
 # libc and Python's timezone readers use the same host data during PGO and tests.
 # Regression workers require a finite process stack for recursion detection.
-prebuildopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
+# Every binary the RPATH wrappers link searches <installdir>/lib first. Linking the build's
+# libpython there makes the build interpreter, Programs/_testembed and the interpreter
+# copies the test suite makes (venvs) load it, and not the libpython of the same name
+# that the EESSI compatibility layer provides. The link is removed before the install.
+local_libpython = 'libpython%(version_major_minor)s.so.1.0'
+local_link_libpython = ('mkdir -p %(installdir)s/lib && '
+                        'ln -sfn "$(pwd)/' + local_libpython + '" %(installdir)s/lib/' + local_libpython + ' && ')
+prebuildopts = local_link_libpython + 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
+preinstallopts = 'rm -f %(installdir)s/lib/' + local_libpython + ' && '
 # The curses module reads the terminfo database of the library it is linked to, while
 # pyrepl's own reader searches the host directories. Where the two databases differ
 # (EESSI's compatibility layer on an older host), point both at the linked one.
 local_same_terminfo = ('{ [ ! -d "${EESSI_EPREFIX:-/nonexistent}/usr/share/terminfo" ] || '
                        'export TERMINFO="${EESSI_EPREFIX}/usr/share/terminfo"; } && ')
-pretestopts = 'ulimit -s 8192 && ' + local_same_terminfo + 'TZDIR=/usr/share/zoneinfo '
+pretestopts = local_link_libpython + 'ulimit -s 8192 && ' + local_same_terminfo + 'TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
-
-# Runtime library paths retain installation entries and exclude the build root.
-# Each file is rewritten as a copy and renamed into place: the kernel refuses
-# writes to the running interpreter and to libraries it has mapped.
-local_finalize_python_rpath = r"""%(installdir)s/bin/python3.14 - <<'PY'
-import os
-import pathlib
-import shutil
-import subprocess
-
-prefix = pathlib.Path("%(installdir)s")
-build = str(pathlib.Path("%(start_dir)s").resolve())
-patchelf = shutil.which("patchelf")
-if patchelf is None:
-    raise RuntimeError("patchelf is required to finalize Python library paths")
-candidates = list((prefix / "bin").glob("python*"))
-candidates += list((prefix / "lib").glob("libpython*.so*"))
-candidates += list((prefix / "lib/python3.14/lib-dynload").glob("*.so"))
-for path in sorted({entry.resolve() for entry in candidates if entry.is_file()}):
-    with path.open("rb") as handle:
-        if handle.read(4) != b"\x7fELF":
-            continue
-    original = subprocess.check_output([patchelf, "--print-rpath", str(path)], text=True).strip()
-    entries = original.split(":") if original else []
-    kept = [
-        entry for entry in entries
-        if entry and (entry.startswith("$") or str(pathlib.Path(entry).resolve()) != build)
-    ]
-    if kept == entries:
-        continue
-    entries = kept
-    libdir = str(prefix / "lib")
-    if libdir not in entries:
-        entries.insert(0, libdir)
-    staged = path.with_name(path.name + ".rpath-staged")
-    shutil.copy2(path, staged)
-    subprocess.run(
-        [patchelf, "--force-rpath", "--set-rpath", ":".join(entries), str(staged)],
-        check=True,
-    )
-    os.replace(staged, path)
-    final = subprocess.check_output(
-        [patchelf, "--print-rpath", str(path)], text=True
-    ).strip().split(":")
-    if any(str(pathlib.Path(entry).resolve()) == build for entry in final if entry[:1] == "/"):
-        raise RuntimeError(f"Python library path retains the build directory: {path}")
-PY
-"""
-postinstallcmds = [local_finalize_python_rpath]
 
 modextravars = {
     'TZDIR': {'value': '/usr/share/zoneinfo', 'pushenv': True},
