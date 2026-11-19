@@ -27,7 +27,7 @@ patch_ctypes_ld_library_path = 'Python-3.14.2-custom-ctypes.patch'
 checksums = [
     {'Python-3.14.2.tgz': 'c609e078adab90e2c6bacb6afafacd5eaf60cd94cf670f1e159565725fcd448d'},
     {'Python-3.12.3_avoid-tkinter-build.patch': '34fa44ca67fc08d41c58db2e289317f12f32777a352a982dca2e63459fc089e3'},
-    {'Python-3.14.2_build-libpython-rpath.patch': 'bfee67e06af98e611c6552a5a92663f8222da24255f4d6c4126e7f10b493c246'},
+    {'Python-3.14.2_build-libpython-rpath.patch': '5131cba102b8931f8ae41d3d8c58713e79d3cc005ff280dfb2a36a24a1cef3bf'},
     {'Python-3.14.2_skip-inf-recursion-tests.patch':
      'ff9d0951f169fa5c34f883093d7688b1823693e2950b6c4cfb21682ece33646a'},
     {'Python-3.13.1_ssl-distrust-compromised-eMudhra-intermediate-CA-keys-CVE-2026-115557.patch':
@@ -63,7 +63,12 @@ dependencies = [
 # libc and Python's timezone readers use the same host data during PGO and tests.
 # Regression workers require a finite process stack for recursion detection.
 prebuildopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
-pretestopts = 'ulimit -s 8192 && TZDIR=/usr/share/zoneinfo '
+# The curses module reads the terminfo database of the library it is linked to, while
+# pyrepl's own reader searches the host directories. Where the two databases differ
+# (EESSI's compatibility layer on an older host), point both at the linked one.
+local_same_terminfo = ('{ [ ! -d "${EESSI_EPREFIX:-/nonexistent}/usr/share/terminfo" ] || '
+                       'export TERMINFO="${EESSI_EPREFIX}/usr/share/terminfo"; } && ')
+pretestopts = 'ulimit -s 8192 && ' + local_same_terminfo + 'TZDIR=/usr/share/zoneinfo '
 runtest = 'test'
 
 # Runtime library paths retain installation entries and exclude the build root.
