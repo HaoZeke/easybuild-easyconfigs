@@ -1,0 +1,29 @@
+Ops that requantize their own output (output_is_observed) can land on an
+exact half quantization step; the kernel and the float reference may then
+round the tie in opposite directions. The derandomized CI Hypothesis profile
+finds such an example for quantized.leaky_relu. Compare the integer
+representations with a tolerance of one step for these ops.
+
+Author: Rohit Goswami (SURF)
+
+--- a/test/quantization/core/test_quantized_op.py
++++ b/test/quantization/core/test_quantized_op.py
+@@ -286,7 +286,17 @@
+                     # Finds qY using in-place or non-in-place quantized operators.
+                     qY = q_op(qX, **extra_kwargs)
+ 
+-                    self.assertEqual(qY, qY_hat, msg=f'{fn_name} - {q_op} failed: ({qY} vs. {qY_hat})')
++                    if output_is_observed:
++                        # The op requantizes its float result itself. When that
++                        # result sits on an exact half step, float rounding in the
++                        # kernel and in the reference can resolve the tie in
++                        # opposite directions, so allow one quantization step.
++                        self.assertEqual(qY.q_scale(), qY_hat.q_scale())
++                        self.assertEqual(qY.q_zero_point(), qY_hat.q_zero_point())
++                        self.assertEqual(qY.int_repr().to(torch.int32), qY_hat.int_repr().to(torch.int32),
++                                         atol=1, rtol=0, msg=f'{fn_name} - {q_op} failed: ({qY} vs. {qY_hat})')
++                    else:
++                        self.assertEqual(qY, qY_hat, msg=f'{fn_name} - {q_op} failed: ({qY} vs. {qY_hat})')
+ 
+     """Tests the correctness of the quantized::relu op."""
+     @override_qengines

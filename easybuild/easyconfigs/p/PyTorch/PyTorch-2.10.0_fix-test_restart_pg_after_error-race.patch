@@ -1,0 +1,26 @@
+test_restart_pg_after_error reads get_error() on the non-zero ranks once,
+after a fixed 4 s sleep. The REMOTE_ERROR propagated from rank 0 can arrive
+just after that (measured 3.96 s to 4.06 s with the NCCL bundled in the
+2.10.0 wheels), so the test fails intermittently. Poll for the error with a
+deadline instead.
+
+Author: Rohit Goswami (SURF)
+
+--- a/test/distributed/test_c10d_nccl.py
++++ b/test/distributed/test_c10d_nccl.py
+@@ -4009,6 +4009,15 @@
+             # other ranks not exiting before rank 0 timeout, this is to avoid
+             # nccl error happening before rank 0 timeouts
+             time.sleep(4)
++            # The remote error arrives once rank 0 has timed out and propagated
++            # it, which can be just after the fixed sleep. Poll for it instead
++            # of reading it once.
++            deadline = time.monotonic() + 60
++            while (
++                nccl_backend.get_error() == ErrorType.SUCCESS
++                and time.monotonic() < deadline
++            ):
++                time.sleep(0.1)
+             self.assertEqual(nccl_backend.get_error(), ErrorType.REMOTE_ERROR)
+             new_file_name = store.get("file").decode()
+ 

@@ -113,6 +113,13 @@ patches = [
     # - test_quantization.py TestFusedObsFakeQuant.test_fused_obs_fake_quant_moving_avg:
     #   unseeded torch.randn inside a Hypothesis test, FlakyFailure on A100 and H100
     'PyTorch-2.10.0_skip-tests-unreliable-in-site-ci.patch',
+    # dynamo guarded saved_tensors_hooks by bare id(); freed hooks reused by address
+    # skipped the recompile (test_saved_tensors_hooks_autograd_cache_symbolic)
+    'PyTorch-2.10.0_fix-saved-tensors-hooks-guard-id-reuse.patch',
+    # fixed 4 s sleep raced the propagated REMOTE_ERROR; poll with a deadline
+    'PyTorch-2.10.0_fix-test_restart_pg_after_error-race.patch',
+    # requantizing ops may round an exact half step either way; allow one step
+    'PyTorch-2.10.0_fix-test_leaky_relu_observed_output-tie.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -257,6 +264,12 @@ checksums = [
      '2d6857dc7d9faf5586ff3504d870b18cbc3f298f66534a2852be89d1a46f9bbf'},
     {'PyTorch-2.10.0_skip-tests-unreliable-in-site-ci.patch':
      '1d2e00cd516097e9efb4aa68cc1d4d59911cc639b585169285c4c4ef3fb75fb6'},
+    {'PyTorch-2.10.0_fix-saved-tensors-hooks-guard-id-reuse.patch':
+     '8f40bcb5d72ffbd18da794065ccd773e3d4d93bb221b3d60e6ee5451d99f5a97'},
+    {'PyTorch-2.10.0_fix-test_restart_pg_after_error-race.patch':
+     '855d897b577368baff1641a38282af51e84cbd9509b3021e484060aa603d345a'},
+    {'PyTorch-2.10.0_fix-test_leaky_relu_observed_output-tie.patch':
+     '6ff0840947ab97e41a8fa389a6552f17ecb1dcc0dfe14fc9935c0d4a034d4db5'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

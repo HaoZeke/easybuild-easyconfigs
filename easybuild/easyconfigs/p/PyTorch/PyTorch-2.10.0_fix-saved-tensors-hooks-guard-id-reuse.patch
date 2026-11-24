@@ -1,0 +1,48 @@
+The saved_tensors_hooks guard compares only id() of hook objects it does
+not keep alive. Hooks created in one `with saved_tensors_hooks(...)` block are
+freed when it exits, and a new pair can be allocated at the same addresses;
+the guard then passes and the graph compiled for the old hooks is reused.
+Seen as test_saved_tensors_hooks_autograd_cache_symbolic recording no
+recompile (and no AOT autograd cache lookup) for the changed hooks.
+Compare identity through weak references instead.
+
+Author: Rohit Goswami (SURF)
+
+--- a/torch/_dynamo/guards.py
++++ b/torch/_dynamo/guards.py
+@@ -2150,7 +2150,18 @@
+ 
+             return tuple(map(id, hooks))
+ 
+-        guard_hooks_ids = hooks_ids_fn(get_hooks())
++        guard_hooks = get_hooks()
++        guard_hooks_ids = hooks_ids_fn(guard_hooks)
++        # Compare identity through weak references, not bare ids. The hooks
++        # are usually created inside a `with saved_tensors_hooks(...)` block
++        # and freed when it exits; a new pair can then be allocated at the
++        # same addresses, and an id-only check would accept it and reuse the
++        # graph compiled for the old hooks.
++        guard_hooks_refs = (
++            None
++            if guard_hooks_ids is None
++            else tuple(weakref.ref(hook) for hook in guard_hooks)
++        )
+ 
+         code = [
+             f"torch._functorch.aot_autograd.utils.top_saved_tensors_hooks ids == {guard_hooks_ids}"
+@@ -2158,7 +2169,14 @@
+         self._set_guard_export_info(guard, code)
+ 
+         def fn(x: Any) -> bool:
+-            return guard_hooks_ids == hooks_ids_fn(get_hooks())
++            hooks = get_hooks()
++            if guard_hooks_refs is None:
++                return hooks_ids_fn(hooks) is None
++            if hooks_ids_fn(hooks) is None:
++                return False
++            return all(
++                ref() is hook for ref, hook in zip(guard_hooks_refs, hooks, strict=True)
++            )
+ 
+         self.guard_manager.root.add_lambda_guard(
+             fn, get_verbose_code_parts(code, guard)
