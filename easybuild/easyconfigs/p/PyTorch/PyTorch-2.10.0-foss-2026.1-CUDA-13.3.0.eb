@@ -103,6 +103,16 @@ patches = [
     'PyTorch-2.10.0_align-test-interfaces-and-fixtures.patch',
     'PyTorch-2.10.0_xnnpack-target-header-search.patch',
     'PyTorch-2.10.0_clear-generated-cuda-source-cache.patch',
+    # Skips, by exact test name (failing on the A100 build in the site build service):
+    # - inductor/test_deterministic.py DeterministicTest.test_run2run_determinism (all variants):
+    #   needs HuggingFace transformers, which it pip-installs from GitHub at test time
+    # - test_serialization.py test_debug_set_in_ci (TestSerialization, TestOldSerialization):
+    #   checks TORCH_SERIALIZATION_DEBUG, exported only by the PyTorch CI job; runs when CI is set
+    # - test_quantization.py TestFakeQuantizeOps.test_learnable_forward_per_channel_cpu:
+    #   reference overflows near 2**63, https://github.com/pytorch/pytorch/issues/111471
+    # - test_quantization.py TestFusedObsFakeQuant.test_fused_obs_fake_quant_moving_avg:
+    #   unseeded torch.randn inside a Hypothesis test, FlakyFailure on A100 and H100
+    'PyTorch-2.10.0_skip-tests-unreliable-in-site-ci.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -245,6 +255,8 @@ checksums = [
      '99e4b586fe46e190adc101abf95a5c5c91a6b295605bee43e4279d4a7a6da66f'},
     {'PyTorch-2.10.0_clear-generated-cuda-source-cache.patch':
      '2d6857dc7d9faf5586ff3504d870b18cbc3f298f66534a2852be89d1a46f9bbf'},
+    {'PyTorch-2.10.0_skip-tests-unreliable-in-site-ci.patch':
+     '1d2e00cd516097e9efb4aa68cc1d4d59911cc639b585169285c4c4ef3fb75fb6'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]

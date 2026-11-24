@@ -1,0 +1,57 @@
+Skip four tests that cannot pass in a site build with CI set, or that are
+unreliable independent of the installation:
+
+- inductor/test_deterministic.py test_run2run_determinism: every variant runs
+  benchmarks/dynamo/huggingface.py, which needs HuggingFace transformers and
+  tries to pip-install it from GitHub at test time; the build has neither the
+  package nor network access.
+- test_serialization.py test_debug_set_in_ci: asserts that the PyTorch CI job
+  exported TORCH_SERIALIZATION_DEBUG=1; it is enabled by any non-empty CI
+  variable, which the build service sets.
+- quantization test_learnable_forward_per_channel_cpu: the kernel and the
+  Python reference disagree on inputs near 2**63 (integer overflow in the
+  reference), see https://github.com/pytorch/pytorch/issues/111471.
+- quantization test_fused_obs_fake_quant_moving_avg: draws torch.randn inside
+  a Hypothesis test, so a replayed example uses different data; Hypothesis
+  reports FlakyFailure on 1-ULP float16 differences on both A100 and H100.
+
+Author: Rohit Goswami <rgoswami@ieee.org>
+
+--- a/test/inductor/test_deterministic.py
++++ b/test/inductor/test_deterministic.py
+@@ -115,6 +115,7 @@
+             else:
+                 self.assertTrue(counters["inductor"]["coordesc_tuning_bench"] > 0)
+ 
++    @unittest.skip("needs HuggingFace transformers and network access at test time")
+     @unittest.skipIf(IS_FBCODE, "Skipping run2run determinism test in fbcode")
+     @parametrize("model_name", ["GoogleFnet", "BertForMaskedLM", "DistillGPT2"])
+     @parametrize("training_or_inference", ["training", "inference"])
+--- a/test/test_serialization.py
++++ b/test/test_serialization.py
+@@ -927,6 +927,7 @@
+             loaded_data = torch.load(f, weights_only=True)
+             self.assertEqual(data, loaded_data)
+ 
++    @unittest.skip("checks a variable that only the PyTorch CI job exports")
+     @unittest.skipIf(not IS_CI, "only check debug var is set in CI")
+     def test_debug_set_in_ci(self):
+         # This test is to make sure that the serialization debug flag is set in CI
+--- a/test/quantization/core/test_workflow_ops.py
++++ b/test/quantization/core/test_workflow_ops.py
+@@ -840,6 +840,7 @@
+                     torch.allclose(Y, Y_prime, rtol=tolerance, atol=tolerance),
+                     "Expected kernel forward function to have results match the reference forward function")
+ 
++    @unittest.skip("reference overflows near 2**63: https://github.com/pytorch/pytorch/issues/111471")
+     @given(X=hu.per_channel_tensor(shapes=hu.array_shapes(1, 5,),
+                                    qparams=hu.qparams(dtypes=torch.quint8)))
+     def test_learnable_forward_per_channel_cpu(self, X):
+@@ -1097,6 +1098,7 @@
+ 
+ 
+ class TestFusedObsFakeQuant(TestCase):
++    @unittest.skip("unseeded torch.randn inside a Hypothesis test gives FlakyFailure")
+     @given(device=st.sampled_from(['cpu', 'cuda'] if torch.cuda.is_available() else ['cpu']),
+            sampled_dtype=st.sampled_from(['bf16', 'fp16', 'fp32']),
+            symmetric_quant=st.booleans(), use_bool=st.booleans())
