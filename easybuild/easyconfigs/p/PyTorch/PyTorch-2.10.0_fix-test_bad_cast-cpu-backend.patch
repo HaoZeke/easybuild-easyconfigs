@@ -1,0 +1,29 @@
+test_bad_cast expects "Conversions between float8_e5m2 and float8_e4m3fn is
+not supported!", which only the Triton backend raises. The CPU variant runs
+whenever an fp8-capable GPU is present (PLATFORM_SUPPORTS_FP8), and the C++
+backend converts between the two float8 types through float, so nothing is
+raised. On CPU, check the compiled conversion against eager instead.
+
+Author: Rohit Goswami (SURF)
+
+--- a/test/inductor/test_fp8.py
++++ b/test/inductor/test_fp8.py
+@@ -167,6 +167,18 @@
+ 
+         x_shape = (16, 16, 16)
+ 
++        if torch.device(device).type == "cpu":
++            # Only the Triton backend rejects direct float8 to float8
++            # conversions. The C++ backend converts through float, so check
++            # that it matches eager instead of expecting the Triton error.
++            for src, dst in (
++                (torch.float8_e4m3fn, torch.float8_e5m2),
++                (torch.float8_e5m2, torch.float8_e4m3fn),
++            ):
++                x = torch.rand(*x_shape, device=device).to(dtype=src)
++                self.assertEqual(compiled_fp8_cast(x, dst), fp8_cast(x, dst))
++            return
++
+         with self.assertRaisesRegex(
+             torch._dynamo.exc.BackendCompilerFailed,
+             "Conversions between float8_e5m2 and float8_e4m3fn is not supported!",

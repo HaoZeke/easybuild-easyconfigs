@@ -1,0 +1,17 @@
+test_jvp for pca_lowrank in float32 misses its 5e-5 tolerance by one element
+(7.6e-5) on AMD Zen 4 hosts. Use the 1e-4 tolerance test_vjp already uses for
+the same op.
+
+Author: Rohit Goswami (SURF)
+
+--- a/test/functorch/test_ops.py
++++ b/test/functorch/test_ops.py
+@@ -640,7 +640,7 @@
+             ),
+             tol1("nn.functional.conv2d", {torch.float32: tol(atol=4e-05, rtol=5e-05)}),
+             tol1("svd_lowrank", {torch.float32: tol(atol=5e-05, rtol=5e-05)}),
+-            tol1("pca_lowrank", {torch.float32: tol(atol=5e-05, rtol=5e-05)}),
++            tol1("pca_lowrank", {torch.float32: tol(atol=1e-04, rtol=1e-04)}),
+             tol1(
+                 "nn.functional.multi_head_attention_forward",
+                 {torch.float32: tol(atol=6e-05, rtol=2e-05)},

@@ -1,0 +1,28 @@
+test_tma_stable_reconstruct compares two (tensor, TensorDescriptor) tuples
+with assertEqual. Triton's TensorDescriptor is a dataclass whose generated
+__eq__ compares the base tensors with ==, which is elementwise, so the
+comparison raises instead of returning a result. Compare the descriptor
+fields instead.
+
+Author: Rohit Goswami (SURF)
+
+--- a/test/dynamo/test_reconstruct.py
++++ b/test/dynamo/test_reconstruct.py
+@@ -445,7 +445,16 @@
+ 
+         ref = create_tma(x)
+         res = torch.compile(create_tma, backend="eager")(x)
+-        self.assertEqual(ref, res)
++        self.assertEqual(ref[0], res[0])
++        # TensorDescriptor is a dataclass whose generated __eq__ compares the
++        # base tensors with ==, which is elementwise and cannot be reduced to a
++        # bool. Compare the descriptor field by field instead.
++        ref_desc, res_desc = ref[1], res[1]
++        self.assertIs(type(ref_desc), type(res_desc))
++        self.assertEqual(ref_desc.base, res_desc.base)
++        for name in ("shape", "strides", "block_shape", "padding"):
++            if hasattr(ref_desc, name):
++                self.assertEqual(getattr(ref_desc, name), getattr(res_desc, name))
+ 
+ 
+ if __name__ == "__main__":

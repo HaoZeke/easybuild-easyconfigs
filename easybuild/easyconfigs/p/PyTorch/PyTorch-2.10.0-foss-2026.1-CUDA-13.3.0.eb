@@ -120,6 +120,14 @@ patches = [
     'PyTorch-2.10.0_fix-test_restart_pg_after_error-race.patch',
     # requantizing ops may round an exact half step either way; allow one step
     'PyTorch-2.10.0_fix-test_leaky_relu_observed_output-tie.patch',
+    # test_tma_stable_reconstruct compared TensorDescriptor dataclasses with ==; compare fields
+    'PyTorch-2.10.0_fix-test_tma_stable_reconstruct-descriptor-compare.patch',
+    # test_bad_cast expects a Triton-only error from the CPU backend; check against eager on CPU
+    'PyTorch-2.10.0_fix-test_bad_cast-cpu-backend.patch',
+    # pca_lowrank jvp in float32 misses 5e-5 by one element on Zen 4; use the vjp tolerance
+    'PyTorch-2.10.0_tolerance-test_jvp_pca_lowrank.patch',
+    # linalg.lstsq noncontiguous float32 gradients differ by ~40 ulps on Zen 4
+    'PyTorch-2.10.0_tolerance-linalg_lstsq-noncontiguous-samples.patch',
 ]
 checksums = [
     {'pytorch-v2.10.0.tar.gz': 'fa8ccbe87f83f48735505371c1c313b4aa6db400b0ae4f8a02844d1e150c695f'},
@@ -270,6 +278,14 @@ checksums = [
      '855d897b577368baff1641a38282af51e84cbd9509b3021e484060aa603d345a'},
     {'PyTorch-2.10.0_fix-test_leaky_relu_observed_output-tie.patch':
      '6ff0840947ab97e41a8fa389a6552f17ecb1dcc0dfe14fc9935c0d4a034d4db5'},
+    {'PyTorch-2.10.0_fix-test_tma_stable_reconstruct-descriptor-compare.patch':
+     '3e45cac58faa9f74d046b7e1470f36abae031ecd3c724c4c9ad99804dd55ea8b'},
+    {'PyTorch-2.10.0_fix-test_bad_cast-cpu-backend.patch':
+     '01547872056940813584d4c0b54c59aec36c01a36de44aebef4c8c4a1b1a322b'},
+    {'PyTorch-2.10.0_tolerance-test_jvp_pca_lowrank.patch':
+     '9de7ac0f3fcfb66dfd6148e08d010ee91ccebb901a0cb9a063f9dd16180acd96'},
+    {'PyTorch-2.10.0_tolerance-linalg_lstsq-noncontiguous-samples.patch':
+     '842552701816ea3710202ccadc92836d9aae63e7bc4ba0aa1a807bcf6829af84'},
 ]
 
 osdependencies = [OS_PKG_IBVERBS_DEV]
