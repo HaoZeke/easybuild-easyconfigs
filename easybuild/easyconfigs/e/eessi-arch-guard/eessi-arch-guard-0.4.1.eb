@@ -1,0 +1,33 @@
+easyblock = 'Binary'
+
+name = 'eessi-arch-guard'
+version = '0.4.1'
+
+homepage = 'https://github.com/stackhands/eessi-arch-guard'
+description = """Reload an EESSI module environment when a Slurm task lands on a node with another CPU or GPU
+target than the one the job was set up on. Run from a task prolog or a job script, it compares
+the node's target with the loaded EESSI software subdirectory and prints the environment changes
+that reload the same modules for this node. `eessi-arch-guard --help` lists the options."""
+
+toolchain = SYSTEM
+
+# A static binary built reproducibly by the project's release workflow.
+source_urls = ['https://github.com/stackhands/eessi-arch-guard/releases/download/v%(version)s/']
+sources = ['%(name)s-%(version)s-%(arch)s-linux-musl']
+checksums = [{
+    'eessi-arch-guard-0.4.1-x86_64-linux-musl': '6548ea69b9f4d76499cdcf8943700375fcb733e1eac02a6521576798c311f328',
+    'eessi-arch-guard-0.4.1-aarch64-linux-musl': 'efac00a6d0cdd7d737ec4cbea26c39abdf7721ec12e946add40fba6fe0c5808b',
+}]
+
+extract_sources = False
+
+install_cmd = 'install -D -m 0755 %(builddir)s/%(name)s-%(version)s-%(arch)s-linux-musl %(installdir)s/bin/%(name)s'
+
+sanity_check_paths = {
+    'files': ['bin/eessi-arch-guard'],
+    'dirs': [],
+}
+
+sanity_check_commands = ['eessi-arch-guard --help', 'eessi-arch-guard --version']
+
+moduleclass = 'tools'
